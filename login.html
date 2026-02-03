@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion | PrintBam Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
+
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.015);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --accent-blue: #3b82f6;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #02040a;
+            color: #ffffff;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Fond Animé identique à l'accueil */
+        .bg-glow {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: -1;
+            background: radial-gradient(circle at 50% -20%, #1e3a8a 0%, transparent 45%),
+                        radial-gradient(circle at 0% 100%, #0f172a 0%, transparent 30%);
+        }
+
+        .glass {
+            position: relative;
+            background: var(--glass-bg);
+            backdrop-filter: blur(30px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: 32px;
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .input-crystal {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .input-crystal:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent-blue);
+            outline: none;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
+        }
+
+        .btn-crystal {
+            background: #3b82f6;
+            color: white;
+            border-radius: 16px;
+            font-weight: 800;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-crystal:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(59, 130, 246, 0.4);
+        }
+
+        .text-gradient {
+            background: linear-gradient(to bottom, #fff 40%, rgba(255,255,255,0.4));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent);
+        }
+    </style>
+</head>
+<body class="p-6">
+
+    <div class="bg-glow"></div>
+
+    <div class="glass p-8 md:p-12">
+        <div class="flex flex-col items-center mb-10">
+            <div class="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-500/40 mb-6">
+                <i class="fas fa-print text-white text-2xl"></i>
+            </div>
+            <h1 class="text-3xl font-black tracking-tighter uppercase">Print<span class="text-blue-500">bam</span></h1>
+            <p class="text-white/40 text-xs font-bold uppercase tracking-[0.3em] mt-2">Accès Infrastructure</p>
+        </div>
+
+        <form action="#" class="space-y-6">
+            <div class="space-y-2">
+                <label class="text-[10px] font-black uppercase tracking-widest text-white/30 ml-2">Identifiant Réseau</label>
+                <div class="relative">
+                    <i class="fas fa-user absolute left-5 top-1/2 -translate-y-1/2 text-white/20 text-sm"></i>
+                    <input type="email" placeholder="votre@email.com" class="w-full input-crystal py-4 pl-12 pr-4 text-sm font-semibold">
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <div class="flex justify-between items-center px-2">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-white/30">Code d'accès</label>
+                    <a href="#" class="text-[9px] font-bold text-blue-500 uppercase tracking-widest hover:underline">Oublié ?</a>
+                </div>
+                <div class="relative">
+                    <i class="fas fa-lock absolute left-5 top-1/2 -translate-y-1/2 text-white/20 text-sm"></i>
+                    <input type="password" placeholder="••••••••" class="w-full input-crystal py-4 pl-12 pr-4 text-sm font-semibold">
+                </div>
+            </div>
+
+            <button type="submit" class="w-full btn-crystal py-4 text-xs font-black uppercase tracking-[0.2em] mt-4">
+                Initialiser la session
+            </button>
+        </form>
+
+        <div class="mt-10">
+            <div class="divider mb-8"></div>
+            
+            <p class="text-center text-white/40 text-[11px] font-medium">
+                Pas encore de compte ? 
+                <a href="#" class="text-white font-black hover:text-blue-500 transition ml-1">Rejoindre le Cloud</a>
+            </p>
+            
+            <div class="flex justify-center gap-6 mt-8 opacity-30 grayscale transition hover:grayscale-0 hover:opacity-100 duration-500">
+                <i class="fab fa-google text-lg"></i>
+                <i class="fab fa-apple text-lg"></i>
+                <i class="fab fa-microsoft text-lg"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="fixed bottom-8 text-[9px] text-white/20 font-bold uppercase tracking-[0.5em]">
+        Secure Auth Protocol v3.0
+    </div>
+<div class="fixed top-8 left-8 z-50">
+    <a href="index.html" class="flex items-center gap-3 group">
+        <div class="w-10 h-10 glass flex items-center justify-center rounded-full border-white/10 group-hover:border-blue-500/50 transition-all">
+            <i class="fas fa-arrow-left text-white/50 group-hover:text-blue-500 text-sm"></i>
+        </div>
+        <span class="text-[10px] font-black uppercase tracking-widest text-white/30 group-hover:text-white transition-all">Retour</span>
+    </a>
+</div>
+</body>
+</html>
