@@ -6,87 +6,37 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#f8fafc">
-    <title>Printbam v3.2 | Infrastructure d'Impression Cloud</title>
+    <title>Printbam v3.5 Pro | Enterprise Cloud Printing</title>
     <link rel="apple-touch-icon" href="logo-printbam-icon2.png">
     <link rel="icon" type="image/png" href="print.png">
     <link rel="manifest" href="./manifest.json">
-
-    <!-- PRÉFÉRENCE DE THÈME NATIVE -->
     <meta name="color-scheme" content="light dark">
+    <meta name="description" content="Printbam est l'infrastructure d'impression cloud leader.">
     
-    <!-- META DONNÉES SEO & RÉSEAUX SOCIAUX -->
-    <meta name="description" content="Printbam est l'infrastructure d'impression cloud leader en Afrique centrale. Impression rapide, reliure, badges PVC et services académiques à Kinshasa.">
-    <meta name="keywords" content="impression, print cloud, kinshasa, reliure, thèse, mémoire, photocopie, badges pvc, rdc, congo">
-    <meta name="author" content="Printbam Technology">
-    
-    <!-- Open Graph / Facebook / LinkedIn -->
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="Printbam - Infrastructure d'Impression Cloud">
-    <meta property="og:description" content="Impression professionnelle et livraison rapide. Digitalisez vos flux avec Printbam.">
-    <meta property="og:image" content="https://www.printbam.com/logo-share.jpg">
-    <meta property="og:url" content="https://www.printbam.pro">
-    
-    <!-- Twitter / X -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Printbam - Impression Cloud">
-    <meta name="twitter:description" content="Impression professionnelle et livraison rapide à Kinshasa.">
-    <meta name="twitter:image" content="https://www.printbam.com/logo-share.jpg">
-    
-    <!-- PRECHARGEMENT DES RESSOURCES (PERFORMANCE) -->
-    <!-- Préconnexion rapide aux serveurs -->
+    <!-- PRECHARGEMENT -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="preconnect" href="https://images.unsplash.com">
-    
-    <!-- Préchargement critique de la police Plus Jakarta Sans (Light & Bold) -->
     <link rel="preload" href="https://fonts.gstatic.com/s/plusjakartasans/v8/LDIoaomPOk8aJ3Q.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="https://fonts.gstatic.com/s/plusjakartasans/v8/LDI2apCSOBg7L-QN7pA.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style" crossorigin>
     
-    <!-- Préchargement critique de FontAwesome -->
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style" integrity="sha512-pVpVHr0..." crossorigin>
-    
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
-    <!-- EmailJS -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.js"></script>
-
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://checkout.flutterwave.com/v3.js"></script>
     <link rel="stylesheet" href="css/ui.css">
-
-    <!-- SERVICE WORKER (MODE HORS LIGNE / PWA) -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').then((reg) => {
-                    console.log('SW Enregistré avec succès:', reg.scope);
-                }).catch((err) => console.error('Erreur SW:', err));
-            });
-        }
-    </script>
 </head>
 <body>
 
     <!-- PROFESSIONAL LOADER -->
     <div id="loader">
         <div class="loader-content">
-            <div class="loader-icon">
-                <i class="fas fa-print"></i>
-            </div>
+            <div class="loader-icon"><i class="fas fa-print"></i></div>
             <div class="loader-text">Printbam</div>
         </div>
-        
-        <div class="loader-dots">
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-        </div>
+        <div class="loader-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
     </div>
 
     <!-- TOAST CONTAINER -->
@@ -97,385 +47,396 @@
     <div class="bg-glow"></div>
 
     <!-- SIDEBAR OVERLAY -->
-    <div id="sidebar-overlay" class="fixed inset-0 z-[5000] invisible transition-all duration-500">
+    <div id="sidebar-overlay" class="fixed inset-0 z-[5000] invisible transition-all duration-500" aria-hidden="true">
         <div id="sidebar-bg" class="absolute inset-0 bg-slate-900/20 backdrop-blur-sm opacity-0 transition-opacity duration-500" onclick="toggleSidebar()"></div>
-        
-        <!-- SIDEBAR PANEL -->
         <div id="sidebar-panel" class="fixed top-0 left-0 h-full w-[300px] bg-white z-[5001] -translate-x-full opacity-0 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col shadow-2xl border-r border-slate-100">
-            <div class="pt-10 pb-6 px-8 border-b border-slate-100 bg-white/50">
-                <span class="text-2xl font-bold text-slate-900 tracking-tight">Print<span class="text-indigo-600">bam</span></span>
-                <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-widest">v3.0 Pro</p>
-            </div>
-
+            <div class="pt-10 pb-6 px-8 border-b border-slate-100 bg-white/50"><span class="text-2xl font-bold text-slate-900 tracking-tight">Print<span class="text-indigo-600">bam</span></span><p class="text-[10px] text-slate-400 mt-1 uppercase tracking-widest">v3.5 Pro</p></div>
             <nav class="flex-1 overflow-y-auto p-5">
-                <div class="mb-8">
-                    <p class="px-4 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider" data-i18n="nav_navigation">Navigation</p>
-                    <div class="flex flex-col gap-2">
-                        <a href="index.html" class="nav-link-pro active">
-                            <i class="fa-solid fa-house w-5 text-center text-sm"></i> <span data-i18n="nav_home">Accueil</span>
-                        </a>
-                        <a href="marketplace.html" class="nav-link-pro">
-                            <i class="fa-solid fa-shop w-5 text-center text-sm"></i> <span data-i18n="nav_market">Marketplace</span>
-                        </a>
-                        <a href="tarifs.html" class="nav-link-pro">
-                            <i class="fa-solid fa-layer-group w-5 text-center text-sm"></i> <span data-i18n="nav_services">Services</span>
-                        </a>
-                    </div>
+                <div class="mb-8"><p class="px-4 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider" data-i18n="nav_navigation">Navigation</p>
+                    <div class="flex flex-col gap-2"><a onclick="switchPage('home')" class="nav-link-pro active"><i class="fa-solid fa-house w-5 text-center text-sm"></i> <span data-i18n="nav_home">Accueil</span></a><a onclick="switchPage('marketplace')" class="nav-link-pro"><i class="fa-solid fa-shop w-5 text-center text-sm"></i> <span data-i18n="nav_market">Marketplace</span></a><a onclick="switchPage('services')" class="nav-link-pro"><i class="fa-solid fa-layer-group w-5 text-center text-sm"></i> <span data-i18n="nav_services">Services & Tarifs</span></a></div>
                 </div>
-                <div>
-                    <p class="px-4 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider" data-i18n="nav_account">Compte</p>
-                    <div class="flex flex-col gap-2">
-                        <a href="javascript:void(0)" onclick="toggleOrders()" class="nav-link-pro">
-                            <i class="fa-solid fa-receipt w-5 text-center text-sm"></i> <span data-i18n="nav_orders">Mes Commandes</span>
-                        </a>
-                        <a href="javascript:void(0)" onclick="toggleSettings()" class="nav-link-pro">
-                            <i class="fa-solid fa-gear w-5 text-center text-sm"></i> <span data-i18n="nav_settings">Paramètres</span>
-                        </a>
-                        <a href="javascript:void(0)" onclick="toggleSupport()" class="nav-link-pro">
-                            <i class="fa-solid fa-headset w-5 text-center text-sm"></i> <span data-i18n="nav_help">Aide</span>
-                        </a>
-                    </div>
-                </div>
+                <div><p class="px-4 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider" data-i18n="nav_account">Compte</p><div class="flex flex-col gap-2"><a href="javascript:void(0)" onclick="toggleOrders()" class="nav-link-pro"><i class="fa-solid fa-receipt w-5 text-center text-sm"></i> <span data-i18n="nav_orders">Mes Commandes</span></a><a href="javascript:void(0)" onclick="toggleSettings()" class="nav-link-pro"><i class="fa-solid fa-gear w-5 text-center text-sm"></i> <span data-i18n="nav_settings">Paramètres</span></a><a href="javascript:void(0)" onclick="toggleSupport()" class="nav-link-pro"><i class="fa-solid fa-headset w-5 text-center text-sm"></i> <span data-i18n="nav_help">Aide</span></a></div></div>
             </nav>
-
             <div class="p-5 border-t border-slate-100 bg-slate-50/50">
                 <div class="flex bg-slate-200/50 p-1 rounded-xl">
-                    <button onclick="setTheme('light')" id="btn-light" class="flex-1 py-2.5 text-xs font-semibold rounded-lg shadow-sm bg-white text-slate-800 transition-all flex justify-center items-center gap-2">
-                        <i class="fas fa-sun text-xs"></i> Light
-                    </button>
-                    <button onclick="setTheme('dark')" id="btn-dark" class="flex-1 py-2.5 text-xs font-semibold rounded-lg text-slate-500 hover:text-slate-800 transition-all flex justify-center items-center gap-2">
-                        <i class="fas fa-moon text-xs"></i> Dark
-                    </button>
+                    <button onclick="setTheme('light')" id="btn-light" class="flex-1 py-2.5 text-xs font-semibold rounded-lg shadow-sm bg-white text-slate-800 transition-all flex justify-center items-center gap-2"><i class="fas fa-sun text-xs"></i> Light</button>
+                    <button onclick="setTheme('dark')" id="btn-dark" class="flex-1 py-2.5 text-xs font-semibold rounded-lg text-slate-500 hover:text-slate-800 transition-all flex justify-center items-center gap-2"><i class="fas fa-moon text-xs"></i> Dark</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- HEADERS -->
+    <!-- MOBILE HEADER -->
+    <div class="sm:hidden fixed top-0 w-full z-[4000] px-4 py-4 transition-all duration-300" id="mobile-header">
+        <div class="flex items-center justify-between gap-3">
+            <button onclick="toggleSidebar()" class="flex items-center justify-center w-11 h-11 bg-white/90 border border-slate-200 rounded-xl shadow-sm backdrop-blur-md active:scale-95 transition-all group" aria-label="Menu"><i class="fas fa-bars text-slate-700 group-hover:text-indigo-600 transition-colors"></i></button>
+            <div class="flex-1 h-11 bg-white/90 border border-slate-200 rounded-xl flex items-center justify-center px-4 shadow-sm backdrop-blur-md"><span class="font-bold text-lg tracking-tight"><span class="text-indigo-600">Print</span>bam</span></div>
+            <a href="javascript:void(0)" onclick="openTerminal()" class="flex items-center justify-center w-11 h-11 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-200 active:scale-95 transition-all text-white" aria-label="Commander"><i class="fas fa-tag text-sm"></i></a>
+        </div>
+    </div>
+
+    <!-- DESKTOP NAV -->
+    <div class="nav-desktop-container fixed top-0 w-full z-[4000] px-6 py-6 transition-all duration-300">
+        <nav id="nav-main" class="glass-header max-w-6xl mx-auto rounded-2xl px-6 h-16 flex justify-between items-center transition-all duration-300">
+            <a onclick="switchPage('home')" class="flex items-center gap-2 group cursor-pointer">
+                <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white text-xs shadow-lg shadow-indigo-200 group-hover:scale-110 transition-transform"><i class="fas fa-print"></i></div>
+                <span class="text-xl font-bold text-slate-900 tracking-tight group-hover:text-indigo-600 transition-colors">Print<span class="text-slate-400 group-hover:text-indigo-400">bam</span></span>
+            </a>
+            <div class="hidden md:flex items-center gap-1">
+                <a onclick="switchPage('home')" class="nav-link-pro rounded-lg"><span data-i18n="nav_home">Accueil</span></a>
+                <a onclick="switchPage('services')" class="nav-link-pro rounded-lg"><span data-i18n="nav_orders">Services</span></a>
+                <a onclick="switchPage('marketplace')" class="nav-link-pro rounded-lg"><span data-i18n="nav_market">Marketplace</span></a>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebar()" class="md:hidden w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors"><i class="fas fa-bars"></i></button>
+                <a href="login.html" class="hidden md:block text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-colors" data-i18n="nav_login">Connexion</a>
+                <a href="javascript:void(0)" onclick="openTerminal()" class="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-indigo-600 transition-all shadow-lg shadow-indigo-200/50 flex items-center gap-2 btn-glow" aria-label="Démarrer une commande"><span data-i18n="btn_start">Démarrer</span> <i class="fas fa-arrow-right text-[10px]"></i></a>
+            </div>
+        </nav>
+    </div>
+
     <!-- MAIN CONTENT WRAPPER -->
     <div id="main-content" class="relative z-0">
-
-        <!-- MOBILE HEADER -->
-        <div class="sm:hidden fixed top-0 w-full z-[4000] px-4 py-4 transition-all duration-300" id="mobile-header">
-            <div class="flex items-center justify-between gap-3">
-                <button onclick="toggleSidebar()" class="flex items-center justify-center w-11 h-11 bg-white/90 border border-slate-200 rounded-xl shadow-sm backdrop-blur-md active:scale-95 transition-all group">
-                    <i class="fas fa-bars text-slate-700 group-hover:text-indigo-600 transition-colors"></i>
-                </button>
-        
-                <div class="flex-1 h-11 bg-white/90 border border-slate-200 rounded-xl flex items-center justify-center px-4 shadow-sm backdrop-blur-md">
-                    <span class="font-bold text-lg tracking-tight"><span class="text-indigo-600">Print</span>bam</span>
-                </div>
-        
-                <a href="offres.html" class="flex items-center justify-center w-11 h-11 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-200 active:scale-95 transition-all text-white">
-                    <i class="fas fa-tag text-sm"></i>
-                </a>
-            </div>
-        </div>
-
-        <!-- DESKTOP NAV -->
-        <div class="nav-desktop-container fixed top-0 w-full z-[4000] px-6 py-6 transition-all duration-300">
-            <nav id="nav-main" class="glass-header max-w-6xl mx-auto rounded-2xl px-6 h-16 flex justify-between items-center transition-all duration-300">
-                <a href="index.html" class="flex items-center gap-2 group">
-                    <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white text-xs shadow-lg shadow-indigo-200 group-hover:scale-110 transition-transform">
-                        <i class="fas fa-print"></i>
-                    </div>
-                    <span class="text-xl font-bold text-slate-900 tracking-tight group-hover:text-indigo-600 transition-colors">Print<span class="text-slate-400 group-hover:text-indigo-400">bam</span></span>
-                </a>
-        
-                <div class="hidden md:flex items-center gap-1">
-                    <a href="index.html" class="nav-link-pro active rounded-lg"><span data-i18n="nav_home">Accueil</span></a>
-                    <a href="tarifs.html" class="nav-link-pro rounded-lg"><span data-i18n="nav_orders">Mes commandes</span></a>
-                    <a href="marketplace.html" class="nav-link-pro rounded-lg"><span data-i18n="nav_market">Marketplace</span></a>
-                </div>
-        
-                <div class="flex items-center gap-3">
-                    <button onclick="toggleSidebar()" class="md:hidden w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <a href="login.html" class="hidden md:block text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-colors" data-i18n="nav_login">Connexion</a>
-                    <a href="commande.html" class="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-indigo-600 transition-all shadow-lg shadow-indigo-200/50 flex items-center gap-2">
-                        <span data-i18n="btn_start">Démarrer</span> <i class="fas fa-arrow-right text-[10px]"></i>
-                    </a>
-                </div>
-            </nav>
-        </div>
 
         <!-- SPACER FOR HEADER -->
         <div class="h-20 md:h-24"></div>
 
-        <!-- HERO SECTION -->
-        <section class="max-w-7xl mx-auto px-4 pt-4 pb-8 text-center relative">
-    
-            <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-900 mb-4 leading-tight">
-                <span data-i18n="hero_title_part1">L'infrastructure</span> <br class="hidden md:block" />
-                <span data-i18n="hero_title_part2">documentaire</span> <span class="text-gradient" data-i18n="hero_title_highlight">haute performance.</span>
-            </h1>
-            
-            <p class="text-lg md:text-xl text-slate-500 font-medium leading-relaxed mb-6 max-w-2xl mx-auto">
-                <span data-i18n="hero_desc">Digitalisez vos flux, nous matérialisons l'excellence avec une</span> <span id="typewriter"></span>
-            </p>
-        
-            <div class="flex flex-wrap justify-center gap-4 mb-4">
-                <a href="commande.html" class="px-8 py-4 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 hover:shadow-indigo-300 hover:-translate-y-1 flex items-center gap-2">
-                    <i class="fas fa-cloud-upload-alt"></i> <span data-i18n="btn_print_now">Imprimer maintenant</span>
-                </a>
-                <a href="tarifs.html" class="px-8 py-4 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-sm hover:border-slate-300 hover:bg-slate-50 transition-all shadow-sm flex items-center gap-2">
-                    <i class="fas fa-play-circle text-indigo-500"></i> <span data-i18n="btn_demo">Voir la démo</span>
-                </a>
-            </div>
-        </section>
+        <!-- PAGE 1: ACCUEIL -->
+        <div id="home-view" class="page-view active">
+            <section class="max-w-7xl mx-auto px-4 pt-4 pb-8 text-center relative">
+                <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-900 mb-4 leading-tight">
+                    <span data-i18n="hero_title_part1">L'infrastructure</span> <br class="hidden md:block" />
+                    <span data-i18n="hero_title_part2">documentaire</span> <span class="text-gradient" data-i18n="hero_title_highlight">haute performance.</span>
+                </h1>
+                <p class="text-lg md:text-xl text-slate-500 font-medium leading-relaxed mb-6 max-w-2xl mx-auto">
+                    <span data-i18n="hero_desc">Digitalisez vos flux, nous matérialisons l'excellence avec une</span> <span id="typewriter"></span>
+                </p>
+                <div class="flex flex-wrap justify-center gap-4 mb-4">
+                    <a href="javascript:void(0)" onclick="openTerminal()" class="px-8 py-4 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 hover:shadow-indigo-300 hover:-translate-y-1 flex items-center gap-2"><i class="fas fa-cloud-upload-alt"></i> <span data-i18n="btn_print_now">Imprimer maintenant</span></a>
+                    <a onclick="switchPage('services')" class="px-8 py-4 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-sm hover:border-slate-300 hover:bg-slate-50 transition-all shadow-sm flex items-center gap-2 cursor-pointer"><i class="fas fa-play-circle text-indigo-500"></i> <span data-i18n="btn_demo">Voir la démo</span></a>
+                </div>
+            </section>
 
-        <!-- FEATURES GRID -->
-        <section class="max-w-7xl mx-auto px-6 pb-25">
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-[280px]">
-                
-                <!-- Large Card 1 -->
-                <div class="md:col-span-8 glass p-6 md:p-8 flex flex-col min-h-[250px] justify-between group reveal-up overflow-hidden">
-                    <div class="relative z-10">
-                        <div class="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center mb-6 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300">
-                            <i class="fas fa-layer-group text-xl"></i>
+            <section class="max-w-7xl mx-auto px-6 pb-25">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-[280px]">
+                    <div class="md:col-span-8 glass p-6 md:p-8 flex flex-col min-h-[250px] justify-between group reveal-up overflow-hidden">
+                        <div class="relative z-10">
+                            <div class="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center mb-6 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300"><i class="fas fa-layer-group text-xl"></i></div>
+                            <h3 class="text-2xl font-bold mb-3 text-slate-900 tracking-tight" data-i18n="feat_arch_title">Architecture Documentaire</h3>
+                            <p class="text-slate-500 text-sm leading-snug w-full mb-6" data-i18n="feat_arch_desc">Traitement architectural de vos documents. Précision au millimètre pour vos manuscrits exigeants et mémoires académiques.</p>
                         </div>
-                        
-                        <h3 class="text-2xl font-bold mb-3 text-slate-900 tracking-tight" data-i18n="feat_arch_title">
-                            Architecture Documentaire
-                        </h3>
-                        
-                        <p class="text-slate-500 text-sm leading-snug w-full mb-6" data-i18n="feat_arch_desc">
-                            Traitement architectural de vos documents. Précision au millimètre pour vos manuscrits exigeants et mémoires académiques.
-                        </p>
+                        <div class="relative z-10 flex flex-wrap gap-2"><span class="text-[10px] font-bold tracking-wide uppercase py-2 px-3 rounded-full bg-slate-50 text-slate-500 border border-slate-100">Reliure Canon</span><span class="text-[10px] font-bold tracking-wide uppercase py-2 px-3 rounded-full bg-slate-50 text-slate-500 border border-slate-100">Papier Premium 80g</span></div>
                     </div>
-                
-                    <div class="relative z-10 flex flex-wrap gap-2">
-                        <span class="text-[10px] font-bold tracking-wide uppercase py-2 px-3 rounded-full bg-slate-50 text-slate-500 border border-slate-100">
-                            Reliure Canon
-                        </span>
-                        <span class="text-[10px] font-bold tracking-wide uppercase py-2 px-3 rounded-full bg-slate-50 text-slate-500 border border-slate-100">
-                            Papier Premium 80g
-                        </span>
+                    <div class="md:col-span-4 glass p-8 flex flex-col items-center justify-center text-center group bg-gradient-to-br from-indigo-50 to-white border-indigo-100 reveal-up" style="transition-delay: 100ms;"><div class="relative z-10"><div class="text-5xl md:text-6xl font-black text-indigo-600 mb-2 group-hover:scale-110 transition-transform duration-300">120<span class="text-xl">min</span></div><p class="text-xs font-bold uppercase tracking-[0.2em] text-indigo-400" data-i18n="feat_delivery">Livraison Express</p></div><div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div></div>
+                    <div class="md:col-span-4 glass p-8 flex flex-col justify-center group reveal-up" style="transition-delay: 200ms;"><div class="relative z-10"><i class="fas fa-id-card text-4xl mb-5 text-indigo-500"></i><h3 class="text-xl font-bold mb-2 text-slate-900" data-i18n="feat_badge_title">Badges PVC</h3><p class="text-slate-500 text-sm" data-i18n="feat_badge_desc">Cartes de service haute définition avec protection thermique et codage magnétique.</p></div></div>
+                    <div class="md:col-span-8 glass p-8 flex items-center gap-10 group reveal-up" style="transition-delay: 300ms;"><div class="hidden md:flex w-24 h-24 bg-indigo-50 rounded-2xl items-center justify-center border border-indigo-100 shrink-0 group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-colors duration-300"><i class="fas fa-server text-3xl text-indigo-600 group-hover:text-white"></i></div><div class="relative z-10"><h3 class="text-2xl font-bold mb-2 text-slate-900 tracking-tight" data-i18n="feat_cloud_title">Infrastructure Cloud Pro</h3><p class="text-slate-500" data-i18n="feat_cloud_desc">Envoyez vos fichiers de n'importe où. Notre réseau sécurisé s'occupe du traitement et de l'impression.</p></div></div>
+                </div>
+            </section>
+
+            <section class="max-w-7xl mx-auto px-5 py-8 relative">
+                <div class="flex flex-col md:flex-row justify-between items-end mb-8 gap-6">
+                    <div class="max-w-xl reveal-up"><h2 class="text-indigo-600 font-black text-xs uppercase tracking-widest mb-3">Portfolio</h2><h3 class="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight" data-i18n="portfolio_title">Standards d'Excellence.</h3></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="glass group flex flex-col h-full reveal-up"><div class="h-64 overflow-hidden rounded-t-2xl relative"><img src="https://images.unsplash.com/photo-1586717791821-3f44a563eb4c?auto=format&fit=crop&w=800&q=80" loading="lazy" class="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"><div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div></div><div class="p-6 flex-1 flex flex-col justify-between"><div><span class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest" data-i18n="card1_cat">Rapports</span><h4 class="text-xl font-bold mt-2 text-slate-900" data-i18n="card1_title">Rapports Institutionnels</h4><p class="text-slate-500 text-sm mt-3 leading-relaxed" data-i18n="card1_desc">Papier couché 120g avec reliure thermique invisible pour une finition premium.</p></div></div></div>
+                    <div class="glass group flex flex-col h-full reveal-up" style="transition-delay: 100ms;"><div class="h-64 overflow-hidden rounded-t-2xl relative"><img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80" loading="lazy" class="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"><div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div></div><div class="p-6 flex-1 flex flex-col justify-between"><div><span class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest" data-i18n="card2_cat">Identité Visuelle</span><h4 class="text-xl font-bold mt-2 text-slate-900" data-i18n="card2_title">Cartes de Membre</h4><p class="text-slate-500 text-sm mt-3 leading-relaxed" data-i18n="card2_desc">Impression sublimation haute résistance avec hologramme de sécurité personnalisé.</p></div></div></div>
+                    <div class="glass group flex flex-col h-full reveal-up" style="transition-delay: 200ms;"><div class="h-64 overflow-hidden rounded-t-2xl relative"><img src="https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=800&q=80" loading="lazy" class="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"><div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div></div><div class="p-6 flex-1 flex flex-col justify-between"><div><span class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest" data-i18n="card3_cat">Technique</span><h4 class="text-xl font-bold mt-2 text-slate-900" data-i18n="card3_title">Plans & Blueprints</h4><p class="text-slate-500 text-sm mt-3 leading-relaxed" data-i18n="card3_desc">Traçage grand format A0/A1 haute précision sur papier technique translucide.</p></div></div></div>
+                </div>
+            </section>
+
+            <section class="relative py-5 md:py-8 my-5 overflow-hidden">
+                <div class="absolute inset-0 bg-slate-900"><img src="https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1500&q=80" class="w-full h-full object-cover opacity-20 mix-blend-overlay"><div class="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/90 to-transparent"></div></div>
+                <div class="relative text-center px-6 z-10"><h2 class="text-3xl md:text-5xl font-bold text-white mb-6 tracking-tight" data-i18n="cta_title">Prêt pour l'impression ?</h2><a href="javascript:void(0)" onclick="openTerminal()" class="inline-block bg-indigo-600 px-10 py-4 rounded-xl font-bold text-sm uppercase tracking-wide text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-900/50 hover:shadow-indigo-600/50 transform hover:-translate-y-1"><span data-i18n="btn_launch_order">Lancer une commande</span></a></div>
+            </section>
+        </div> <!-- FIN HOME VIEW -->
+
+        <!-- PAGE 2: MARKETPLACE -->
+        <div id="marketplace-view" class="page-view">
+            <section class="max-w-7xl mx-auto px-6 py-10">
+                <div class="mb-10 text-center">
+                    <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight mb-4"><span class="text-gradient">Marketplace</span> Printbam</h1>
+                    <p class="text-slate-500 max-w-2xl mx-auto text-lg" data-i18n="market_desc">Découvrez nos packs pré-configurés pour vos besoins professionnels et académiques.</p>
+                </div>
+
+                <!-- FILTRES & RECHERCHE -->
+                <div class="glass p-4 mb-8 flex flex-col md:flex-row gap-4 items-center justify-between sticky top-24 z-30">
+                    <div class="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 no-scrollbar">
+                        <button onclick="filterMarket('all')" class="filter-btn active px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold shadow-md transition-colors whitespace-nowrap">Tout</button>
+                        <button onclick="filterMarket('academique')" class="filter-btn px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm font-bold hover:bg-slate-50 transition-colors whitespace-nowrap">Académique</button>
+                        <button onclick="filterMarket('corporate')" class="filter-btn px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm font-bold hover:bg-slate-50 transition-colors whitespace-nowrap">Corporate</button>
+                        <button onclick="filterMarket('marketing')" class="filter-btn px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm font-bold hover:bg-slate-50 transition-colors whitespace-nowrap">Marketing</button>
+                    </div>
+                    <div class="relative w-full md:w-64">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input type="text" id="market-search" oninput="searchMarketplace(this.value)" placeholder="Rechercher un produit..." class="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
                     </div>
                 </div>
 
-                <!-- Stat Card -->
-                <div class="md:col-span-4 glass p-8 flex flex-col items-center justify-center text-center group bg-gradient-to-br from-indigo-50 to-white border-indigo-100 reveal-up" style="transition-delay: 100ms;">
-                    <div class="relative z-10">
-                        <div class="text-5xl md:text-6xl font-black text-indigo-600 mb-2 group-hover:scale-110 transition-transform duration-300">120<span class="text-xl">min</span></div>
-                        <p class="text-xs font-bold uppercase tracking-[0.2em] text-indigo-400" data-i18n="feat_delivery">Livraison Express</p>
-                    </div>
-                    <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
-                </div>
-
-                <!-- Small Card 1 -->
-                <div class="md:col-span-4 glass p-8 flex flex-col justify-center group reveal-up" style="transition-delay: 200ms;">
-                    <div class="relative z-10">
-                        <i class="fas fa-id-card text-4xl mb-5 text-indigo-500"></i>
-                        <h3 class="text-xl font-bold mb-2 text-slate-900" data-i18n="feat_badge_title">Badges PVC</h3>
-                        <p class="text-slate-500 text-sm" data-i18n="feat_badge_desc">Cartes de service haute définition avec protection thermique et codage magnétique.</p>
-                    </div>
-                </div>
-
-                <!-- Large Card 2 -->
-                <div class="md:col-span-8 glass p-8 flex items-center gap-10 group reveal-up" style="transition-delay: 300ms;">
-                    <div class="hidden md:flex w-24 h-24 bg-indigo-50 rounded-2xl items-center justify-center border border-indigo-100 shrink-0 group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-colors duration-300">
-                        <i class="fas fa-server text-3xl text-indigo-600 group-hover:text-white"></i>
-                    </div>
-                    <div class="relative z-10">
-                        <h3 class="text-2xl font-bold mb-2 text-slate-900 tracking-tight" data-i18n="feat_cloud_title">Infrastructure Cloud Pro</h3>
-                        <p class="text-slate-500" data-i18n="feat_cloud_desc">Envoyez vos fichiers de n'importe où. Notre réseau sécurisé s'occupe du traitement et de l'impression.</p>
-                    </div>
-                </div>
-
-            </div>
-        </section>
-
-        <!-- SHOWCASE SECTION -->
-        <section class="max-w-7xl mx-auto px-5 py-8 relative">
-            <div class="flex flex-col md:flex-row justify-between items-end mb-8 gap-6">
-                <div class="max-w-xl reveal-up">
-                    <h2 class="text-indigo-600 font-black text-xs uppercase tracking-widest mb-3">Portfolio</h2>
-                    <h3 class="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight" data-i18n="portfolio_title">Standards d'Excellence.</h3>
-                </div>
-                <div class="flex gap-2 reveal-up">
-                    <button class="px-5 py-2.5 text-xs font-bold bg-slate-900 text-white rounded-lg shadow-lg" data-i18n="btn_all">Tout voir</button>
-                    <button class="px-5 py-2.5 text-xs font-bold bg-white border border-slate-200 text-slate-600 rounded-lg hover:border-slate-400 transition-colors">Corporate</button>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <!-- Card 1 -->
-                <div class="glass group flex flex-col h-full reveal-up">
-                    <div class="h-64 overflow-hidden rounded-t-2xl relative">
-                        <img src="https://images.unsplash.com/photo-1586717791821-3f44a563eb4c?auto=format&fit=crop&w=800&q=80" 
-                             class="w-full h-full object-cover transition-all duration-700 group-hover:scale-110">
-                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    </div>
-                    <div class="p-6 flex-1 flex flex-col justify-between">
-                        <div>
-                            <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest" data-i18n="card1_cat">Rapports</span>
-                            <h4 class="text-xl font-bold mt-2 text-slate-900" data-i18n="card1_title">Rapports Institutionnels</h4>
-                            <p class="text-slate-500 text-sm mt-3 leading-relaxed" data-i18n="card1_desc">Papier couché 120g avec reliure thermique invisible pour une finition premium.</p>
-                        </div>
-                        <div class="pt-6 border-t border-slate-100 flex justify-between items-center mt-6">
-                            <span class="text-[10px] text-slate-400 uppercase font-bold tracking-tighter">Banque Centrale</span>
-                            <i class="fas fa-arrow-right text-indigo-600 -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300"></i>
+                <!-- GRID -->
+                <div id="products-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Item 1 -->
+                    <div class="market-item glass flex flex-col group overflow-hidden" data-category="academique">
+                        <div class="h-48 bg-indigo-50 relative"><div class="absolute inset-0 flex items-center justify-center text-indigo-200 text-6xl"><i class="fas fa-file-pdf"></i></div><span class="absolute top-4 left-4 bg-indigo-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase">Populaire</span></div>
+                        <div class="p-6 flex-1 flex flex-col">
+                            <h3 class="font-bold text-lg mb-2" data-i18n="mkt_item1_title">Pack Mémoire Standard</h3>
+                            <p class="text-sm text-slate-500 mb-4 flex-1" data-i18n="mkt_item1_desc">Impression N&B + Reliure Spirale + 2 Exemplaires.</p>
+                            <div class="flex items-center justify-between mt-auto">
+                                <span class="text-2xl font-black text-slate-900">25.000 <span class="text-xs text-slate-400 font-normal">FC</span></span>
+                                <a href="javascript:void(0)" onclick="openTerminal()" class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-indigo-600 transition-colors"><i class="fas fa-arrow-right"></i></a>
+                            </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Card 2 -->
-                <div class="glass group flex flex-col h-full reveal-up" style="transition-delay: 100ms;">
-                    <div class="h-64 overflow-hidden rounded-t-2xl relative">
-                        <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80" 
-                             class="w-full h-full object-cover transition-all duration-700 group-hover:scale-110">
-                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    </div>
-                    <div class="p-6 flex-1 flex flex-col justify-between">
-                        <div>
-                            <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest" data-i18n="card2_cat">Identité Visuelle</span>
-                            <h4 class="text-xl font-bold mt-2 text-slate-900" data-i18n="card2_title">Cartes de Membre</h4>
-                            <p class="text-slate-500 text-sm mt-3 leading-relaxed" data-i18n="card2_desc">Impression sublimation haute résistance avec hologramme de sécurité personnalisé.</p>
-                        </div>
-                        <div class="pt-6 border-t border-slate-100 flex justify-between items-center mt-6">
-                            <span class="text-[10px] text-slate-400 uppercase font-bold tracking-tighter">Clubs Privés</span>
-                            <i class="fas fa-arrow-right text-indigo-600 -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300"></i>
+                    <!-- Item 2 -->
+                    <div class="market-item glass flex flex-col group overflow-hidden" data-category="corporate">
+                        <div class="h-48 bg-emerald-50 relative"><div class="absolute inset-0 flex items-center justify-center text-emerald-200 text-6xl"><i class="fas fa-id-card"></i></div></div>
+                        <div class="p-6 flex-1 flex flex-col">
+                            <h3 class="font-bold text-lg mb-2" data-i18n="mkt_item2_title">Pack Badges Pro</h3>
+                            <p class="text-sm text-slate-500 mb-4 flex-1" data-i18n="mkt_item2_desc">50 Cartes PVC recto-verso avec personnalisation.</p>
+                            <div class="flex items-center justify-between mt-auto">
+                                <span class="text-2xl font-black text-slate-900">45.000 <span class="text-xs text-slate-400 font-normal">FC</span></span>
+                                <a href="javascript:void(0)" onclick="openTerminal()" class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-indigo-600 transition-colors"><i class="fas fa-arrow-right"></i></a>
+                            </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Card 3 -->
-                <div class="glass group flex flex-col h-full reveal-up" style="transition-delay: 200ms;">
-                    <div class="h-64 overflow-hidden rounded-t-2xl relative">
-                        <img src="https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=800&q=80" 
-                             class="w-full h-full object-cover transition-all duration-700 group-hover:scale-110">
-                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    </div>
-                    <div class="p-6 flex-1 flex flex-col justify-between">
-                        <div>
-                            <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest" data-i18n="card3_cat">Technique</span>
-                            <h4 class="text-xl font-bold mt-2 text-slate-900" data-i18n="card3_title">Plans & Blueprints</h4>
-                            <p class="text-slate-500 text-sm mt-3 leading-relaxed" data-i18n="card3_desc">Traçage grand format A0/A1 haute précision sur papier technique translucide.</p>
-                        </div>
-                        <div class="pt-6 border-t border-slate-100 flex justify-between items-center mt-6">
-                            <span class="text-[10px] text-slate-400 uppercase font-bold tracking-tighter">Bureau d'études</span>
-                            <i class="fas fa-arrow-right text-indigo-600 -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300"></i>
+                    <!-- Item 3 -->
+                    <div class="market-item glass flex flex-col group overflow-hidden" data-category="marketing">
+                        <div class="h-48 bg-orange-50 relative"><div class="absolute inset-0 flex items-center justify-center text-orange-200 text-6xl"><i class="fas fa-bullhorn"></i></div></div>
+                        <div class="p-6 flex-1 flex flex-col">
+                            <h3 class="font-bold text-lg mb-2" data-i18n="mkt_item3_title">Kit Communication</h3>
+                            <p class="text-sm text-slate-500 mb-4 flex-1" data-i18n="mkt_item3_desc">100 Affiches A3 + 500 Flyers A5.</p>
+                            <div class="flex items-center justify-between mt-auto">
+                                <span class="text-2xl font-black text-slate-900">120.000 <span class="text-xs text-slate-400 font-normal">FC</span></span>
+                                <a href="javascript:void(0)" onclick="openTerminal()" class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-indigo-600 transition-colors"><i class="fas fa-arrow-right"></i></a>
+                            </div>
                         </div>
                     </div>
-                </div>
-
-            </div>
-        </section>
-
-        <!-- CTA BANNER -->
-        <section class="relative py-5 md:py-8 my-5 overflow-hidden">
-            <div class="absolute inset-0 bg-slate-900">
-                 <img src="https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1500&q=80" class="w-full h-full object-cover opacity-20 mix-blend-overlay">
-                 <div class="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/90 to-transparent"></div>
-            </div>
-            <div class="relative text-center px-6 z-10">
-                <h2 class="text-3xl md:text-5xl font-bold text-white mb-6 tracking-tight" data-i18n="cta_title">Prêt pour l'impression ?</h2>
-                <a href="commande.html" class="inline-block bg-indigo-600 px-10 py-4 rounded-xl font-bold text-sm uppercase tracking-wide text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-900/50 hover:shadow-indigo-600/50 transform hover:-translate-y-1">
-                    <span data-i18n="btn_launch_order">Lancer une commande</span>
-                </a>
-            </div>
-        </section>
-
-        <!-- PROMO BOX -->
-        <div class="max-w-7xl mx-auto px-6 mb-8">
-            <div class="glass p-1 bg-gradient-to-r from-indigo-100 to-white border-indigo-200 reveal-up">
-                <div class="bg-white rounded-xl p-8 flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div>
-                        <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider" data-i18n="promo_tag">Offre Académique</span>
-                        <h4 class="text-xl font-bold mt-2 text-slate-900" data-i18n="promo_title">Pack Thèse & Mémoire</h4>
-                        <p class="text-slate-500 text-sm mt-2" data-i18n="promo_desc">Saisie assistée, correction et mise en page normes APA/ISO Pro.</p>
+                    <!-- Item 4 -->
+                    <div class="market-item glass flex flex-col group overflow-hidden" data-category="marketing">
+                        <div class="h-48 bg-purple-50 relative"><div class="absolute inset-0 flex items-center justify-center text-purple-200 text-6xl"><i class="fas fa-tshirt"></i></div></div>
+                        <div class="p-6 flex-1 flex flex-col">
+                            <h3 class="font-bold text-lg mb-2" data-i18n="mkt_item4_title">Personnalisation</h3>
+                            <p class="text-sm text-slate-500 mb-4 flex-1" data-i18n="mkt_item4_desc">T-shirts, Mugs et Objets publicitaires.</p>
+                            <div class="flex items-center justify-between mt-auto">
+                                <span class="text-2xl font-black text-slate-900">Sur devis</span>
+                                <a href="javascript:void(0)" onclick="openTerminal()" class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-indigo-600 transition-colors"><i class="fas fa-arrow-right"></i></a>
+                            </div>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-6 w-full md:w-auto">
-                        <span class="text-2xl font-black text-indigo-600">-25%</span>
-                        <a href="commande.html" class="flex-1 md:flex-none px-6 py-3 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition-all text-center" data-i18n="btn_benefit">Profiter</a>
+
+                    <!-- NOUVEAUX PRODUITS (10+) -->
+                    <!-- Item 5: Thèse Premium (Académique) -->
+                    <div class="market-item glass flex flex-col group overflow-hidden" data-category="academique">
+                        <div class="h-48 bg-rose-50 relative">
+                            <div class="absolute inset-0 flex items-center justify-center text-rose-200 text-6xl"><i class="fas fa-graduation-cap"></i></div>
+                            <span class="absolute top-4 left-4 bg-rose-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase">Premium</span>
+                        </div>
+                        <div class="p-6 flex-1 flex flex-col">
+                            <h3 class="font-bold text-lg mb-2">Thèse de Doctorat</h3>
+                            <p class="text-sm text-slate-500 mb-4 flex-1">Impression Couleur + Reliure Cuir Souple + Couverture Cartonnée.</p>
+                            <div class="flex items-center justify-between mt-auto">
+                                <span class="text-2xl font-black text-slate-900">50.000 <span class="text-xs text-slate-400 font-normal">FC</span></span>
+                                <a href="javascript:void(0)" onclick="openTerminal()" class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-indigo-600 transition-colors"><i class="fas fa-arrow-right"></i></a>
+                            </div>
+                        </div>
                     </div>
+                    
+                    <!-- Item 6: Cartes de Visite Luxe (Corporate) -->
+                    <div class="market-item glass flex flex-col group overflow-hidden" data-category="corporate">
+                        <div class="h-48 bg-amber-50 relative">
+                            <div class="absolute inset-0 flex items-center justify-center text-amber-200 text-6xl"><i class="fas fa-address-card"></i></div>
+                        </div>
+                        <div class="p-6 flex-1 flex flex-col">
+                            <h3 class="font-bold text-lg mb-2">Cartes de Visite Luxe</h3>
+                            <p class="text-sm text-slate-500 mb-4 flex-1">Papier Brillant 350g + Recto/Verso + Bords Arrondis.</p>
+                            <div class="flex items-center justify-between mt-auto">
+                                <span class="text-2xl font-black text-slate-900">30.000 <span class="text-xs text-slate-400 font-normal">FC</span></span>
+                                <a href="javascript:void(0)" onclick="openTerminal()" class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-indigo-600 transition-colors"><i class="fas fa-arrow-right"></i></a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Item 7: Roll-Up Bannière (Marketing) -->
+                    <div class="market-item glass flex flex-col group overflow-hidden" data-category="marketing">
+                        <div class="h-48 bg-blue-50 relative">
+                            <div class="absolute inset-0 flex items-center justify-center text-blue-200 text-6xl"><i class="fas fa-flag"></i></div>
+                        </div>
+                        <div class="p-6 flex-1 flex flex-col">
+                            <h3 class="font-bold text-lg mb-2">Roll-Up Bannière</h3>
+                            <p class="text-sm text-slate-500 mb-4 flex-1">Support 85x200cm + Housse de transport + Impression Haute Déf.</p>
+                            <div class="flex items-center justify-between mt-auto">
+                                <span class="text-2xl font-black text-slate-900">40.000 <span class="text-xs text-slate-400 font-normal">FC</span></span>
+                                <a href="javascript:void(0)" onclick="openTerminal()" class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-indigo-600 transition-colors"><i class="fas fa-arrow-right"></i></a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Item 8: Notes de Cours (Académique) -->
+                    <div class="market-item glass flex flex-col group overflow-hidden" data-category="academique">
+                        <div class="h-48 bg-teal-50 relative">
+                            <div class="absolute inset-0 flex items-center justify-center text-teal-200 text-6xl"><i class="fas fa-book-open"></i></div>
+                            <span class="absolute top-4 left-4 bg-teal-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase">Éco</span>
+                        </div>
+                        <div class="p-6 flex-1 flex flex-col">
+                            <h3 class="font-bold text-lg mb-2">Notes de Cours (Pack 10)</h3>
+                            <p class="text-sm text-slate-500 mb-4 flex-1">Double photocopiage N&B + Agrafage central.</p>
+                            <div class="flex items-center justify-between mt-auto">
+                                <span class="text-2xl font-black text-slate-900">12.000 <span class="text-xs text-slate-400 font-normal">FC</span></span>
+                                <a href="javascript:void(0)" onclick="openTerminal()" class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-indigo-600 transition-colors"><i class="fas fa-arrow-right"></i></a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Item 9: En-Têtes Lettres (Corporate) -->
+                    <div class="market-item glass flex flex-col group overflow-hidden" data-category="corporate">
+                        <div class="h-48 bg-slate-50 relative">
+                            <div class="absolute inset-0 flex items-center justify-center text-slate-200 text-6xl"><i class="fas fa-envelope-open-text"></i></div>
+                        </div>
+                        <div class="p-6 flex-1 flex flex-col">
+                            <h3 class="font-bold text-lg mb-2">En-Têtes Lettres</h3>
+                            <p class="text-sm text-slate-500 mb-4 flex-1">500 feuilles A4 80g + Logo en couleur + Typo standard.</p>
+                            <div class="flex items-center justify-between mt-auto">
+                                <span class="text-2xl font-black text-slate-900">15.000 <span class="text-xs text-slate-400 font-normal">FC</span></span>
+                                <a href="javascript:void(0)" onclick="openTerminal()" class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-indigo-600 transition-colors"><i class="fas fa-arrow-right"></i></a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Item 10: Flyers Triptyques (Marketing) -->
+                    <div class="market-item glass flex flex-col group overflow-hidden" data-category="marketing">
+                        <div class="h-48 bg-pink-50 relative">
+                            <div class="absolute inset-0 flex items-center justify-center text-pink-200 text-6xl"><i class="fas fa-map"></i></div>
+                        </div>
+                        <div class="p-6 flex-1 flex flex-col">
+                            <h3 class="font-bold text-lg mb-2">Flyers Triptyques</h3>
+                            <p class="text-sm text-slate-500 mb-4 flex-1">Pliage en 3 (Roulé) + Papier 135g Mat.</p>
+                            <div class="flex items-center justify-between mt-auto">
+                                <span class="text-2xl font-black text-slate-900">8.000 <span class="text-xs text-slate-400 font-normal">FC</span></span>
+                                <a href="javascript:void(0)" onclick="openTerminal()" class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-indigo-600 transition-colors"><i class="fas fa-arrow-right"></i></a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Item 11: Cahier d'Entreprise (Corporate) -->
+                    <div class="market-item glass flex flex-col group overflow-hidden" data-category="corporate">
+                        <div class="h-48 bg-cyan-50 relative">
+                            <div class="absolute inset-0 flex items-center justify-center text-cyan-200 text-6xl"><i class="fas fa-book"></i></div>
+                        </div>
+                        <div class="p-6 flex-1 flex flex-col">
+                            <h3 class="font-bold text-lg mb-2">Cahier d'Entreprise</h3>
+                            <p class="text-sm text-slate-500 mb-4 flex-1">Reliure spirale wire + Couverture personnalisée.</p>
+                            <div class="flex items-center justify-between mt-auto">
+                                <span class="text-2xl font-black text-slate-900">6.000 <span class="text-xs text-slate-400 font-normal">FC</span></span>
+                                <a href="javascript:void(0)" onclick="openTerminal()" class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-indigo-600 transition-colors"><i class="fas fa-arrow-right"></i></a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Item 12: Stickers Découpés (Marketing) -->
+                    <div class="market-item glass flex flex-col group overflow-hidden" data-category="marketing">
+                        <div class="h-48 bg-fuchsia-50 relative">
+                            <div class="absolute inset-0 flex items-center justify-center text-fuchsia-200 text-6xl"><i class="fas fa-sticky-note"></i></div>
+                        </div>
+                        <div class="p-6 flex-1 flex flex-col">
+                            <h3 class="font-bold text-lg mb-2">Stickers Ronds (Die-cut)</h3>
+                            <p class="text-sm text-slate-500 mb-4 flex-1">Lot de 100 autocollants contours perdus.</p>
+                            <div class="flex items-center justify-between mt-auto">
+                                <span class="text-2xl font-black text-slate-900">20.000 <span class="text-xs text-slate-400 font-normal">FC</span></span>
+                                <a href="javascript:void(0)" onclick="openTerminal()" class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-indigo-600 transition-colors"><i class="fas fa-arrow-right"></i></a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Item 13: Rapport Annuel (Corporate) -->
+                    <div class="market-item glass flex flex-col group overflow-hidden" data-category="corporate">
+                        <div class="h-48 bg-stone-50 relative">
+                            <div class="absolute inset-0 flex items-center justify-center text-stone-200 text-6xl"><i class="fas fa-building"></i></div>
+                            <span class="absolute top-4 left-4 bg-stone-700 text-white text-[10px] font-bold px-2 py-1 rounded uppercase">Exclusif</span>
+                        </div>
+                        <div class="p-6 flex-1 flex flex-col">
+                            <h3 class="font-bold text-lg mb-2">Rapport Annuel</h3>
+                            <p class="text-sm text-slate-500 mb-4 flex-1">Design couverture + Impression Selective + Reliure Rigide.</p>
+                            <div class="flex items-center justify-between mt-auto">
+                                <span class="text-2xl font-black text-slate-900">80.000 <span class="text-xs text-slate-400 font-normal">FC</span></span>
+                                <a href="javascript:void(0)" onclick="openTerminal()" class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-indigo-600 transition-colors"><i class="fas fa-arrow-right"></i></a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Item 14: Affiches Événements (Marketing) -->
+                    <div class="market-item glass flex flex-col group overflow-hidden" data-category="marketing">
+                        <div class="h-48 bg-indigo-50 relative">
+                            <div class="absolute inset-0 flex items-center justify-center text-indigo-200 text-6xl"><i class="fas fa-images"></i></div>
+                        </div>
+                        <div class="p-6 flex-1 flex flex-col">
+                            <h3 class="font-bold text-lg mb-2">Affiches Événements</h3>
+                            <p class="text-sm text-slate-500 mb-4 flex-1">Format A2 (50x70cm) + Papier Affiche 115g.</p>
+                            <div class="flex items-center justify-between mt-auto">
+                                <span class="text-2xl font-black text-slate-900">25.000 <span class="text-xs text-slate-400 font-normal">FC</span></span>
+                                <a href="javascript:void(0)" onclick="openTerminal()" class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-indigo-600 transition-colors"><i class="fas fa-arrow-right"></i></a>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
-            </div>
+            </section>
         </div>
 
-        <!-- PARTNERSHIP -->
-        <div class="max-w-7xl mx-auto px-6 mb-24 reveal-up">
-            <div class="glass p-10 flex flex-col md:flex-row items-center justify-between border-l-4 border-l-slate-900">
-                <div class="max-w-2xl">
-                    <h4 class="text-2xl font-bold text-slate-900 tracking-tight" data-i18n="corp_title">Partenariat Corporate</h4>
-                    <p class="text-slate-500 mt-2" data-i18n="corp_desc">Externalisez votre flux documentaire. Facturation mensuelle, gestionnaire de compte dédié et API d'intégration.</p>
+        <!-- PAGE 3: SERVICES & TARIFS -->
+        <div id="services-view" class="page-view">
+            <section class="max-w-7xl mx-auto px-6 py-10">
+                <div class="mb-10 text-center">
+                    <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight mb-4"><span class="text-gradient" data-i18n="services_title">Services & Tarifs</span></h1>
+                    <p class="text-slate-500 max-w-2xl mx-auto text-lg" data-i18n="services_desc">Une tarification transparente et compétitive pour tous vos projets.</p>
                 </div>
-                <a href="login.html" class="mt-6 md:mt-0 px-6 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-bold uppercase tracking-widest hover:bg-slate-50 hover:border-slate-300 hover:text-indigo-600 transition-all duration-300 group">
-                    <span data-i18n="btn_contact_sales">Contacter ventes</span> <i class="fas fa-arrow-right ml-2 text-[10px] group-hover:translate-x-1 transition-transform"></i>
-                </a>
-            </div>
+
+                <!-- TABLE SECTION -->
+                <div class="glass overflow-hidden mb-12">
+                    <div class="p-6 border-b border-slate-200">
+                        <h3 class="text-xl font-bold text-slate-900" data-i18n="srv_pricing">Grille Tarifaire (Prix unitaire)</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-600 font-bold uppercase text-xs tracking-wider">
+                                    <th class="px-6 py-4" data-i18n="srv_format">Format</th>
+                                    <th class="px-6 py-4" data-i18n="srv_bw">Noir & Blanc</th>
+                                    <th class="px-6 py-4" data-i18n="srv_color">Couleur</th>
+                                    <th class="px-6 py-4 hidden md:table-cell" data-i18n="srv_premium">Premium</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr class="hover:bg-indigo-50/50 transition-colors"><td class="px-6 py-4 font-bold text-slate-900">A5</td><td class="px-6 py-4 text-slate-600">200 FC</td><td class="px-6 py-4 text-slate-600">400 FC</td><td class="px-6 py-4 hidden md:table-cell text-indigo-600">-</td></tr>
+                                <tr class="hover:bg-indigo-50/50 transition-colors bg-white"><td class="px-6 py-4 font-bold text-slate-900">A4</td><td class="px-6 py-4 text-slate-600">400 FC</td><td class="px-6 py-4 text-slate-600">700 FC</td><td class="px-6 py-4 hidden md:table-cell text-indigo-600">1.200 FC</td></tr>
+                                <tr class="hover:bg-indigo-50/50 transition-colors"><td class="px-6 py-4 font-bold text-slate-900">A3</td><td class="px-6 py-4 text-slate-600">1.000 FC</td><td class="px-6 py-4 text-slate-600">1.800 FC</td><td class="px-6 py-4 hidden md:table-cell text-indigo-600">2.500 FC</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="p-4 bg-indigo-50 text-xs text-indigo-800 text-center font-bold">* Tarifs pour recto simple. Ajoutez 60% pour recto-verso.</div>
+                </div>
+
+                <!-- FINITIONS -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="glass p-8 text-center hover:border-indigo-500 transition-colors"><i class="fas fa-book text-4xl text-indigo-600 mb-4"></i><h3 class="font-bold text-lg mb-2" data-i18n="srv_binding">Reliure</h3><p class="text-sm text-slate-500 mb-4" data-i18n="srv_binding_desc">Spirale métallique, Thermocollée ou Cannelée.</p><p class="font-black text-slate-900">1.500 FC <span class="text-xs text-slate-400 font-normal">/ unité</span></p></div>
+                    <div class="glass p-8 text-center hover:border-indigo-500 transition-colors"><i class="fas fa-shield-alt text-4xl text-indigo-600 mb-4"></i><h3 class="font-bold text-lg mb-2" data-i18n="srv_laminate">Plastification</h3><p class="text-sm text-slate-500 mb-4" data-i18n="srv_laminate_desc">Protection matte ou brillante.</p><p class="font-black text-slate-900">1.000 FC <span class="text-xs text-slate-400 font-normal">/ feuille</span></p></div>
+                    <div class="glass p-8 text-center hover:border-indigo-500 transition-colors"><i class="fas fa-cut text-4xl text-indigo-600 mb-4"></i><h3 class="font-bold text-lg mb-2" data-i18n="srv_cut">Découpe & Massicot</h3><p class="text-sm text-slate-500 mb-4" data-i18n="srv_cut_desc">Découpe précise au millimètre.</p><p class="font-black text-slate-900">500 FC <span class="text-xs text-slate-400 font-normal">/ coupe</span></p></div>
+                </div>
+            </section>
         </div>
 
-        <!-- FOOTER -->
-        <footer class="relative mt-10 border-t border-slate-200 bg-white pt-14 pb-10">
+        <!-- FOOTER (SHARED) -->
+        <footer id="main-footer" class="relative mt-10 border-t border-slate-200 bg-white pt-14 pb-10">
             <div class="max-w-7xl mx-auto px-6">
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-12 mb-16">
                     <div class="md:col-span-4 space-y-6">
-                        <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white text-xs">
-                                <i class="fas fa-print"></i>
-                            </div>
-                            <span class="text-xl font-bold text-slate-900 tracking-tight">Print<span class="text-indigo-600">bam</span></span>
-                        </div>
-                        <p class="text-slate-500 text-sm leading-relaxed" data-i18n="footer_about">
-                            L'infrastructure d'impression cloud leader en Afrique centrale. Fiabilité, rapidité et sécurité pour vos documents.
-                        </p>
-                        <div class="flex gap-4">
-                            <a href="#" class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-indigo-600 hover:text-white transition-all"><i class="fab fa-linkedin-in"></i></a>
-                            <a href="#" class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-indigo-600 hover:text-white transition-all"><i class="fab fa-twitter"></i></a>
-                            <a href="#" class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-indigo-600 hover:text-white transition-all"><i class="fab fa-whatsapp"></i></a>
-                        </div>
+                        <div class="flex items-center gap-2"><div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white text-xs"><i class="fas fa-print"></i></div><span class="text-xl font-bold text-slate-900 tracking-tight">Print<span class="text-indigo-600">bam</span></span></div>
+                        <p class="text-slate-500 text-sm leading-relaxed" data-i18n="footer_about">L'infrastructure d'impression cloud leader en Afrique centrale. Fiabilité, rapidité et sécurité pour vos documents.</p>
+                        <div class="flex gap-4"><a href="#" class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-indigo-600 hover:text-white transition-all"><i class="fab fa-linkedin-in"></i></a><a href="#" class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-indigo-600 hover:text-white transition-all"><i class="fab fa-twitter"></i></a><a href="#" class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-indigo-600 hover:text-white transition-all"><i class="fab fa-whatsapp"></i></a></div>
                     </div>
-
-                    <div class="md:col-span-2 space-y-4">
-                        <h4 class="text-slate-900 font-bold text-sm uppercase tracking-wider" data-i18n="footer_services">Services</h4>
-                        <ul class="space-y-3 text-sm text-slate-500">
-                            <li><a href="#" class="hover:text-indigo-600 transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px]"></i> Saisie</a></li>
-                            <li><a href="#" class="hover:text-indigo-600 transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px]"></i> Impression</a></li>
-                            <li><a href="#" class="hover:text-indigo-600 transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px]"></i> Conception, et plus</a></li>
-                        </ul>
-                    </div>
-
-                    <div class="md:col-span-2 space-y-4">
-                        <h4 class="text-slate-900 font-bold text-sm uppercase tracking-wider" data-i18n="footer_company">Entreprise</h4>
-                        <ul class="space-y-3 text-sm text-slate-500">
-                            <li><a href="#" class="hover:text-indigo-600 transition">À propos</a></li>
-                            <li><a href="#" class="hover:text-indigo-600 transition">Carrières</a></li>
-                            <li><a href="#" class="hover:text-indigo-600 transition">Presse</a></li>
-                        </ul>
-                    </div>
-
-                    <div class="md:col-span-4 space-y-4">
-                        <h4 class="text-slate-900 font-bold text-sm uppercase tracking-wider" data-i18n="footer_contact">Contact</h4>
-                        <div class="space-y-4">
-                            <div class="flex items-start gap-3">
-                                <i class="fas fa-map-marker-alt text-indigo-600 mt-1 text-sm"></i>
-                                <div>
-                                    <p class="text-sm font-bold text-slate-900">Siège Social</p>
-                                    <p class="text-xs text-slate-500">Croix rouge, Kinshasa, Kinshasa ville</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start gap-3">
-                                <i class="fas fa-envelope text-indigo-600 mt-1 text-sm"></i>
-                                <div>
-                                    <p class="text-sm font-bold text-slate-900">Email Support</p>
-                                    <p class="text-xs text-slate-500">contact@printbam.pro</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <div class="md:col-span-2 space-y-4"><h4 class="text-slate-900 font-bold text-sm uppercase tracking-wider" data-i18n="footer_services">Services</h4><ul class="space-y-3 text-sm text-slate-500"><li><a href="javascript:void(0)" onclick="switchPage('services')" class="hover:text-indigo-600 transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px]"></i> Impression</a></li><li><a href="javascript:void(0)" onclick="switchPage('marketplace')" class="hover:text-indigo-600 transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px]"></i> Packs</a></li></ul></div>
+                    <div class="md:col-span-4 space-y-4"><h4 class="text-slate-900 font-bold text-sm uppercase tracking-wider" data-i18n="footer_contact">Contact</h4><div class="space-y-4"><div class="flex items-start gap-3"><i class="fas fa-map-marker-alt text-indigo-600 mt-1 text-sm"></i><div><p class="text-sm font-bold text-slate-900">Siège Social</p><p class="text-xs text-slate-500">Croix rouge, Kinshasa, RDC</p></div></div><div class="flex items-start gap-3"><i class="fas fa-envelope text-indigo-600 mt-1 text-sm"></i><div><p class="text-sm font-bold text-slate-900">Email Support</p><p class="text-xs text-slate-500">contact@printbam.pro</p></div></div></div></div>
                 </div>
-
-                <div class="pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <p class="text-[10px] text-slate-400 font-medium tracking-wider">
-                        © 2026 Printbam Technology Inc. Tous droits réservés.
-                    </p>
-                    <div class="flex gap-6 text-[10px] text-slate-400 font-medium uppercase tracking-wider">
-                        <a href="#" class="hover:text-slate-600 transition">Confidentialité</a>
-                        <a href="#" class="hover:text-slate-600 transition">CGV</a>
-                    </div>
-                </div>
+                <div class="pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4"><p class="text-[10px] text-slate-400 font-medium tracking-wider">© 2026 Printbam Technology Inc. Tous droits réservés.</p></div>
             </div>
         </footer>
 
@@ -483,183 +444,190 @@
 
     <!-- MOBILE DOCK -->
     <div class="mobile-dock md:hidden bg-white rounded-2xl px-2 py-2 flex items-center justify-between shadow-xl border border-slate-100">
-        <a href="index.html" class="flex flex-1 flex-col items-center gap-1 group">
-            <i class="fas fa-house text-lg text-indigo-600"></i>
-            <span class="text-[9px] font-medium text-indigo-600"><span data-i18n="nav_home">Accueil</span></span>
-        </a>
+        <a onclick="switchPage('home')" class="flex flex-1 flex-col items-center gap-1 group cursor-pointer"><i class="fas fa-house text-lg text-indigo-600"></i><span class="text-[9px] font-medium text-indigo-600">Accueil</span></a>
+        <a onclick="switchPage('marketplace')" class="flex flex-1 flex-col items-center gap-1 group cursor-pointer"><i class="fas fa-tags text-lg text-slate-400 group-hover:text-slate-600"></i><span class="text-[9px] font-medium text-slate-400">Marketplace</span></a>
+        <div class="flex flex-1 justify-center -mt-6"><a href="javascript:void(0)" onclick="openTerminal()" class="relative group cursor-pointer"><div class="w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-indigo-200 border-4 border-slate-50"><i class="fas fa-print text-white text-lg"></i></div></a></div>
+        <a onclick="switchPage('services')" class="flex flex-1 flex-col items-center gap-1 group cursor-pointer"><i class="fas fa-file-invoice-dollar text-lg text-slate-400 group-hover:text-slate-600"></i><span class="text-[9px] font-medium text-slate-400">Tarifs</span></a>
+        <a href="login.html" class="flex flex-1 flex-col items-center gap-1 group"><div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-slate-200 transition-colors"><i class="fas fa-user text-xs text-slate-600"></i></div></a>    </div>
 
-        <a href="marketplace.html" class="flex flex-1 flex-col items-center gap-1 group">
-            <i class="fas fa-tags text-lg text-slate-400 group-hover:text-slate-600"></i>
-            <span class="text-[9px] font-medium text-slate-400"><span data-i18n="nav_market">Offres</span></span>
-        </a>
-
-        <div class="flex flex-1 justify-center -mt-6">
-            <a href="commande.html" class="relative group">
-                <div class="w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-indigo-200 border-4 border-slate-50">
-                    <i class="fas fa-print text-white text-lg"></i>
-                </div>
-            </a>
-        </div>
-
-        <a href="tarifs.html" class="flex flex-1 flex-col items-center gap-1 group">
-            <i class="fas fa-file-invoice-dollar text-lg text-slate-400 group-hover:text-slate-600"></i>
-            <span class="text-[9px] font-medium text-slate-400"><span data-i18n="nav_services">Tarifs</span></span>
-        </a>
-
-        <a href="login.html" class="flex flex-1 flex-col items-center gap-1 group">
-            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-slate-200 transition-colors">
-                <i class="fas fa-user text-xs text-slate-600"></i>
-            </div>
-        </a>
-    </div>
-
-    <!-- SETTINGS OVERLAY -->
+    <!-- SETTINGS, SUPPORT, ORDERS OVERLAYS -->
     <div id="settings-overlay" class="fixed inset-0 z-[6000] invisible transition-all duration-500">
         <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm opacity-0 transition-opacity duration-500" onclick="toggleSettings()"></div>
         <div id="settings-panel" class="absolute right-0 top-0 h-full w-full md:w-[400px] translate-x-full transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col shadow-2xl bg-white border-l border-slate-100">
-            <div class="p-6 border-b border-slate-100 flex items-center justify-between">
-                <h2 class="text-xl font-bold text-slate-900" data-i18n="nav_settings">Paramètres</h2>
-                <button onclick="toggleSettings()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors">
-                    <i class="fas fa-times text-slate-500"></i>
-                </button>
-            </div>
-            
+            <div class="p-6 border-b border-slate-100 flex items-center justify-between"><h2 class="text-xl font-bold text-slate-900" data-i18n="nav_settings">Paramètres</h2><button onclick="toggleSettings()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors"><i class="fas fa-times text-slate-500"></i></button></div>
             <div class="flex-1 overflow-y-auto p-6 space-y-8">
+                <!-- PRO STATS SECTION -->
                 <section class="space-y-4">
-                    <p class="text-xs font-bold text-indigo-600 uppercase tracking-wider" data-i18n="settings_profile">Votre Profil</p>
-                    <div class="flex items-center gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                        <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
-                            <i class="fas fa-user"></i>
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tableau de Bord Client</h3>
+                    <div class="glass p-4 bg-indigo-50/50 border-indigo-100 grid grid-cols-2 gap-4">
+                        <div class="text-center">
+                            <span id="stats-orders-count" class="block text-2xl font-black text-indigo-600">0</span>
+                            <span class="text-[10px] uppercase font-bold text-slate-500">Commandes</span>
                         </div>
-                        <div>
-                            <p class="text-sm font-semibold text-slate-900">Utilisateur: Client</p>
-                            <p class="text-xs text-slate-500">ID: PB-8829-2026</p>
+                        <div class="text-center border-l border-slate-200/50">
+                            <span id="stats-total-spent" class="block text-2xl font-black text-emerald-600">0</span>
+                            <span class="text-[10px] uppercase font-bold text-slate-500">Dépensé (FC)</span>
                         </div>
                     </div>
                 </section>
-                <section class="space-y-6 text-left">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm font-medium text-slate-700" data-i18n="settings_notifs">Notifications push</span>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" class="sr-only peer" checked>
-                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                        </label>
-                    </div>
-                    
-                    <!-- SECTION LANGUE -->
-                    <div class="flex flex-col gap-2 pt-4 border-t border-slate-100">
-                        <span class="text-sm font-medium text-slate-700" data-i18n="settings_lang">Langue</span>
-                        <select id="language-select" onchange="changeLanguage(this.value)" class="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-sm text-slate-900 focus:outline-none focus:border-indigo-500 transition-all">
-                            <option value="fr">Français</option>
-                            <option value="en">English</option>
-                            <option value="ln">Lingala</option>
-                            <option value="tu">Tshiluba</option>
-                            <option value="sw">Swahili</option>
-                            <option value="kg">Kikongo</option>
-                        </select>
-                    </div>
 
-                </section>
+                <section class="space-y-6 text-left"><div class="flex flex-col gap-2 pt-4 border-t border-slate-100"><span class="text-sm font-medium text-slate-700" data-i18n="settings_lang">Langue</span><select id="language-select" onchange="changeLanguage(this.value)" class="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-sm text-slate-900 focus:outline-none focus:border-indigo-500 transition-all"><option value="fr">Français</option><option value="en">English</option><option value="ln">Lingala</option><option value="tu">Tshiluba</option><option value="sw">Swahili</option><option value="kg">Kikongo</option></select></div></section>
             </div>
-            <div class="p-6 border-t border-slate-100 bg-slate-50">
-                <button onclick="showToast('Paramètres sauvegardés', 'success')" class="w-full py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold uppercase text-slate-600 hover:bg-slate-100 transition-all">
-                    <span data-i18n="settings_save">Sauvegarder</span>
-                </button>
-            </div>
+            <div class="p-6 border-t border-slate-100 bg-slate-50"><button onclick="showToast('Paramètres sauvegardés', 'success')" class="w-full py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold uppercase text-slate-600 hover:bg-slate-100 transition-all"><span data-i18n="settings_save">Sauvegarder</span></button></div>
         </div>
     </div>
-
-    <!-- SUPPORT OVERLAY -->
     <div id="support-overlay" class="fixed inset-0 z-[7000] invisible transition-all duration-500">
         <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm opacity-0 transition-opacity duration-500" onclick="toggleSupport()"></div>
         <div id="support-panel" class="absolute right-0 top-0 h-full w-full md:w-[450px] translate-x-full transition-transform duration-600 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col shadow-2xl bg-white border-l border-slate-100">
-            <div class="p-6 border-b border-slate-100">
-                <div class="flex items-center justify-between mb-6">
-                    <div class="flex flex-col">
-                        <h2 class="text-xl font-bold text-slate-900" data-i18n="nav_help">Centre d'Aide</h2>
-                        <p class="text-xs font-bold text-indigo-600 uppercase tracking-wider mt-1">Support Printbam</p>
+            <div class="p-6 border-b border-slate-100"><div class="flex items-center justify-between mb-6"><div class="flex flex-col"><h2 class="text-xl font-bold text-slate-900" data-i18n="nav_help">Centre d'Aide</h2><p class="text-xs font-bold text-indigo-600 uppercase tracking-wider mt-1">Support Printbam</p></div><button onclick="toggleSupport()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors"><i class="fas fa-times text-slate-500"></i></button></div><div class="relative"><i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i><input type="text" placeholder="Rechercher une solution..." class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"></div></div></div>
+            <div class="flex-1 overflow-y-auto p-6 space-y-8"><section class="space-y-4 text-left pt-6 border-t border-slate-100"><p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Envoyer un message</p><form id="support-form" onsubmit="handleSupportSubmit(event)" class="space-y-4"><div><label class="text-xs font-bold text-slate-500 ml-1">Sujet</label><select required class="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-sm text-slate-900 focus:outline-none focus:border-indigo-500 transition-all mt-1"><option value="imprimer">Problème d'impression</option><option value="paiement">Question sur les tarifs</option><option value="autre">Autre demande</option></select></div><div><label class="text-xs font-bold text-slate-500 ml-1">Message</label><textarea required rows="4" placeholder="Décrivez votre besoin..." class="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 transition-all resize-none mt-1"></textarea></div><button type="submit" id="btn-send-support" class="w-full py-3 bg-indigo-600 rounded-xl text-xs font-bold uppercase tracking-widest text-white shadow-md hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"><span data-i18n="btn_send">Envoyer</span><i class="fas fa-paper-plane text-[10px]"></i></button></form><div id="support-success" class="hidden flex flex-col items-center justify-center p-8 text-center space-y-3 bg-green-50 rounded-xl border border-green-100"><div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-green-200"><i class="fas fa-check"></i></div><p class="text-sm font-bold text-slate-900">Message Envoyé !</p><p class="text-xs text-slate-500">Notre équipe vous répondra sous quelques minutes.</p></div></section><section class="space-y-3 text-left"><p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">FAQ Rapide</p><details class="group bg-slate-50 rounded-xl border border-slate-100 overflow-hidden"><summary class="list-none p-4 text-sm font-semibold text-slate-700 cursor-pointer flex justify-between items-center hover:bg-slate-100 transition-colors">Comment suivre ma commande ?<i class="fas fa-chevron-down text-xs transition-transform group-open:rotate-180"></i></summary><div class="px-4 pb-4 text-xs text-slate-500">Allez dans "Mes Commandes" dans le menu latéral.</div></details></section></div>
+        </div>
+    </div>
+    
+    <!-- ORDERS & TRACKING MODAL -->
+    <div id="orders-overlay" class="fixed inset-0 z-[8000] invisible transition-all duration-500">
+        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm opacity-0 transition-opacity duration-500" onclick="closeTrackModal()"></div>
+        <div id="orders-panel" class="absolute right-0 top-0 h-full w-full md:w-[500px] translate-x-full transition-transform duration-600 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col shadow-2xl bg-white border-l border-slate-100">
+            <div class="p-6 border-b border-slate-100 flex items-center justify-between"><div class="flex flex-col"><h2 class="text-xl font-bold text-slate-900" data-i18n="nav_orders">Mes Commandes</h2><p class="text-xs font-bold text-indigo-600 uppercase tracking-wider mt-1">Historique</p></div><button onclick="closeTrackModal()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors"><i class="fas fa-times text-slate-500"></i></button></div>
+            <div id="orders-list" class="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/30"></div>
+            <div class="p-6 border-t border-slate-100 bg-white"><div class="flex justify-between items-center mb-4"><span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Total Dépensé</span><span id="total-spent" class="text-xl font-bold text-slate-900">0 FC</span></div><button id="btn-clear-history" onclick="confirmClearHistory()" class="w-full py-3 rounded-xl border border-red-100 text-red-500 text-xs font-bold uppercase hover:bg-red-50 transition-all">Vider l'historique</button></div>
+        </div>
+    </div>
+
+    <!-- MODAL DE SUIVI (TRACKING) - AVEC WHATSAPP ET DATE -->
+    <div id="track-modal" class="fixed inset-0 z-[8500] invisible transition-all duration-500">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm opacity-0 transition-opacity duration-500" onclick="closeTrackModal()"></div>
+        <div class="absolute right-0 top-0 h-full w-full md:w-[400px] translate-x-full transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col shadow-2xl bg-white border-l border-slate-100 z-[8501]">
+            <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900">Suivi #<span id="track-id"></span></h3>
+                    <p id="track-date" class="text-xs text-slate-400 mt-1"></p>
+                </div>
+                <button onclick="closeTrackModal()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-8">
+                <div class="timeline">
+                    <div class="timeline-item active"><div class="timeline-date">Aujourd'hui, 10:00</div><div class="timeline-content">Commande reçue et confirmée</div></div>
+                    <div class="timeline-item active"><div class="timeline-date">Aujourd'hui, 10:15</div><div class="timeline-content">En cours d'impression</div></div>
+                    <div class="timeline-item"><div class="timeline-date" id="est-date-label">Prévu</div><div class="timeline-content" id="est-date-text">En préparation pour livraison</div></div>
+                    <div class="timeline-item"><div class="timeline-date">Livraison</div><div class="timeline-content">Livraison au client</div></div>
+                </div>
+                
+                <!-- BADGE DATE ESTIMÉE -->
+                <div class="mt-6 p-4 bg-emerald-50 border border-emerald-100 rounded-xl flex items-start gap-3">
+                    <div class="mt-1 text-emerald-600"><i class="fas fa-truck-fast"></i></div>
+                    <div>
+                        <p class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">Estimation de Réception</p>
+                        <p id="estimated-delivery-date" class="text-sm font-bold text-emerald-900">Calcul en cours...</p>
+                        <p class="text-[10px] text-emerald-600 mt-1">Sous réserve de disponibilité du coursier.</p>
                     </div>
-                    <button onclick="toggleSupport()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors">
-                        <i class="fas fa-times text-slate-500"></i>
-                    </button>
-                </div> 
-                <div class="relative">
-                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                    <input type="text" placeholder="Rechercher une solution..." class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
                 </div>
             </div>
-            <div class="flex-1 overflow-y-auto p-6 space-y-8">
-                <section class="space-y-4 text-left pt-6 border-t border-slate-100">
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Envoyer un message</p>
-                    <form id="support-form" onsubmit="handleSupportSubmit(event)" class="space-y-4">
-                        <div>
-                            <label class="text-xs font-bold text-slate-500 ml-1">Sujet</label>
-                            <select required class="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-sm text-slate-900 focus:outline-none focus:border-indigo-500 transition-all mt-1">
-                                <option value="imprimer">Problème d'impression</option>
-                                <option value="paiement">Question sur les tarifs</option>
-                                <option value="autre">Autre demande</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold text-slate-500 ml-1">Message</label>
-                            <textarea required rows="4" placeholder="Décrivez votre besoin..." class="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 transition-all resize-none mt-1"></textarea>
-                        </div>
-                        <button type="submit" id="btn-send-support" class="w-full py-3 bg-indigo-600 rounded-xl text-xs font-bold uppercase tracking-widest text-white shadow-md hover:bg-indigo-700 transition-all flex items-center justify-center gap-2">
-                            <span data-i18n="btn_send">Envoyer</span>
-                            <i class="fas fa-paper-plane text-[10px]"></i>
-                        </button>
-                    </form>
-                    <div id="support-success" class="hidden flex flex-col items-center justify-center p-8 text-center space-y-3 bg-green-50 rounded-xl border border-green-100">
-                        <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-green-200">
-                            <i class="fas fa-check"></i>
-                        </div>
-                        <p class="text-sm font-bold text-slate-900">Message Envoyé !</p>
-                        <p class="text-xs text-slate-500">Notre équipe vous répondra sous quelques minutes.</p>
-                    </div>
-                </section>  
-                <section class="space-y-3 text-left">
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">FAQ Rapide</p>     
-                    <details class="group bg-slate-50 rounded-xl border border-slate-100 overflow-hidden">
-                        <summary class="list-none p-4 text-sm font-semibold text-slate-700 cursor-pointer flex justify-between items-center hover:bg-slate-100 transition-colors">
-                            Comment suivre ma commande ?
-                            <i class="fas fa-chevron-down text-xs transition-transform group-open:rotate-180"></i>
-                        </summary>
-                        <div class="px-4 pb-4 text-xs text-slate-500">
-                            Allez dans "Mes Commandes" dans le menu latéral.
-                        </div>
-                    </details>
-                </section>
+            
+            <!-- ACTIONS FOOTER -->
+            <div class="p-6 bg-slate-50 mt-auto border-t border-slate-100 space-y-3">
+                <!-- ACTION WHATSAPP -->
+                <button onclick="shareOrderOnWhatsApp()" class="w-full py-3 bg-[#25D366] text-white rounded-xl font-bold text-sm hover:bg-[#20bd5a] transition-colors flex items-center justify-center gap-2 shadow-md shadow-green-200">
+                    <i class="fab fa-whatsapp text-lg"></i> Contacter le Support (WhatsApp)
+                </button>
+                
+                <!-- ACTION FACTURE -->
+                <button onclick="openInvoice()" class="w-full py-3 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-indigo-600 transition-colors flex items-center justify-center gap-2">
+                    <i class="fas fa-file-invoice"></i> Télécharger Facture
+                </button>
+                
+                <button onclick="closeTrackModal()" class="w-full py-2 text-xs font-bold text-slate-500 hover:text-slate-900">Fermer</button>
             </div>
         </div>
     </div>
 
-    <!-- ORDERS OVERLAY -->
-    <div id="orders-overlay" class="fixed inset-0 z-[8000] invisible transition-all duration-500">
-        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm opacity-0 transition-opacity duration-500" onclick="toggleOrders()"></div>
-        <div id="orders-panel" class="absolute right-0 top-0 h-full w-full md:w-[500px] translate-x-full transition-transform duration-600 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col shadow-2xl bg-white border-l border-slate-100">
-            <div class="p-6 border-b border-slate-100 flex items-center justify-between">
-                <div class="flex flex-col">
-                    <h2 class="text-xl font-bold text-slate-900" data-i18n="nav_orders">Mes Commandes</h2>
-                    <p class="text-xs font-bold text-indigo-600 uppercase tracking-wider mt-1">Historique</p>
+    <!-- PROFESSIONAL INVOICE MODAL -->
+    <div id="invoice-modal">
+        <div class="invoice-paper">
+            <button onclick="closeInvoice()" class="absolute top-4 right-4 no-print p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition"><i class="fas fa-times text-slate-500"></i></button>
+            <div class="invoice-header">
+                <div>
+                    <h1 class="text-3xl font-black text-slate-900 tracking-tight">Print<span class="text-indigo-600">bam</span></h1>
+                    <p class="text-sm text-slate-500">Infrastructure Cloud Pro</p>
+                    <p class="text-xs text-slate-400 mt-1">Croix Rouge, Kinshasa</p>
                 </div>
-                <button onclick="toggleOrders()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors">
-                    <i class="fas fa-times text-slate-500"></i>
-                </button>
-            </div>
-            <div id="orders-list" class="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/30">
-                <!-- Orders injected via JS -->
-            </div>
-            <div class="p-6 border-t border-slate-100 bg-white">
-                <div class="flex justify-between items-center mb-4">
-                    <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Total Dépensé</span>
-                    <span id="total-spent" class="text-xl font-bold text-slate-900">0 FC</span>
+                <div class="text-right">
+                    <h2 class="text-xl font-bold text-indigo-600">FACTURE</h2>
+                    <p class="text-sm font-bold text-slate-900 mt-1">#<span id="inv-id"></span></p>
+                    <p class="text-xs text-slate-500" id="inv-date"></p>
                 </div>
-                <button id="btn-clear-history" onclick="confirmClearHistory()" class="w-full py-3 rounded-xl border border-red-100 text-red-500 text-xs font-bold uppercase hover:bg-red-50 transition-all">
-                    Vider l'historique
-                </button>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-8 mb-8">
+                <div>
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Facturé à</h3>
+                    <p class="font-bold text-slate-900" id="inv-client">Client Visiteur</p>
+                    <p class="text-sm text-slate-500" id="inv-contact">--</p>
+                </div>
+                <div class="text-right">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Statut</h3>
+                    <span class="inline-block px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">PAYÉ</span>
+                </div>
+            </div>
+
+            <table class="invoice-table">
+                <thead>
+                    <tr>
+                        <th width="50%">Description</th>
+                        <th class="text-center">Qté</th>
+                        <th class="text-right">Prix Unitaire</th>
+                        <th class="text-right">Total</th>
+                    </tr>
+                </thead>
+                <tbody id="inv-items">
+                    <!-- JS Generated -->
+                </tbody>
+            </table>
+
+            <div class="invoice-total">
+                Total: <span id="inv-total">0 FC</span>
+            </div>
+
+            <div class="mt-12 pt-8 border-t-2 border-dashed border-slate-200 text-center">
+                <p class="text-xs text-slate-400 mb-2">Merci de votre confiance. Garantie de qualité 100%.</p>
+                <div class="flex justify-center gap-2 mt-2">
+                    <div class="w-8 h-8 bg-slate-100 rounded flex items-center justify-center text-slate-400"><i class="fab fa-whatsapp"></i></div>
+                    <div class="w-8 h-8 bg-slate-100 rounded flex items-center justify-center text-slate-400"><i class="fas fa-globe"></i></div>
+                </div>
+            </div>
+            
+            <div class="mt-8 text-center no-print">
+                <button onclick="window.print()" class="px-6 py-2 bg-slate-900 text-white text-xs font-bold uppercase rounded hover:bg-indigo-600 transition">Imprimer / PDF</button>
             </div>
         </div>
     </div>
+
+    <!-- TERMINAL WRAPPER -->
+    <div id="terminal-wrapper" class="p-4 md:p-10" aria-hidden="true">
+        <div id="close-terminal-btn" onclick="closeTerminal()"><i class="fas fa-times"></i></div>
+        <div class="bg-glow"></div>
+        <div class="max-w-6xl mx-auto">
+            <header class="flex flex-col md:flex-row justify-between items-center mb-12 gap-6"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-2xl shadow-indigo-500/40 italic font-black text-white">P</div><span class="text-2xl font-extrabold tracking-tighter">Print<span class="text-indigo-600">bam</span></span></div><div class="flex gap-2 p-1.5 glass border-white/5 rounded-full"><div id="pill-1" class="px-6 py-2 rounded-full text-[10px] font-black uppercase transition-all duration-300 bg-indigo-600 text-white" data-i18n="term_config">1. Config</div><div id="pill-2" class="px-6 py-2 rounded-full text-[10px] font-black uppercase transition-all duration-300 text-indigo-600/30" data-i18n="term_send">2. Envoi</div><div id="pill-3" class="px-6 py-2 rounded-full text-[10px] font-black uppercase transition-all duration-300 text-indigo-600/30" data-i18n="term_pay">3. Pay</div></div></header>
+            <div class="grid lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 glass p-8 md:p-12">
+                    <div id="step-1" class="space-y-8"><h2 class="text-3xl font-black tracking-tighter text-gradient" data-i18n="term_config_title">Configuration</h2>
+                        <div id="uploadWrapper" class="relative">
+                            <div id="uploadContainer" class="relative border border-dashed border-indigo-600/20 bg-indigo-50/30 rounded-3xl p-10 text-center group hover:border-indigo-500/50 transition-all"><input type="file" id="fileUpload" accept=".pdf,image/jpeg,image/png" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"><div id="uploadUI"><i class="fas fa-file-contract text-4xl text-indigo-600 mb-4"></i><p id="fileNameDisplay" class="text-sm font-bold text-indigo-900/60" data-i18n="term_upload_placeholder">Cliquez ou glissez votre document ici</p></div></div>
+                            <div id="previewBox" class="hidden absolute inset-0 z-20 glass bg-slate-900/95 border-indigo-500/30 flex items-center justify-between px-6 py-4 rounded-3xl"><div class="flex items-center gap-4"><div class="w-16 h-20 bg-white rounded shadow-lg overflow-hidden flex items-center justify-center"><img id="imagePreview" class="hidden w-full h-full object-contain" /><canvas id="pdfPreview" class="hidden w-full h-full"></canvas></div><div class="text-left"><p class="text-[9px] font-black text-indigo-500 uppercase tracking-widest tracking-tighter" data-i18n="term_doc_detected">Document détecté</p><p id="previewName" class="text-sm text-white truncate w-40 font-bold"></p></div></div><button onclick="resetUpload()" class="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white transition-all"><i class="fas fa-trash-can"></i></button></div>
+                        </div>
+                        <div class="grid md:grid-cols-2 gap-6"><div class="space-y-2"><label class="text-[10px] uppercase font-black tracking-widest text-indigo-600/50 ml-2" data-i18n="term_format">Format</label><select id="format" onchange="calculatePrice()" class="w-full input-crystal p-4 font-bold bg-slate-900"><option value="A5">A5</option><option value="A4" selected>A4</option><option value="A3">A3</option><option value="A2">A2</option><option value="A1">A1</option><option value="A0">A0</option></select></div><div class="space-y-2"><label class="text-[10px] uppercase font-black tracking-widest text-indigo-600/50 ml-2" data-i18n="term_color">Couleur</label><select id="couleur" onchange="calculatePrice()" class="w-full input-crystal p-4 font-bold bg-slate-900"><option value="NB" data-i18n="term_bw">Noir & Blanc</option><option value="CL" data-i18n="term_color_hd">Couleur HD</option></select></div></div>
+                        <div class="space-y-4"><label class="text-[10px] uppercase font-black tracking-widest text-indigo-600/50 ml-2" data-i18n="term_finish">Finition & Protection</label><div class="grid grid-cols-2 gap-4"><div onclick="toggleOption('reliure')" id="opt-reliure" class="option-card p-4 rounded-2xl glass flex items-center gap-4"><div class="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-600"><i class="fas fa-book"></i></div><div><p class="text-xs font-black" data-i18n="term_binding">Reliure</p><p class="text-[10px] text-indigo-600/40">+1.500 FC</p></div></div><div onclick="toggleOption('plastique')" id="opt-plastique" class="option-card p-4 rounded-2xl glass flex items-center gap-4"><div class="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600"><i class="fas fa-layer-group"></i></div><div><p class="text-xs font-black" data-i18n="term_laminate">Plastifier</p><p class="text-[10px] text-indigo-600/40">+1.000 FC / p</p></div></div></div></div>
+                        <div class="grid md:grid-cols-3 gap-6"><div class="md:col-span-1 space-y-2"><label class="text-[10px] uppercase font-black tracking-widest text-indigo-600/50 ml-2" data-i18n="term_pages">Pages</label><input type="number" id="nbPages" value="1" min="1" oninput="calculatePrice()" class="w-full input-crystal p-4 font-bold bg-indigo-500/5"></div><div class="md:col-span-1 space-y-2"><label class="text-[10px] uppercase font-black tracking-widest text-indigo-600/50 ml-2" data-i18n="term_copies">Exemplaires</label><input type="number" id="nbExemplaires" value="1" min="1" oninput="calculatePrice()" class="w-full input-crystal p-4 font-bold"></div><div class="md:col-span-1 space-y-2"><label class="text-[10px] uppercase font-black tracking-widest text-indigo-600/50 ml-2" data-i18n="term_type">Type</label><button onclick="toggleRectoVerso()" id="btnRV" class="w-full input-crystal p-4 font-bold text-xs uppercase tracking-tighter" data-i18n="term_recto">Recto Seul</button><input type="hidden" id="rectoVerso" value="false"></div></div>
+                    </div>
+                    <div id="step-2" class="hidden-step space-y-8"><h2 class="text-3xl font-black tracking-tighter text-gradient" data-i18n="term_dest_title">Destination</h2><div class="space-y-4"><input type="text" id="custName" data-placeholder="term_ph_name" class="w-full input-crystal p-4 font-bold"><input type="tel" id="custTel" oninput="formatPhone(this)" maxlength="15" data-placeholder="term_ph_phone" class="w-full input-crystal p-4 font-bold"><textarea id="custAddr" data-placeholder="term_ph_addr" class="w-full input-crystal p-4 font-bold h-32"></textarea></div></div>
+                    <div id="step-3" class="hidden-step space-y-8 text-center"><h2 class="text-3xl font-black tracking-tighter text-gradient mb-10" data-i18n="term_payment">Paiement</h2><div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="paymentMethods"><button onclick="selectMethod(this, 'Orange')" class="payment-btn glass p-4 flex flex-col items-center gap-3 grayscale opacity-50 transition-all"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Orange_logo.svg/1200px-Orange_logo.svg.png" class="h-6"><span class="font-black text-[8px]">ORANGE</span></button><button onclick="selectMethod(this, 'Mpesa')" class="payment-btn glass p-4 flex flex-col items-center gap-3 grayscale opacity-50 transition-all"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a2/M-Pesa_Logo.png" class="h-6"><span class="font-black text-[8px]">M-PESA</span></button><button onclick="selectMethod(this, 'Airtel')" class="payment-btn glass p-4 flex flex-col items-center gap-3 grayscale opacity-50 transition-all"><div class="text-red-500 font-bold">airtel</div><span class="font-black text-[8px]">AIRTEL</span></button><button onclick="selectMethod(this, 'Cashbam')" class="payment-btn glass p-4 flex flex-col items-center gap-3 grayscale opacity-50 transition-all border-dashed"><i class="fas fa-vault text-xl text-emerald-500"></i><span class="font-black text-[8px] text-emerald-500">CASHBAM</span></button></div><input type="hidden" id="selectedOperator" value=""></div>
+                    <div class="mt-12 flex justify-between items-center"><button id="prevBtn" onclick="prevStep()" class="invisible text-xs font-black uppercase text-indigo-600/30 hover:text-indigo-600 transition" data-i18n="term_back">Retour</button><button id="nextBtn" onclick="handleNavigation()" class="px-10 py-5 bg-indigo-600 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-indigo-500/20 hover:scale-105 transition-all" data-i18n="term_continue">Continuer</button></div>
+                </div>
+                <div class="glass p-8 h-fit lg:sticky lg:top-10 border-indigo-500/20"><span class="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-600" data-i18n="term_total">Total Commande</span><div class="text-5xl font-extrabold text-slate-900 tracking-tighter my-6"><span id="totalDisplay">0</span> <span class="text-sm font-light text-slate-500" data-i18n="term_currency">FC</span></div><div class="space-y-4 border-t border-indigo-600/10 pt-6 text-[11px] font-bold uppercase text-indigo-600/40"><div class="flex justify-between"><span data-i18n="term_printing">Impression</span> <span id="resImpression" class="text-slate-900">-</span></div><div class="flex justify-between"><span data-i18n="term_finishes">Finitions</span> <span id="resFinition" class="text-slate-900">0 FC</span></div></div></div>
+            </div>
+        </div>
+        <div id="uploadModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 hidden"><div class="absolute inset-0 bg-black/90 backdrop-blur-xl"></div><div class="relative glass p-10 text-center max-w-sm w-full border-indigo-500/30"><i class="fas fa-cloud-arrow-up text-4xl text-indigo-600 animate-bounce mb-6"></i><h2 class="text-xl font-black text-slate-900 mb-6" data-i18n="term_uploading">Envoi sécurisé...</h2><div class="w-full bg-white/5 h-2 rounded-full overflow-hidden mb-2"><div id="progressBar" class="progress-bar-fill h-full w-0"></div></div><div id="progressPercent" class="text-[10px] font-black text-indigo-600 uppercase">0%</div></div></div>
+        <div id="successModal" class="fixed inset-0 z-[110] flex items-center justify-center p-4 hidden"><div class="absolute inset-0 bg-black/80 backdrop-blur-2xl"></div><div class="relative glass p-10 text-center max-w-sm w-full border-emerald-500/30"><div class="w-20 h-20 bg-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-3xl"><i class="fas fa-check"></i></div><h2 class="text-2xl font-black text-slate-900 tracking-tighter" data-i18n="term_confirmed">Confirmé !</h2><p class="text-slate-500 text-sm mt-2" data-i18n="term_redirect">Redirection vers l'accueil...</p></div></div>
     <script src="js/app.js" defer></script>
 </body>
 </html>
