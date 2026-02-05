@@ -2,156 +2,466 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connexion | PrintBam Terminal</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#f8fafc">
+    <title>Connexion | Printbam Pro</title>
+    
+    <!-- FONTS & ICONS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
+    <script src="https://cdn.tailwindcss.com"></script>
 
+    <style>
+        /* --- VARIABLES & RESET (Identiques au fichier principal) --- */
         :root {
-            --glass-bg: rgba(255, 255, 255, 0.015);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --accent-blue: #3b82f6;
+            --glass-bg: #ffffff;
+            --glass-border: #e2e8f0;
+            --accent-blue: #4f46e5;
+            --accent-blue-hover: #4338ca;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --bg-body: #f8fafc;
+            --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            --shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --ease-elastic: cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background: #02040a;
-            color: #ffffff;
+            background-color: var(--bg-body);
+            color: var(--text-main);
             margin: 0;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            transition: background-color 0.4s ease, color 0.4s ease;
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            overflow: hidden;
         }
 
-        /* Fond Animé identique à l'accueil */
+        /* --- BACKGROUND ELEMENTS --- */
+        .bg-grid {
+            position: fixed; inset: 0; z-index: -2;
+            background-image: linear-gradient(to right, #e2e8f0 1px, transparent 1px), linear-gradient(to bottom, #e2e8f0 1px, transparent 1px);
+            background-size: 48px 48px;
+            mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+            opacity: 0.6;
+            pointer-events: none;
+        }
         .bg-glow {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            z-index: -1;
-            background: radial-gradient(circle at 50% -20%, #1e3a8a 0%, transparent 45%),
-                        radial-gradient(circle at 0% 100%, #0f172a 0%, transparent 30%);
+            position: fixed; top: -20%; left: -10%; right: -10%; bottom: 0; z-index: -1;
+            background: radial-gradient(circle at 50% 0%, #e0e7ff 0%, transparent 60%);
+            opacity: 0.6;
+            pointer-events: none;
         }
 
+        /* --- GLASSMORPHISM --- */
         .glass {
-            position: relative;
-            background: var(--glass-bg);
-            backdrop-filter: blur(30px) saturate(180%);
-            border: 1px solid var(--glass-border);
-            border-radius: 32px;
-            width: 100%;
-            max-width: 450px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            border-radius: 24px;
+            box-shadow: var(--shadow-soft);
         }
 
+        /* --- DARK MODE --- */
+        body.dark-mode {
+            background: #0f172a !important;
+            color: #f8fafc !important;
+            --glass-bg: #1e293b;
+            --glass-border: rgba(255,255,255,0.08);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --bg-body: #020617;
+        }
+        body.dark-mode .bg-grid { background-image: linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px); opacity: 0.4; }
+        body.dark-mode .bg-glow { background: radial-gradient(circle at 50% 0%, rgba(79, 70, 229, 0.15) 0%, transparent 60%); }
+        body.dark-mode .glass { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3); }
+
+        /* --- INPUTS --- */
         .input-crystal {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 100%;
+            background: rgba(255,255,255,0.5);
+            border: 1px solid var(--glass-border);
             border-radius: 16px;
+            padding: 16px;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-main);
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+        .input-crystal:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            background: rgba(255,255,255,0.9);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        }
+        body.dark-mode .input-crystal {
+            background: rgba(0,0,0,0.2);
+            border-color: rgba(255,255,255,0.1);
             color: white;
+        }
+        body.dark-mode .input-crystal:focus {
+            background: rgba(0,0,0,0.4);
+            border-color: #6366f1;
+        }
+
+        /* --- BUTTONS --- */
+        .btn-primary {
+            width: 100%;
+            background: var(--accent-blue);
+            color: white;
+            padding: 16px;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-primary:hover {
+            background: var(--accent-blue-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
+        }
+        .btn-primary:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* --- TABS --- */
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
             transition: all 0.3s ease;
         }
-
-        .input-crystal:focus {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: var(--accent-blue);
-            outline: none;
-            box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
+        .tab-btn.active {
+            color: var(--accent-blue);
+            border-bottom-color: var(--accent-blue);
         }
 
-        .btn-crystal {
-            background: #3b82f6;
-            color: white;
-            border-radius: 16px;
-            font-weight: 800;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+        /* --- TOAST --- */
+        .toast {
+            position: fixed; bottom: 24px; right: 24px; z-index: 100;
+            padding: 16px 24px; border-radius: 12px; background: white;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            border-left: 4px solid #10b981;
+            font-size: 14px; font-weight: 600;
+            transform: translateX(100%); opacity: 0; transition: all 0.4s ease;
         }
+        .toast.show { transform: translateX(0); opacity: 1; }
+        .toast.error { border-left-color: #ef4444; }
+        body.dark-mode .toast { background: #1e293b; color: white; }
 
-        .btn-crystal:hover {
-            background: #2563eb;
-            transform: translateY(-2px);
-            box-shadow: 0 15px 40px rgba(59, 130, 246, 0.4);
-        }
+        /* --- UTILS --- */
+        .hidden { display: none; }
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .text-gradient {
-            background: linear-gradient(to bottom, #fff 40%, rgba(255,255,255,0.4));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .divider {
-            height: 1px;
-            background: linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent);
+        @media (min-width: 768px) {
+            .split-layout {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                min-height: 600px;
+                max-width: 1000px;
+                width: 90%;
+                overflow: hidden;
+            }
+            .split-image {
+                background-image: url('https://images.unsplash.com/photo-1561489413-985b06da5bee?auto=format&fit=crop&w=1000&q=80');
+                background-size: cover;
+                background-position: center;
+            }
+            .mobile-only { display: none; }
         }
     </style>
 </head>
-<body class="p-6">
+<body>
 
+    <!-- BACKGROUNDS -->
+    <div class="bg-grid"></div>
     <div class="bg-glow"></div>
 
-    <div class="glass p-8 md:p-12">
-        <div class="flex flex-col items-center mb-10">
-            <div class="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-500/40 mb-6">
-                <i class="fas fa-print text-white text-2xl"></i>
+    <!-- THEME TOGGLE -->
+    <button onclick="toggleTheme()" class="fixed top-6 right-6 z-50 w-10 h-10 rounded-full bg-white/80 border border-slate-200 flex items-center justify-center text-slate-600 hover:text-indigo-600 transition-colors shadow-sm backdrop-blur-md">
+        <i class="fas fa-moon dark-icon"></i>
+        <i class="fas fa-sun light-icon hidden"></i>
+    </button>
+
+    <!-- MAIN CONTAINER -->
+    <div class="glass split-layout w-full mx-auto relative overflow-hidden fade-in">
+        
+        <!-- IMAGE SECTION (Desktop Only) -->
+        <div class="split-image relative hidden md:block">
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
+            <div class="absolute bottom-0 left-0 p-10 text-white z-10">
+                <h2 class="text-4xl font-black mb-4 tracking-tight">Rejoignez la <br>Révolution.</h2>
+                <p class="text-slate-200 text-sm mb-6">Accès instantané à vos documents, où que vous soyez.</p>
+                <div class="flex gap-2">
+                    <div class="w-2 h-2 rounded-full bg-indigo-500"></div>
+                    <div class="w-2 h-2 rounded-full bg-indigo-500/50"></div>
+                    <div class="w-2 h-2 rounded-full bg-indigo-500/25"></div>
+                </div>
             </div>
-            <h1 class="text-3xl font-black tracking-tighter uppercase">Print<span class="text-blue-500">bam</span></h1>
-            <p class="text-white/40 text-xs font-bold uppercase tracking-[0.3em] mt-2">Accès Infrastructure</p>
         </div>
 
-        <form action="#" class="space-y-6">
-            <div class="space-y-2">
-                <label class="text-[10px] font-black uppercase tracking-widest text-white/30 ml-2">Identifiant Réseau</label>
-                <div class="relative">
-                    <i class="fas fa-user absolute left-5 top-1/2 -translate-y-1/2 text-white/20 text-sm"></i>
-                    <input type="email" placeholder="votre@email.com" class="w-full input-crystal py-4 pl-12 pr-4 text-sm font-semibold">
-                </div>
-            </div>
-
-            <div class="space-y-2">
-                <div class="flex justify-between items-center px-2">
-                    <label class="text-[10px] font-black uppercase tracking-widest text-white/30">Code d'accès</label>
-                    <a href="#" class="text-[9px] font-bold text-blue-500 uppercase tracking-widest hover:underline">Oublié ?</a>
-                </div>
-                <div class="relative">
-                    <i class="fas fa-lock absolute left-5 top-1/2 -translate-y-1/2 text-white/20 text-sm"></i>
-                    <input type="password" placeholder="••••••••" class="w-full input-crystal py-4 pl-12 pr-4 text-sm font-semibold">
-                </div>
-            </div>
-
-            <button type="submit" class="w-full btn-crystal py-4 text-xs font-black uppercase tracking-[0.2em] mt-4">
-                Initialiser la session
-            </button>
-        </form>
-
-        <div class="mt-10">
-            <div class="divider mb-8"></div>
+        <!-- FORM SECTION -->
+        <div class="p-8 md:p-12 flex flex-col justify-center relative z-10">
             
-            <p class="text-center text-white/40 text-[11px] font-medium">
-                Pas encore de compte ? 
-                <a href="#" class="text-white font-black hover:text-blue-500 transition ml-1">Rejoindre le Cloud</a>
-            </p>
-            
-            <div class="flex justify-center gap-6 mt-8 opacity-30 grayscale transition hover:grayscale-0 hover:opacity-100 duration-500">
-                <i class="fab fa-google text-lg"></i>
-                <i class="fab fa-apple text-lg"></i>
-                <i class="fab fa-microsoft text-lg"></i>
+            <!-- MOBILE HEADER -->
+            <div class="text-center mb-8 md:hidden mobile-only">
+                <h1 class="text-2xl font-black tracking-tight mb-2">Print<span class="text-indigo-600">bam</span></h1>
+                <p class="text-slate-500 text-xs">Bienvenue</p>
             </div>
+
+            <!-- DESKTOP HEADER -->
+            <div class="hidden md:flex items-center gap-3 mb-8">
+                <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white text-sm shadow-lg"><i class="fas fa-print"></i></div>
+                <h1 class="text-2xl font-black tracking-tight">Print<span class="text-indigo-600">bam</span></h1>
+            </div>
+
+            <!-- TABS -->
+            <div class="flex border-b border-slate-200 mb-8">
+                <button onclick="switchTab('login')" id="tab-login" class="tab-btn active">Connexion</button>
+                <button onclick="switchTab('register')" id="tab-register" class="tab-btn">Inscription</button>
+            </div>
+
+            <!-- LOGIN FORM -->
+            <form id="form-login" onsubmit="handleLogin(event)" class="space-y-5 fade-in">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Email</label>
+                    <input type="email" required placeholder="client@printbam.pro" class="input-crystal">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Mot de passe</label>
+                    <input type="password" required placeholder="••••••••" class="input-crystal">
+                </div>
+                
+                <div class="flex items-center justify-between text-xs font-medium">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                        <span class="text-slate-500">Se souvenir de moi</span>
+                    </label>
+                    <a href="#" class="text-indigo-600 hover:text-indigo-800">Oublié ?</a>
+                </div>
+
+                <button type="submit" class="btn-primary">
+                    <span id="btn-login-text">Se connecter</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </form>
+
+            <!-- REGISTER FORM -->
+            <form id="form-register" onsubmit="handleRegister(event)" class="space-y-4 hidden fade-in">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Nom complet</label>
+                    <input type="text" required placeholder="Jean Dupont" class="input-crystal">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Email</label>
+                    <input type="email" required placeholder="client@printbam.pro" class="input-crystal">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Téléphone</label>
+                    <input type="tel" id="reg-phone" oninput="formatPhone(this)" required placeholder="+243 000 000 000" maxlength="16" class="input-crystal">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Mot de passe</label>
+                    <input type="password" required placeholder="Min. 8 caractères" class="input-crystal">
+                </div>
+
+                <div class="flex items-start gap-2 pt-2">
+                    <input type="checkbox" required class="mt-1 w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                    <p class="text-[11px] text-slate-500 leading-tight">
+                        J'accepte les <a href="#" class="text-indigo-600 underline">conditions d'utilisation</a> et la <a href="#" class="text-indigo-600 underline">politique de confidentialité</a>.
+                    </p>
+                </div>
+
+                <button type="submit" class="btn-primary">
+                    <span id="btn-reg-text">Créer mon compte</span>
+                    <i class="fas fa-user-plus"></i>
+                </button>
+            </form>
+
+            <!-- SOCIAL LOGIN (SHARED) -->
+            <div class="mt-8 pt-6 border-t border-slate-200">
+                <p class="text-center text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Ou continuer avec</p>
+                <div class="flex gap-4 justify-center">
+                    <button type="button" class="w-12 h-12 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-all shadow-sm">
+                        <i class="fab fa-google"></i>
+                    </button>
+                    <button type="button" class="w-12 h-12 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-all shadow-sm">
+                        <i class="fab fa-apple text-xl"></i>
+                    </button>
+                    <button type="button" class="w-12 h-12 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-all shadow-sm">
+                        <i class="fab fa-linkedin-in"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-8 text-center">
+                <a href="index.html" class="text-xs font-bold text-slate-400 hover:text-indigo-600 uppercase tracking-widest transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i> Retour à l'accueil
+                </a>
+            </div>
+
         </div>
     </div>
 
-    <div class="fixed bottom-8 text-[9px] text-white/20 font-bold uppercase tracking-[0.5em]">
-        Secure Auth Protocol v3.0
-    </div>
-<div class="fixed top-8 left-8 z-50">
-    <a href="index.html" class="flex items-center gap-3 group">
-        <div class="w-10 h-10 glass flex items-center justify-center rounded-full border-white/10 group-hover:border-blue-500/50 transition-all">
-            <i class="fas fa-arrow-left text-white/50 group-hover:text-blue-500 text-sm"></i>
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="toast">
+        <div class="flex items-center gap-3">
+            <i class="fas fa-check-circle text-green-500" id="toast-icon"></i>
+            <span id="toast-message">Opération réussie</span>
         </div>
-        <span class="text-[10px] font-black uppercase tracking-widest text-white/30 group-hover:text-white transition-all">Retour</span>
-    </a>
-</div>
+    </div>
+
+    <script>
+        // --- THEME MANAGEMENT ---
+        function toggleTheme() {
+            const body = document.body;
+            const darkIcon = document.querySelector('.dark-icon');
+            const lightIcon = document.querySelector('.light-icon');
+            
+            if (body.classList.contains('dark-mode')) {
+                body.classList.remove('dark-mode');
+                localStorage.setItem('printbam-theme', 'light');
+                darkIcon.classList.remove('hidden');
+                lightIcon.classList.add('hidden');
+            } else {
+                body.classList.add('dark-mode');
+                localStorage.setItem('printbam-theme', 'dark');
+                darkIcon.classList.add('hidden');
+                lightIcon.classList.remove('hidden');
+            }
+        }
+
+        // Load Theme from LocalStorage
+        if(localStorage.getItem('printbam-theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+            document.querySelector('.dark-icon').classList.add('hidden');
+            document.querySelector('.light-icon').classList.remove('hidden');
+        }
+
+        // --- TAB SWITCHING ---
+        function switchTab(tab) {
+            const loginForm = document.getElementById('form-login');
+            const registerForm = document.getElementById('form-register');
+            const tabLogin = document.getElementById('tab-login');
+            const tabRegister = document.getElementById('tab-register');
+
+            if (tab === 'login') {
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                tabLogin.classList.add('active');
+                tabRegister.classList.remove('active');
+            } else {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+                tabLogin.classList.remove('active');
+                tabRegister.classList.add('active');
+            }
+        }
+
+        // --- PHONE MASKING ---
+        function formatPhone(input) {
+            let value = input.value.replace(/\D/g, '');
+            if (value.length > 0 && !value.startsWith('243')) value = '243' + value;
+            if (value.length > 12) value = value.substring(0, 12);
+            
+            let formatted = '';
+            if (value.length > 0) formatted = '+' + value.substring(0, 3);
+            if (value.length > 3) formatted += ' ' + value.substring(3, 6);
+            if (value.length > 6) formatted += ' ' + value.substring(6, 9);
+            if (value.length > 9) formatted += ' ' + value.substring(9, 12);
+            
+            input.value = formatted;
+        }
+
+        // --- TOAST NOTIFICATION ---
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.innerText = message;
+            
+            if(type === 'error') {
+                toast.classList.add('error');
+                toastIcon.className = 'fas fa-exclamation-circle text-red-500';
+            } else {
+                toast.classList.remove('error');
+                toastIcon.className = 'fas fa-check-circle text-green-500';
+            }
+
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // --- FORM HANDLERS ---
+        function handleLogin(e) {
+            e.preventDefault();
+            const btnText = document.getElementById('btn-login-text');
+            const originalText = btnText.innerText;
+            
+            // Simulate Loading
+            btnText.innerText = "Connexion...";
+            
+            setTimeout(() => {
+                showToast("Connexion réussie ! Bienvenue.");
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
+            }, 1500);
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            const btnText = document.getElementById('btn-reg-text');
+            const originalText = btnText.innerText;
+            
+            // Simple Validation Example
+            const inputs = e.target.querySelectorAll('input');
+            let valid = true;
+            inputs.forEach(input => {
+                if(!input.value) valid = false;
+            });
+
+            if(!valid) {
+                showToast("Veuillez remplir tous les champs", "error");
+                return;
+            }
+
+            // Simulate Loading
+            btnText.innerText = "Création...";
+            
+            setTimeout(() => {
+                showToast("Compte créé avec succès !");
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
+            }, 1500);
+        }
+    </script>
 </body>
 </html>
