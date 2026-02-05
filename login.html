@@ -250,8 +250,9 @@
             <!-- LOGIN FORM -->
             <form id="form-login" onsubmit="handleLogin(event)" class="space-y-5 fade-in">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Email</label>
-                    <input type="email" required id="login-email" placeholder="client@printbam.pro" class="input-crystal">
+                    <!-- LABEL MODIFIÉ -->
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Email ou numéro de téléphone</label>
+                    <input type="email" required id="login-email" placeholder="exemple@mail.com ou +243..." class="input-crystal">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Mot de passe</label>
@@ -279,8 +280,9 @@
                     <input type="text" id="reg-name" required placeholder="Jean Dupont" class="input-crystal">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Email</label>
-                    <input type="email" id="reg-email" required placeholder="client@printbam.pro" class="input-crystal">
+                    <!-- LABEL MODIFIÉ -->
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Email ou numéro de téléphone</label>
+                    <input type="email" id="reg-email" required placeholder="exemple@mail.com ou +243..." class="input-crystal">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Téléphone</label>
@@ -339,11 +341,8 @@
 
     <script>
         // --- CONFIGURATION SUPABASE ---
-        // REMPLACEZ ICI PAR VOS CLÉS DU DASHBOARD SUPABASE
         const supabaseUrl = 'https://kjbpcylgrgmyuyfdfnsg.supabase.co'; 
         const supabaseKey = 'sb_publishable_97qp1y6ik21B3lgS3mmyLw_hQ5-8SPt';
-        
-        // Initialisation du client Supabase
         const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
         // --- THEME MANAGEMENT ---
@@ -372,7 +371,7 @@
             document.querySelector('.light-icon').classList.remove('hidden');
         }
 
-        // --- TAB SWITCHING ---
+        // --- TAB SWITCHING (CORRIGÉ) ---
         function switchTab(tab) {
             const loginForm = document.getElementById('form-login');
             const registerForm = document.getElementById('form-register');
@@ -380,13 +379,29 @@
             const tabRegister = document.getElementById('tab-register');
 
             if (tab === 'login') {
-                loginForm.classList.remove('hidden');
+                // On cache inscription
                 registerForm.classList.add('hidden');
+                registerForm.classList.remove('fade-in');
+                
+                // On affiche connexion (avec petit délai pour l'animation)
+                loginForm.classList.remove('hidden');
+                setTimeout(() => {
+                    loginForm.classList.add('fade-in');
+                }, 50);
+                
                 tabLogin.classList.add('active');
                 tabRegister.classList.remove('active');
             } else {
+                // On cache connexion
                 loginForm.classList.add('hidden');
+                loginForm.classList.remove('fade-in');
+
+                // On affiche inscription (avec petit délai pour l'animation)
                 registerForm.classList.remove('hidden');
+                setTimeout(() => {
+                    registerForm.classList.add('fade-in');
+                }, 50);
+
                 tabLogin.classList.remove('active');
                 tabRegister.classList.add('active');
             }
@@ -429,17 +444,15 @@
             }, 3000);
         }
 
-        // --- SESSION CHECK (AU DÉMARRAGE) ---
+        // --- SESSION CHECK ---
         (async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
-                // Si l'utilisateur est déjà connecté, on le renvoie à l'accueil
                 window.location.href = 'index.html';
             }
         })();
 
-        // --- FORM HANDLERS (CONNECTÉS À SUPABASE) ---
-
+        // --- FORM HANDLERS ---
         async function handleLogin(e) {
             e.preventDefault();
             const email = document.getElementById('login-email').value;
@@ -448,7 +461,7 @@
             const btnText = document.getElementById('btn-login-text');
             const originalText = btnText.innerText;
 
-            // État de chargement
+            // Simulate Loading
             btnText.innerText = "Connexion...";
 
             try {
@@ -462,16 +475,12 @@
                     showToast("Erreur : " + error.message, "error");
                     btnText.innerText = originalText;
                 } else {
-                    // Succès
                     showToast("Connexion réussie ! Bienvenue.", "success");
-                    
-                    // Petite pause pour voir le toast
                     setTimeout(() => {
                         window.location.href = 'index.html';
                     }, 1000);
                 }
             } catch (err) {
-                console.error(err);
                 showToast("Erreur de connexion au serveur", "error");
                 btnText.innerText = originalText;
             }
@@ -480,7 +489,6 @@
         async function handleRegister(e) {
             e.preventDefault();
             
-            // Récupération des données via les IDs ajoutés
             const name = document.getElementById('reg-name').value;
             const email = document.getElementById('reg-email').value;
             const phone = document.getElementById('reg-phone').value;
@@ -489,17 +497,16 @@
             const btnText = document.getElementById('btn-reg-text');
             const originalText = btnText.innerText;
 
-            // Validation
             if(password.length < 6) {
                 showToast("Le mot de passe doit contenir au moins 6 caractères", "error");
                 return;
             }
 
-            // État de chargement
+            // Simulate Loading
             btnText.innerText = "Inscription...";
 
             try {
-                // 1. Créer l'utilisateur dans Auth
+                // 1. Sign Up in Auth
                 const { data, error } = await supabase.auth.signUp({
                     email: email,
                     password: password,
@@ -511,7 +518,7 @@
                     return;
                 }
 
-                // 2. Créer le profil public dans la table 'profiles'
+                // 2. Create Public Profile
                 if (data.user) {
                     const { error: profileError } = await supabase
                         .from('profiles')
@@ -528,11 +535,10 @@
                     
                     showToast("Compte créé avec succès !");
                     setTimeout(() => {
-                        switchTab('login'); // Basculer vers le formulaire de connexion
+                        switchTab('login'); // Switcher vers le formulaire de login
                     }, 1500);
                 }
             } catch (err) {
-                console.error(err);
                 showToast("Erreur lors de l'inscription", "error");
                 btnText.innerText = originalText;
             }
