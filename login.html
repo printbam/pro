@@ -13,6 +13,9 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
 
+    <!-- CLIENT SUPABASE -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
     <style>
         /* --- VARIABLES & RESET (Identiques au fichier principal) --- */
         :root {
@@ -248,11 +251,11 @@
             <form id="form-login" onsubmit="handleLogin(event)" class="space-y-5 fade-in">
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Email</label>
-                    <input type="email" required placeholder="client@printbam.pro" class="input-crystal">
+                    <input type="email" required id="login-email" placeholder="client@printbam.pro" class="input-crystal">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Mot de passe</label>
-                    <input type="password" required placeholder="••••••••" class="input-crystal">
+                    <input type="password" required id="login-password" placeholder="••••••••" class="input-crystal">
                 </div>
                 
                 <div class="flex items-center justify-between text-xs font-medium">
@@ -263,7 +266,7 @@
                     <a href="#" class="text-indigo-600 hover:text-indigo-800">Oublié ?</a>
                 </div>
 
-                <button type="submit" class="btn-primary">
+                <button type="submit" id="btn-login" class="btn-primary">
                     <span id="btn-login-text">Se connecter</span>
                     <i class="fas fa-arrow-right"></i>
                 </button>
@@ -273,11 +276,11 @@
             <form id="form-register" onsubmit="handleRegister(event)" class="space-y-4 hidden fade-in">
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Nom complet</label>
-                    <input type="text" required placeholder="Jean Dupont" class="input-crystal">
+                    <input type="text" id="reg-name" required placeholder="Jean Dupont" class="input-crystal">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Email</label>
-                    <input type="email" required placeholder="client@printbam.pro" class="input-crystal">
+                    <input type="email" id="reg-email" required placeholder="client@printbam.pro" class="input-crystal">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Téléphone</label>
@@ -285,7 +288,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Mot de passe</label>
-                    <input type="password" required placeholder="Min. 8 caractères" class="input-crystal">
+                    <input type="password" id="reg-password" required placeholder="Min. 8 caractères" class="input-crystal">
                 </div>
 
                 <div class="flex items-start gap-2 pt-2">
@@ -295,7 +298,7 @@
                     </p>
                 </div>
 
-                <button type="submit" class="btn-primary">
+                <button type="submit" id="btn-register" class="btn-primary">
                     <span id="btn-reg-text">Créer mon compte</span>
                     <i class="fas fa-user-plus"></i>
                 </button>
@@ -335,6 +338,14 @@
     </div>
 
     <script>
+        // --- CONFIGURATION SUPABASE ---
+        // REMPLACEZ ICI PAR VOS CLÉS DU DASHBOARD SUPABASE
+        const supabaseUrl = 'https://kjbpcylgrgmyuyfdfnsg.supabase.co'; 
+        const supabaseKey = 'sb_publishable_97qp1y6ik21B3lgS3mmyLw_hQ5-8SPt';
+        
+        // Initialisation du client Supabase
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
         // --- THEME MANAGEMENT ---
         function toggleTheme() {
             const body = document.body;
@@ -418,49 +429,113 @@
             }, 3000);
         }
 
-        // --- FORM HANDLERS ---
-        function handleLogin(e) {
+        // --- SESSION CHECK (AU DÉMARRAGE) ---
+        (async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                // Si l'utilisateur est déjà connecté, on le renvoie à l'accueil
+                window.location.href = 'index.html';
+            }
+        })();
+
+        // --- FORM HANDLERS (CONNECTÉS À SUPABASE) ---
+
+        async function handleLogin(e) {
             e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
             const btnText = document.getElementById('btn-login-text');
             const originalText = btnText.innerText;
-            
-            // Simulate Loading
+
+            // État de chargement
             btnText.innerText = "Connexion...";
-            
-            setTimeout(() => {
-                showToast("Connexion réussie ! Bienvenue.");
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 1000);
-            }, 1500);
+
+            try {
+                // Appel API Supabase Auth
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password,
+                });
+
+                if (error) {
+                    showToast("Erreur : " + error.message, "error");
+                    btnText.innerText = originalText;
+                } else {
+                    // Succès
+                    showToast("Connexion réussie ! Bienvenue.", "success");
+                    
+                    // Petite pause pour voir le toast
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1000);
+                }
+            } catch (err) {
+                console.error(err);
+                showToast("Erreur de connexion au serveur", "error");
+                btnText.innerText = originalText;
+            }
         }
 
-        function handleRegister(e) {
+        async function handleRegister(e) {
             e.preventDefault();
+            
+            // Récupération des données via les IDs ajoutés
+            const name = document.getElementById('reg-name').value;
+            const email = document.getElementById('reg-email').value;
+            const phone = document.getElementById('reg-phone').value;
+            const password = document.getElementById('reg-password').value;
+
             const btnText = document.getElementById('btn-reg-text');
             const originalText = btnText.innerText;
-            
-            // Simple Validation Example
-            const inputs = e.target.querySelectorAll('input');
-            let valid = true;
-            inputs.forEach(input => {
-                if(!input.value) valid = false;
-            });
 
-            if(!valid) {
-                showToast("Veuillez remplir tous les champs", "error");
+            // Validation
+            if(password.length < 6) {
+                showToast("Le mot de passe doit contenir au moins 6 caractères", "error");
                 return;
             }
 
-            // Simulate Loading
-            btnText.innerText = "Création...";
-            
-            setTimeout(() => {
-                showToast("Compte créé avec succès !");
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 1000);
-            }, 1500);
+            // État de chargement
+            btnText.innerText = "Inscription...";
+
+            try {
+                // 1. Créer l'utilisateur dans Auth
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                });
+
+                if (error) {
+                    showToast("Erreur : " + error.message, "error");
+                    btnText.innerText = originalText;
+                    return;
+                }
+
+                // 2. Créer le profil public dans la table 'profiles'
+                if (data.user) {
+                    const { error: profileError } = await supabase
+                        .from('profiles')
+                        .insert([{ 
+                            id: data.user.id, 
+                            email: email, 
+                            full_name: name, 
+                            phone: phone 
+                        }]);
+
+                    if (profileError) {
+                        console.error("Erreur profil:", profileError);
+                    }
+                    
+                    showToast("Compte créé avec succès !");
+                    setTimeout(() => {
+                        switchTab('login'); // Basculer vers le formulaire de connexion
+                    }, 1500);
+                }
+            } catch (err) {
+                console.error(err);
+                showToast("Erreur lors de l'inscription", "error");
+                btnText.innerText = originalText;
+            }
         }
     </script>
 </body>
