@@ -371,19 +371,19 @@
             document.querySelector('.light-icon').classList.remove('hidden');
         }
 
-        // --- TAB SWITCHING (CORRIGÉ) ---
+        // --- TAB SWITCHING ---
         function switchTab(tab) {
             const loginForm = document.getElementById('form-login');
             const registerForm = document.getElementById('form-register');
             const tabLogin = document.getElementById('tab-login');
             const tabRegister = document.getElementById('tab-register');
-
+        
             if (tab === 'login') {
                 // On cache inscription
                 registerForm.classList.add('hidden');
                 registerForm.classList.remove('fade-in');
                 
-                // On affiche connexion (avec petit délai pour l'animation)
+                // On affiche connexion
                 loginForm.classList.remove('hidden');
                 setTimeout(() => {
                     loginForm.classList.add('fade-in');
@@ -395,13 +395,13 @@
                 // On cache connexion
                 loginForm.classList.add('hidden');
                 loginForm.classList.remove('fade-in');
-
-                // On affiche inscription (avec petit délai pour l'animation)
+        
+                // On affiche inscription
                 registerForm.classList.remove('hidden');
                 setTimeout(() => {
                     registerForm.classList.add('fade-in');
                 }, 50);
-
+        
                 tabLogin.classList.remove('active');
                 tabRegister.classList.add('active');
             }
