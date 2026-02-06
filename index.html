@@ -271,24 +271,169 @@
         @media (min-width:769px) { .mobile-dock { display: none !important; } }
 
         /* TERMINAL STYLES */
-        #terminal-wrapper { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 20000; background-color: var(--bg-body); color: var(--text-main); font-family: 'Plus Jakarta Sans', sans-serif; overflow-y: auto; overflow-x: hidden; transition: background-color 0.4s ease, color 0.4s ease; }
-        #close-terminal-btn { position: absolute; top: 20px; right: 20px; z-index: 20050; width: 40px; height: 40px; background: var(--glass-bg); border:1px solid var(--glass-border); backdrop-filter: blur(10px); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--text-main); cursor: pointer; transition: all 0.3s; box-shadow: var(--shadow-soft); }
-        #close-terminal-btn:hover { background: rgba(255,50,50,0.1); color: #ef4444; transform: rotate(90deg); }
-        #terminal-wrapper .bg-glow { position: fixed; inset: 0; z-index: -1; background: radial-gradient(circle at 50% -20%, var(--accent-blue) 0%, transparent 45%); opacity: 0.1; }
-        #terminal-wrapper .glass { background: var(--glass-bg); backdrop-filter: blur(30px); border: 1px solid var(--glass-border); border-radius: 28px; box-shadow: var(--shadow-soft); }
-        #terminal-wrapper .input-crystal { background: rgba(255,255,255,0.5); border: 1px solid var(--glass-border); border-radius: 16px; color: var(--text-main); transition: 0.3s; }
-        #terminal-wrapper .text-gradient { background: linear-gradient(to bottom, var(--text-main) 40%, var(--text-muted)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        body.dark-mode #terminal-wrapper .text-gradient { background: linear-gradient(to bottom, #fff 40%, rgba(255,255,255,0.4)); }
-        #terminal-wrapper .hidden-step { display: none; }
-        #terminal-wrapper .progress-bar-fill { width: 0%; transition: width 0.4s; background: var(--accent-blue); box-shadow: 0 0 15px rgba(79, 130, 246, 0.5); }
-        #terminal-wrapper .option-card { cursor: pointer; transition: all 0.3s ease; border: 1px solid var(--glass-border); background: var(--glass-bg); }
-        #terminal-wrapper .option-card.active { border-color: var(--accent-blue); background: rgba(79, 70, 229, 0.05); }
-        @keyframes terminalShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
-        #terminal-wrapper .input-error { animation: terminalShake 0.3s ease-in-out; border-color: #ef4444 !important; }
-        #terminal-wrapper input, #terminal-wrapper select, #terminal-wrapper textarea { width: 100%; display: block; }
-        #terminal-wrapper button { cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
-        #terminal-wrapper .payment-btn { background: var(--glass-bg); border:1px solid var(--glass-border); }
+        /* --- TERMINAL WRAPPER PRINCIPAL --- */
+#terminal-wrapper { 
+    display: none; 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100vw; 
+    height: 100vh; 
+    z-index: 20000; 
+    background-color: var(--bg-body); 
+    color: var(--text-main); 
+    font-family: 'Plus Jakarta Sans', sans-serif; 
+    overflow-y: auto; 
+    overflow-x: hidden; 
+    transition: background-color 0.4s ease, color 0.4s ease; 
+    outline: none; /* Empêche le contour bleu sur le wrapper lui-même */
+}
 
+/* --- BOUTON FERMER --- */
+#close-terminal-btn { 
+    position: absolute; 
+    top: 20px; 
+    right: 20px; 
+    z-index: 20050; 
+    width: 40px; 
+    height: 40px; 
+    background: var(--glass-bg); 
+    border: 1px solid var(--glass-border); 
+    backdrop-filter: blur(10px); 
+    -webkit-backdrop-filter: blur(10px); /* Pour Safari */
+    border-radius: 50%; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    color: var(--text-main); 
+    cursor: pointer; 
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+    box-shadow: var(--shadow-soft); 
+}
+
+#close-terminal-btn:hover { 
+    background: rgba(239, 68, 68, 0.1); /* Rouge plus doux */
+    color: #ef4444; 
+    transform: rotate(90deg) scale(1.1); 
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+/* --- ÉLÉMENTS VISUELS (Glassmorphism & Glow) --- */
+#terminal-wrapper .bg-glow { 
+    position: fixed; 
+    inset: 0; 
+    z-index: -1; 
+    background: radial-gradient(circle at 50% -20%, var(--accent-blue) 0%, transparent 45%); 
+    opacity: 0.1; 
+    pointer-events: none; /* Sécurité : ne bloque pas les clics */
+}
+
+#terminal-wrapper .glass { 
+    background: var(--glass-bg); 
+    backdrop-filter: blur(30px); 
+    -webkit-backdrop-filter: blur(30px);
+    border: 1px solid var(--glass-border); 
+    border-radius: 28px; 
+    box-shadow: var(--shadow-soft); 
+}
+
+#terminal-wrapper .input-crystal { 
+    background: rgba(255, 255, 255, 0.05); /* Plus subtil en mode sombre */
+    border: 1px solid var(--glass-border); 
+    border-radius: 16px; 
+    color: var(--text-main); 
+    transition: all 0.3s ease; 
+    padding: 12px 16px;
+}
+
+#terminal-wrapper .input-crystal:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+}
+
+/* --- TYPOGRAPHIE --- */
+#terminal-wrapper .text-gradient { 
+    background: linear-gradient(to bottom, var(--text-main) 40%, var(--text-muted)); 
+    -webkit-background-clip: text; 
+    -webkit-text-fill-color: transparent; 
+    background-clip: text;
+}
+
+body.dark-mode #terminal-wrapper .text-gradient { 
+    background: linear-gradient(to bottom, #fff 40%, rgba(255,255,255,0.4)); 
+}
+
+/* --- LOGIQUE DE STEPS & PROGRESSION --- */
+#terminal-wrapper .hidden-step { display: none; }
+
+#terminal-wrapper .progress-bar-fill { 
+    width: 0%; 
+    height: 100%;
+    transition: width 0.6s cubic-bezier(0.65, 0, 0.35, 1); 
+    background: var(--accent-blue); 
+    box-shadow: 0 0 15px rgba(79, 130, 246, 0.5); 
+}
+
+/* --- CARTES D'OPTIONS --- */
+#terminal-wrapper .option-card { 
+    cursor: pointer; 
+    transition: all 0.3s ease; 
+    border: 1px solid var(--glass-border); 
+    background: var(--glass-bg); 
+    user-select: none;
+}
+
+#terminal-wrapper .option-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent-blue);
+    background: rgba(79, 70, 229, 0.02);
+}
+
+#terminal-wrapper .option-card.active { 
+    border-color: var(--accent-blue); 
+    background: rgba(79, 70, 229, 0.05); 
+    box-shadow: 0 0 20px rgba(79, 70, 229, 0.1);
+}
+
+/* --- ANIMATIONS D'ERREUR --- */
+@keyframes terminalShake { 
+    0%, 100% { transform: translateX(0); } 
+    25% { transform: translateX(-5px); } 
+    75% { transform: translateX(5px); } 
+}
+
+#terminal-wrapper .input-error { 
+    animation: terminalShake 0.3s ease-in-out; 
+    border-color: #ef4444 !important; 
+    background: rgba(239, 68, 68, 0.05) !important;
+}
+
+/* --- FORMULAIRES & BOUTONS --- */
+#terminal-wrapper input, 
+#terminal-wrapper select, 
+#terminal-wrapper textarea { 
+    width: 100%; 
+    display: block; 
+    appearance: none; /* Nettoyage sur mobile */
+}
+
+#terminal-wrapper button { 
+    cursor: pointer; 
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center; 
+    transition: all 0.2s ease;
+}
+
+#terminal-wrapper button:active { transform: scale(0.97); }
+
+#terminal-wrapper .payment-btn { 
+    background: var(--glass-bg); 
+    border: 1px solid var(--glass-border); 
+    font-weight: 600;
+}
         /* PROFESSIONAL INVOICE MODAL */
         #invoice-modal { display: none; position: fixed; inset: 0; z-index: [9500]; backdrop-filter: blur(8px); background: rgba(0,0,0,0.6); align-items: center; justify-content: center; padding: 20px; }
         #invoice-modal.active { display: flex; }
@@ -362,16 +507,65 @@
         <div id="sidebar-panel" class="fixed top-0 left-0 h-full w-[300px] bg-white z-[5001] -translate-x-full opacity-0 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col shadow-2xl border-r border-slate-100">
             <div class="pt-10 pb-6 px-8 border-b border-slate-100 bg-white/50"><span class="text-2xl font-bold text-slate-900 tracking-tight">Print<span class="text-indigo-600">bam</span></span><p class="text-[10px] text-slate-400 mt-1 uppercase tracking-widest">v3.5 Pro</p></div>
             <nav class="flex-1 overflow-y-auto p-5">
-                <div class="mb-8"><p class="px-4 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider" data-i18n="nav_navigation">Navigation</p>
-                    <div class="flex flex-col gap-2"><a onclick="switchPage('home')" class="nav-link-pro active"><i class="fa-solid fa-house w-5 text-center text-sm"></i> <span data-i18n="nav_home">Accueil</span></a><a onclick="switchPage('marketplace')" class="nav-link-pro"><i class="fa-solid fa-shop w-5 text-center text-sm"></i> <span data-i18n="nav_market">Marketplace</span></a><a onclick="switchPage('services')" class="nav-link-pro"><i class="fa-solid fa-layer-group w-5 text-center text-sm"></i> <span data-i18n="nav_services">Services & Tarifs</span></a></div>
-                </div>
-                <div><p class="px-4 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider" data-i18n="nav_account">Compte</p><div class="flex flex-col gap-2"><!-- À ajouter dans le menu de navigation du sidebar -->
-<a href="javascript:void(0)" onclick="toggleProfile()" class="nav-link-pro">
-    <i class="fa-solid fa-user-circle w-5 text-center text-sm"></i> 
-    <span data-i18n="nav_profile">Mon Profil</span>
-</a>
-                    <a href="javascript:void(0)" onclick="toggleOrders()" class="nav-link-pro"><i class="fa-solid fa-receipt w-5 text-center text-sm"></i> <span data-i18n="nav_orders">Mes Commandes</span></a><a href="javascript:void(0)" onclick="toggleSettings()" class="nav-link-pro"><i class="fa-solid fa-gear w-5 text-center text-sm"></i> <span data-i18n="nav_settings">Paramètres</span></a><a href="javascript:void(0)" onclick="toggleSupport()" class="nav-link-pro"><i class="fa-solid fa-headset w-5 text-center text-sm"></i> <span data-i18n="nav_help">Aide</span></a></div></div>
-            </nav>
+    <!-- SECTION NAVIGATION -->
+    <div class="mb-8">
+        <p class="px-4 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider" data-i18n="nav_navigation">Navigation</p>
+        <div class="flex flex-col gap-2">
+            <a onclick="switchPage('home')" class="nav-link-pro active">
+                <i class="fa-solid fa-house w-5 text-center text-sm"></i> 
+                <span data-i18n="nav_home">Accueil</span>
+            </a>
+            <a onclick="switchPage('marketplace')" class="nav-link-pro">
+                <i class="fa-solid fa-shop w-5 text-center text-sm"></i> 
+                <span data-i18n="nav_market">Marketplace</span>
+            </a>
+            <a onclick="switchPage('services')" class="nav-link-pro">
+                <i class="fa-solid fa-layer-group w-5 text-center text-sm"></i> 
+                <span data-i18n="nav_services">Services & Tarifs</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- SECTION COMPTE -->
+    <div>
+        <p class="px-4 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider" data-i18n="nav_account">Compte</p>
+        <div class="flex flex-col gap-2">
+            <a href="javascript:void(0)" onclick="toggleProfile()" class="nav-link-pro">
+                <i class="fa-solid fa-user-circle w-5 text-center text-sm"></i> 
+                <span data-i18n="nav_profile">Mon Profil</span>
+            </a>
+            <a href="javascript:void(0)" onclick="toggleOrders()" class="nav-link-pro">
+                <i class="fa-solid fa-receipt w-5 text-center text-sm"></i> 
+                <span data-i18n="nav_orders">Mes Commandes</span>
+            </a>
+            <a href="javascript:void(0)" onclick="toggleSettings()" class="nav-link-pro">
+                <i class="fa-solid fa-gear w-5 text-center text-sm"></i> 
+                <span data-i18n="nav_settings">Paramètres</span>
+            </a>
+            <a href="javascript:void(0)" onclick="toggleSupport()" class="nav-link-pro">
+                <i class="fa-solid fa-headset w-5 text-center text-sm"></i> 
+                <span data-i18n="nav_help">Aide</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- SECTION APPLICATION (NOUVEAU) -->
+    <div class="mt-8">
+        <p class="px-4 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Application</p>
+        <div class="flex flex-col gap-2">
+            <a href="javascript:void(0)" onclick="toggleAbout()" class="nav-link-pro">
+                <i class="fa-solid fa-circle-info w-5 text-center text-sm"></i> 
+                <span data-i18n="nav_about">À propos</span>
+            </a>
+            
+            <!-- Lien Admin (Caché par défaut) -->
+            <a href="javascript:void(0)" onclick="switchPage('admin')" id="nav-admin-link" class="nav-link-pro hidden">
+                <i class="fa-solid fa-shield-halved w-5 text-center text-sm"></i> 
+                <span>Espace Admin</span>
+            </a>
+        </div>
+    </div>
+</nav>
             <div class="p-5 border-t border-slate-100 bg-slate-50/50">
                 <div class="flex bg-slate-200/50 p-1 rounded-xl">
                     <button onclick="setTheme('light')" id="btn-light" class="flex-1 py-2.5 text-xs font-semibold rounded-lg shadow-sm bg-white text-slate-800 transition-all flex justify-center items-center gap-2"><i class="fas fa-sun text-xs"></i> Light</button>
@@ -738,9 +932,29 @@
                 </div>
             </section>
         </div>
+        <!-- PAGE 4: ESPACE ADMIN (Caché par défaut) -->
+        <!-- PAGE 4: ESPACE ADMIN (À coller AVANT le footer) -->
+        <div id="admin-view" class="page-view">
+            <section class="max-w-7xl mx-auto px-6 py-10">
+                <div class="flex justify-between items-end mb-10 border-b border-slate-200 pb-6">
+                    <div>
+                        <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight mb-2"><span class="text-gradient">Espace Admin</span></h1>
+                        <p class="text-slate-500">Gérez le contenu de votre application.</p>
+                    </div>
+                    <button onclick="openArticleModal()" class="px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition-all flex items-center gap-2">
+                        <i class="fas fa-plus"></i> Nouvel Article
+                    </button>
+                </div>
 
+                <!-- Liste des articles -->
+                <div id="admin-articles-list" class="grid grid-cols-1 gap-6">
+                    <!-- Les articles s'afficheront ici via JS -->
+                    <div class="text-center py-10 text-slate-400">Chargement des articles...</div>
+                <!-- </div> -->
+            </section>
+        </div>
         <!-- FOOTER (SHARED) -->
-        <footer id="main-footer" class="relative mt-10 border-t border-slate-200 bg-white pt-14 pb-10">
+        <!-- <footer id="main-footer" class="relative mt-10 border-t border-slate-200 bg-white pt-14 pb-10">
             <div class="max-w-7xl mx-auto px-6">
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-12 mb-16">
                     <div class="md:col-span-4 space-y-6">
@@ -753,9 +967,10 @@
                 </div>
                 <div class="pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4"><p class="text-[10px] text-slate-400 font-medium tracking-wider">© 2026 Printbam Technology Inc. Tous droits réservés.</p></div>
             </div>
-        </footer>
-
-    </div> <!-- END MAIN CONTENT -->
+        </footer> -->
+    <!-- </section> -->
+</div>
+    <!-- </div> <!-- END MAIN CONTENT -->
 
     <!-- MOBILE DOCK -->
     <div class="mobile-dock md:hidden bg-white rounded-2xl px-2 py-2 flex items-center justify-between shadow-xl border border-slate-100">
@@ -873,6 +1088,95 @@
                     </div>
                 </div>
             </div>
+
+
+
+    <!-- ABOUT OVERLAY -->
+<div id="about-overlay" class="fixed inset-0 z-[6500] invisible transition-all duration-500">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm opacity-0 transition-opacity duration-500" onclick="toggleAbout()"></div>
+    <div id="about-panel" class="absolute right-0 top-0 h-full w-full md:w-[400px] translate-x-full transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col shadow-2xl bg-white border-l border-slate-100">
+        
+        <!-- Header du panneau -->
+        <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
+            <div>
+                <h2 class="text-xl font-bold text-slate-900">À propos</h2>
+                <p class="text-[10px] text-indigo-600 font-bold uppercase tracking-wider mt-1">Printbam v3.5</p>
+            </div>
+            <button onclick="toggleAbout()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors">
+                <i class="fas fa-times text-slate-500"></i>
+            </button>
+        </div>
+
+        <!-- Contenu (Adapté du footer en colonne simple) -->
+        <div class="flex-1 overflow-y-auto p-6 space-y-8">
+            
+            <!-- Branding -->
+            <div class="flex flex-col items-center text-center space-y-4">
+                <div class="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-indigo-200">
+                    <i class="fas fa-print"></i>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-black text-slate-900 tracking-tight">Print<span class="text-indigo-600">bam</span></h3>
+                    <p class="text-xs text-slate-400 mt-1">Enterprise Cloud Printing</p>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="text-center">
+                <p class="text-sm text-slate-500 leading-relaxed">
+                    L'infrastructure d'impression cloud leader en Afrique centrale. Fiabilité, rapidité et sécurité pour vos documents.
+                </p>
+            </div>
+
+            <div class="h-px bg-slate-100 w-full"></div>
+
+            <!-- Contact Info -->
+            <div class="space-y-4">
+                <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">Contact</h4>
+                
+                <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
+                        <i class="fas fa-map-marker-alt text-xs"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-900">Siège Social</p>
+                        <p class="text-xs text-slate-500">Croix rouge, Kinshasa, RDC</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
+                        <i class="fas fa-envelope text-xs"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-900">Email Support</p>
+                        <p class="text-xs text-slate-500">contact@printbam.pro</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Réseaux Sociaux -->
+            <div class="flex justify-center gap-4 pt-4">
+                <a href="#" class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-indigo-600 hover:text-white transition-all">
+                    <i class="fab fa-linkedin-in"></i>
+                </a>
+                <a href="#" class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-indigo-600 hover:text-white transition-all">
+                    <i class="fab fa-twitter"></i>
+                </a>
+                <a href="#" class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-indigo-600 hover:text-white transition-all">
+                    <i class="fab fa-whatsapp"></i>
+                </a>
+            </div>
+
+        </div>
+
+        <!-- Footer Panneau -->
+        <div class="p-4 border-t border-slate-100 bg-slate-50 text-center">
+            <p class="text-[9px] text-slate-400 font-medium tracking-wider">© 2026 Printbam Technology Inc.</p>
+        </div>
+
+    </div>
+</div>
     
     <!-- ORDERS & TRACKING MODAL -->
     <div id="orders-overlay" class="fixed inset-0 z-[8000] invisible transition-all duration-500">
@@ -991,7 +1295,41 @@
             </div>
         </div>
     </div>
-
+    <!-- MODALE AJOUT ARTICLE -->
+    <div id="article-modal" class="fixed inset-0 z-[9500] hidden">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeArticleModal()"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-2xl shadow-2xl p-8 animate-fadeIn">
+            <h3 class="text-2xl font-black mb-6 text-slate-900">Publier un article</h3>
+            <form id="article-form" onsubmit="saveArticle(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Titre</label>
+                    <input type="text" id="art-title" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Catégorie</label>
+                    <!-- IMPORTANT : Les valeurs doivent correspondre aux boutons de filtre -->
+                    <select id="art-category" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500">
+                        <option value="academique">Académique</option>
+                        <option value="corporate">Corporate</option>
+                        <option value="marketing">Marketing</option>
+                        <option value="news">Actualité (Sans filtre)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Image (URL)</label>
+                    <input type="url" id="art-image" placeholder="https://..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Contenu</label>
+                    <textarea id="art-content" required rows="6" placeholder="Écrivez votre article ici..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500"></textarea>
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" onclick="closeArticleModal()" class="px-4 py-2 text-slate-500 font-bold hover:text-slate-900">Annuler</button>
+                    <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700">Publier</button>
+                </div>
+            </form>
+        </div>
+    </div>
     <!-- TERMINAL WRAPPER -->
     <div id="terminal-wrapper" class="p-4 md:p-10" aria-hidden="true">
         <div id="close-terminal-btn" onclick="closeTerminal()"><i class="fas fa-times"></i></div>
@@ -1109,7 +1447,6 @@
             function showErrorAnimation(el) { el.classList.add('input-error'); setTimeout(() => el.classList.remove('input-error'), 400); }
             calculatePrice();
         </script>
-    </div>
 
     <!-- SCRIPT PRINCIPAL -->
     <script>
@@ -1118,10 +1455,10 @@ const SUPABASE_URL = 'https://lqqtvumwdixlhamwmqii.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxcXR2dW13ZGl4bGhhbXdtcWlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyOTQ1NjMsImV4cCI6MjA4NTg3MDU2M30.QKTBQbZ78iRVyM1o-hhtAPkWP23h_vXAMA3zrfuzipY'; // Votre clé
 
 // On récupère la fonction createClient de la librairie globale
-const { createClient } = supabase;
+// const { createClient } = supabase;
 
 // On crée notre instance client avec un nom différent pour éviter le conflit
-const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
         /* --- PRO FEATURES VARIABLES --- */
         let currentInvoiceData = null;
@@ -1142,15 +1479,20 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
             const sidebarOverlay = document.getElementById('sidebar-overlay');
             if (!sidebarOverlay.classList.contains('invisible')) toggleSidebar();
 
-            // --- FOOTER VISIBILITY LOGIC ---
-            const footer = document.getElementById('main-footer');
-            if(footer) {
-                if(pageId === 'marketplace') {
-                    footer.style.display = 'none';
-                } else {
-                    footer.style.display = 'block';
-                }
+            
+            if (pageId === 'admin') {
+                loadAdminArticles();
             }
+            
+            // --- FOOTER VISIBILITY LOGIC ---
+        //     const footer = document.getElementById('main-footer');
+        //     if(footer) {
+        //         if(pageId === 'marketplace') {
+        //             footer.style.display = 'none';
+        //         } else {
+        //             footer.style.display = 'block';
+        //         }
+        //     }
         }
 
         /* --- MARKETPLACE LOGIC --- */
@@ -1291,24 +1633,45 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
         }
 
         /* --- TERMINAL --- */
-        function openTerminal() {
-            const terminal = document.getElementById('terminal-wrapper');
-            if(terminal) {
-                terminal.style.display = 'block'; terminal.scrollTop = 0; document.body.style.overflow = 'hidden';
-                terminal.setAttribute('aria-hidden', 'false');
-                updateLanguage(localStorage.getItem('printbam-lang') || 'fr');
-            }
+       function openTerminal() {
+            const term = document.getElementById('terminal-wrapper');
+            if (!term) return;
+        
+            // 1. On affiche et on débloque les interactions
+            term.style.display = 'block';
+            term.removeAttribute('inert'); 
+            term.setAttribute('aria-hidden', 'false');
+        
+            // 2. On bloque le scroll du site derrière
+            document.body.style.overflow = 'hidden';
+        
+            // 3. Sécurité : on force le focus sur le bouton de fermeture
+            setTimeout(() => {
+                const closeBtn = document.getElementById('close-terminal-btn');
+                if (closeBtn) closeBtn.focus();
+            }, 100);
         }
+        
         function closeTerminal() {
-            const terminal = document.getElementById('terminal-wrapper');
-            if(terminal) { terminal.style.display = 'none'; document.body.style.overflow = 'auto'; terminal.setAttribute('aria-hidden', 'true'); }
+            const term = document.getElementById('terminal-wrapper');
+            if (!term) return;
+        
+            // 1. On cache et on verrouille
+            term.style.display = 'none';
+            term.setAttribute('inert', '');
+            term.setAttribute('aria-hidden', 'true');
+        
+            // 2. On rend le scroll au site
+            document.body.style.overflow = 'auto';
+        
+            // 3. On nettoie le focus pour éviter l'erreur console
+            if (document.activeElement) document.activeElement.blur();
         }
-
         /* --- TRANSLATIONS --- */
         const translations = {
             fr: {
                 nav_navigation: "Navigation", nav_home: "Accueil", nav_market: "Marketplace", nav_services: "Services", nav_account: "Compte", nav_orders: "Mes Commandes", nav_settings: "Paramètres", nav_help: "Aide", nav_login: "Connexion", btn_start: "Démarrer",
-                hero_title_part1: "L'infrastructure", hero_title_part2: "documentaire", hero_title_highlight: "haute performance.", hero_desc: "Digitalisez vos flux, nous matérialisons l'excellence avec une", btn_print_now: "Imprimer maintenant", btn_demo: "Voir la démo",
+                hero_title_part1: "L'infrastructure", hero_title_part2: "documentaire", hero_title_highlight: "haute performance.", hero_desc: "Digitalisez vos flux, nous matérialisons l'excellence avec une", btn_print_now: "Imprimer maintenant", btn_demo: "Voir la démo", nav_about: "À propos",
                 feat_arch_title: "Architecture Documentaire", feat_arch_desc: "Traitement architectural de vos documents. Précision au millimètre pour vos manuscrits exigeants et mémoires académiques.", feat_delivery: "Livraison Express", feat_badge_title: "Badges PVC", feat_badge_desc: "Cartes de service haute définition avec protection thermique et codage magnétique.", feat_cloud_title: "Infrastructure Cloud", feat_cloud_desc: "Envoyez vos fichiers de n'importe où. Notre réseau sécurisé s'occupe du traitement et de l'impression.",
                 portfolio_title: "Standards d'Excellence.", card1_cat: "Rapports", card1_title: "Rapports Institutionnels", card1_desc: "Papier couché 120g avec reliure thermique invisible pour une finition premium.", card2_cat: "Identité Visuelle", card2_title: "Cartes de Membre", card2_desc: "Impression sublimation haute résistance avec hologramme de sécurité personnalisé.", card3_cat: "Technique", card3_title: "Plans & Blueprints", card3_desc: "Traçage grand format A0/A1 haute précision sur papier technique translucide.",
                 cta_title: "Prêt pour l'impression ?", btn_launch_order: "Lancer une commande", footer_about: "L'infrastructure d'impression cloud leader en Afrique centrale. Fiabilité, rapidité et sécurité pour vos documents.", footer_services: "Services", footer_company: "Entreprise", footer_contact: "Contact", settings_profile: "Votre Profil", settings_notifs: "Notifications push", settings_lang: "Langue", settings_save: "Sauvegarder", btn_send: "Envoyer",
@@ -1321,14 +1684,14 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
                 hero_title_part1: "The high-performance", hero_title_part2: "document", hero_title_highlight: "infrastructure.", hero_desc: "Digitize your workflows, we materialize excellence with", btn_print_now: "Print Now", btn_demo: "View Demo",
                 feat_arch_title: "Document Architecture", feat_arch_desc: "Architectural processing of your documents. Millimeter precision for demanding manuscripts and academic theses.", feat_delivery: "Express Delivery", feat_badge_title: "PVC Badges", feat_badge_desc: "High definition service cards with thermal protection and magnetic coding.", feat_cloud_title: "Cloud Infrastructure", feat_cloud_desc: "Send files from anywhere. Our secure network takes care of processing and printing.",
                 portfolio_title: "Standards of Excellence.", card1_cat: "Reports", card1_title: "Institutional Reports", card1_desc: "120g coated paper with invisible thermal binding for a premium finish.", card2_cat: "Visual Identity", card2_title: "Membership Cards", card2_desc: "High resistance sublimation printing with personalized security hologram.", card3_cat: "Technical", card3_title: "Plans & Blueprints", card3_desc: "Large format A0/A1 high precision tracing on translucent technical paper.",
-                cta_title: "Ready to print?", btn_launch_order: "Launch an Order", footer_about: "The leading cloud printing infrastructure in Central Africa. Reliability, speed and security for your documents.", footer_services: "Services", footer_company: "Company", footer_contact: "Contact", settings_profile: "Your Profile", settings_notifs: "Push Notifications", settings_lang: "Language", settings_save: "Save", btn_send: "Send",
+                cta_title: "Ready to print?", btn_launch_order: "Launch an Order", footer_about: "The leading cloud printing infrastructure in Central Africa. Reliability, speed and security for your documents.", footer_services: "Services", footer_company: "Company", footer_contact: "Contact", settings_profile: "Your Profile", settings_notifs: "Push Notifications", settings_lang: "Language", settings_save: "Save", btn_send: "Send", nav_about: "About", 
                 market_desc: "Discover our pre-configured packs for your professional and academic needs. Constant quality, rapid delivery.", mkt_item1_title: "Standard Thesis Pack", mkt_item1_desc: "B&W Printing + Spiral Binding + 2 Copies.", mkt_item2_title: "Pro Badges Pack", mkt_item2_desc: "50 Double-sided PVC cards with customization.", mkt_item3_title: "Communication Kit", mkt_item3_desc: "100 A3 Posters + 500 A5 Flyers.", mkt_item4_title: "Customization", mkt_item4_desc: "T-shirts, Mugs and Promotional items.",
                 services_title: "Services & Pricing", services_desc: "Transparent and competitive pricing for all your printing projects.", srv_pricing: "Price Grid (Unit Price)", srv_format: "Format", srv_bw: "Black & White", srv_color: "Color", srv_premium: "Premium", srv_binding: "Binding", srv_binding_desc: "Metal spiral, Thermal or Canneled binding.", srv_laminate: "Lamination", srv_laminate_desc: "Matte or Glossy protection.", srv_cut: "Cutting & Guillotine", srv_cut_desc: "Precise cutting to millimeter.",
                 term_config: "1. Config", term_send: "2. Send", term_pay: "3. Pay", term_config_title: "Configuration", term_upload_placeholder: "Click or drag your document here", term_doc_detected: "Document Detected", term_format: "Format", term_color: "Color", term_bw: "Black & White", term_color_hd: "Color HD", term_finish: "Finish & Protection", term_binding: "Binding", term_laminate: "Laminate", term_pages: "Pages", term_copies: "Copies", term_type: "Type", term_recto: "Single Sided", term_recto_verso: "Double Sided", term_dest_title: "Destination", term_ph_name: "Full Name", term_ph_phone: "WhatsApp (ex: +243...)", term_ph_addr: "Full Delivery Address", term_payment: "Payment", term_total: "Total Order", term_currency: "FC", term_printing: "Printing", term_finishes: "Finishes", term_back: "Back", term_continue: "Continue", term_confirm: "Confirm Payment", term_uploading: "Secure upload...", term_confirmed: "Confirmed!", term_redirect: "Redirecting to home..."
             },
-            ln: { nav_navigation: "Boluki", nav_home: "Esika", nav_market: "Bisika", nav_services: "Misala", nav_account: "Bokomi", nav_orders: "Mikanda", nav_settings: "Ndimi", nav_help: "Lisungi", nav_login: "Kokota", btn_start: "Yuka", hero_title_part1: "Bokoli ya", hero_title_part2: "bukundu", hero_title_highlight: "ya makasi.", hero_desc: "Botia bisusu na nzela ya électronique, biso tokobi kobimisa eloko ya makasi na", btn_print_now: "Kobima Sika", btn_demo: "Tala", feat_arch_title: "Bokoli ya Mbete", feat_arch_desc: "Botia ya mbete ya mikanda na yo.", feat_delivery: "Komesa Mbote", feat_badge_title: "Ba Badge PVC", feat_badge_desc: "Ba carte ya service.", feat_cloud_title: "Sistème ya Cloud", feat_cloud_desc: "Tinda ba fichier awa.", portfolio_title: "Ndimi ya Makasi.", cta_title: "Oyo ozali kokoba ?", btn_launch_order: "Sima Commande", term_config: "1. Config", term_send: "2. Tinda", term_pay: "3. Kobimisa", term_config_title: "Configuration", term_upload_placeholder: "Kokota kobimisa buku na awa", term_doc_detected: "Buku ekomi", term_format: "Format", term_color: "Couleur", term_bw: "Noir & Blanc", term_color_hd: "Couleur HD", term_finish: "Mikongo & Protection", term_binding: "Reliure", term_laminate: "Plastifier", term_pages: "Pages", term_copies: "Exemplaires", term_type: "Type", term_recto: "Recto Seul", term_recto_verso: "Recto / Verso", term_dest_title: "Destination", term_ph_name: "Nkombo mobimba", term_ph_phone: "WhatsApp", term_ph_addr: "Adrese", term_payment: "Kobimisa", term_total: "Total Commande", term_currency: "FC", term_printing: "Kobima", term_finishes: "Mikongo", term_back: "Kozwa", term_continue: "Kosukola", term_confirm: "Kobimisa", term_uploading: "Tinda...", term_confirmed: "Confirmé !", term_redirect: "Kozwa...", market_desc: "Bolia ba packs...", services_title: "Services & Tarifs", services_desc: "Prix transparente...", srv_pricing: "Grille Tarifaire", srv_format: "Format", srv_bw: "Noir & Blanc", srv_color: "Couleur", srv_premium: "Premium", srv_binding: "Reliure", srv_binding_desc: "Spirale, etc...", srv_laminate: "Plastification", srv_laminate_desc: "Protection...", srv_cut: "Découpe", srv_cut_desc: "Découpe...", mkt_item1_title: "Pack Mémoire", mkt_item1_desc: "Kobima + Reliure...", mkt_item2_title: "Pack Badges", mkt_item2_desc: "50 Cartes...", mkt_item3_title: "Kit Comm", mkt_item3_desc: "Affiches...", mkt_item4_title: "Perso", mkt_item4_desc: "T-shirts...", nav_orders: "Mikanda", nav_settings: "Ndimi", nav_help: "Aide", settings_lang: "Lokota", settings_save: "Tia", btn_send: "Tinda", settings_profile: "Lingomba na yo", settings_notifs: "Notifications", footer_about: "Bokoli...", footer_services: "Misala", footer_company: "Kompani", footer_contact: "Komisa" },
-            tu: { nav_navigation: "Buvui", nav_home: "Kadi", nav_market: "Kabuadi", nav_services: "Miyila", nav_account: "Ditumbu", nav_orders: "Babui", nav_settings: "Mwididi", nav_help: "Lubulayi", nav_login: "Kuluka", btn_start: "Yuka", term_config: "1. Config", term_send: "2. Tuma", term_pay: "3. Dija", term_config_title: "Configuration", term_upload_placeholder: "Kokota tuma buku na awa", term_doc_detected: "Buku dijwidi", term_format: "Format", term_color: "Couleur", term_bw: "Noir & Blanc", term_color_hd: "Couleur HD", term_finish: "Midi & Dija", term_binding: "Reliure", term_laminate: "Lamina", term_pages: "Makon", term_copies: "Kadisadi", term_type: "Mutundu", term_recto: "Tshitshi", term_recto_verso: "Tshitshi / Mutundu", term_dest_title: "Muadi", term_ph_name: "Dina mobimba", term_ph_phone: "WhatsApp", term_ph_addr: "Adrese", term_payment: "Kulipa", term_total: "Total Commande", term_currency: "FC", term_printing: "Kubaja", term_finishes: "Midi", term_back: "Kubajikula", term_continue: "Kosuka", term_confirm: "Kulipa", term_uploading: "Kutuma...", term_confirmed: "Bwakaji !", term_redirect: "Kujikula...", hero_title_part1: "Buvui ya", hero_title_part2: "mutundu", hero_title_highlight: "wa bule.", hero_desc: "Dija masalu a eletronique, twa ku buka butashi wa bule na", btn_print_now: "Bubaja Ubu", btn_demo: "Laja", portfolio_title: "Ndimi wa Bule.", cta_title: "Waba udi bubaja ?", btn_launch_order: "Simula Babui", term_config_title: "Configuration", term_upload_placeholder: "Kokota tuma buku na awa", term_doc_detected: "Buku dijwidi", term_format: "Format", term_color: "Couleur", term_bw: "Noir & Blanc", term_color_hd: "Couleur HD", term_finish: "Midi & Dija", term_binding: "Reliure", term_laminate: "Lamina", term_pages: "Makon", term_copies: "Kadisadi", term_type: "Mutundu", term_recto: "Tshitshi", term_recto_verso: "Tshitshi / Mutundu", term_dest_title: "Muadi", term_ph_name: "Dina mobimba", term_ph_phone: "WhatsApp", term_ph_addr: "Adrese", term_payment: "Kulipa", term_total: "Total Commande", term_currency: "FC", term_printing: "Kubaja", term_finishes: "Midi", term_back: "Kubajikula", term_continue: "Kosuka", term_confirm: "Kulipa", term_uploading: "Kutuma...", term_confirmed: "Bwakaji !", term_redirect: "Kujikula..." },
-            sw: { nav_navigation: "Miondoko", nav_home: "Nyumbani", nav_market: "Soko", nav_services: "Huduma", nav_account: "Akaunti", nav_orders: "Oda", nav_settings: "Mipangilio", nav_help: "Msaada", nav_login: "Ingia", btn_start: "Anza", term_config: "1. Config", term_send: "2. Tuma", term_pay: "3. Lipia", term_config_title: "Mipangilio", term_upload_placeholder: "Bofya au paka faili hapa", term_doc_detected: "Faili Imeibainwa", term_format: "Ukubwa", term_color: "Rangi", term_bw: "Nyeusi & Njivu", term_color_hd: "Rangi HD", term_finish: "Maliza & Kinga", term_binding: "Uunganishaji", term_laminate: "Lamine", term_pages: "Ukurasa", term_copies: "Nakala", term_type: "Aina", term_recto: "Upande Mmoja", term_recto_verso: "Upande Wote", term_dest_title: "Mahali", term_ph_name: "Jina Kamili", term_ph_phone: "WhatsApp", term_ph_addr: "Anwani ya Kupokelea", term_payment: "Lipa", term_total: "Jumla ya Oda", term_currency: "FC", term_printing: "Uchapishaji", term_finishes: "Mikwabo", term_back: "Nyuma", term_continue: "Endelea", term_confirm: "Thibitisha Lipa", term_uploading: "Kutuma salama...", term_confirmed: "Imethibitishwa!", term_redirect: "Kurudi nyumbani...", hero_title_part1: "Miundombinu ya", hero_title_part2: "waraka", hero_title_highlight: "ya nguvu.", hero_desc: "Badilisha mtiririko wako, sisi tunato ubora wa", btn_print_now: "Chapisha Sasa", btn_demo: "Tazama Demo", portfolio_title: "Vigezo vya Ubora.", cta_title: "Uko tayari kuchapisha?", btn_launch_order: "Anza Oda", term_config_title: "Mipangilio", term_upload_placeholder: "Bofya au paka faili hapa", term_doc_detected: "Faili Imeibainwa", term_format: "Ukubwa", term_color: "Rangi", term_bw: "Nyeusi & Njivu", term_color_hd: "Rangi HD", term_finish: "Maliza & Kinga", term_binding: "Uunganishaji", term_laminate: "Lamine", term_pages: "Ukurasa", term_copies: "Nakala", term_type: "Aina", term_recto: "Upande Mmoja", term_recto_verso: "Upande Wote", term_dest_title: "Mahali", term_ph_name: "Jina Kamili", term_ph_phone: "WhatsApp", term_ph_addr: "Anwani ya Kupokelea", term_payment: "Lipa", term_total: "Jumla ya Oda", term_currency: "FC", term_printing: "Uchapishaji", term_finishes: "Mikwabo", term_back: "Nyuma", term_continue: "Endelea", term_confirm: "Thibitisha Lipa", term_uploading: "Kutuma salama...", term_confirmed: "Imethibitishwa!", term_redirect: "Kurudi nyumbani..." },
+            ln: { nav_navigation: "Boluki", nav_home: "Esika", nav_market: "Bisika", nav_services: "Misala", nav_account: "Bokomi", nav_orders: "Mikanda", nav_about: "Na ntina na biso", nav_settings: "Ndimi", nav_help: "Lisungi", nav_login: "Kokota", btn_start: "Yuka", hero_title_part1: "Bokoli ya", hero_title_part2: "bukundu", hero_title_highlight: "ya makasi.", hero_desc: "Botia bisusu na nzela ya électronique, biso tokobi kobimisa eloko ya makasi na", btn_print_now: "Kobima Sika", btn_demo: "Tala", feat_arch_title: "Bokoli ya Mbete", feat_arch_desc: "Botia ya mbete ya mikanda na yo.", feat_delivery: "Komesa Mbote", feat_badge_title: "Ba Badge PVC", feat_badge_desc: "Ba carte ya service.", feat_cloud_title: "Sistème ya Cloud", feat_cloud_desc: "Tinda ba fichier awa.", portfolio_title: "Ndimi ya Makasi.", cta_title: "Oyo ozali kokoba ?", btn_launch_order: "Sima Commande", term_config: "1. Config", term_send: "2. Tinda", term_pay: "3. Kobimisa", term_config_title: "Configuration", term_upload_placeholder: "Kokota kobimisa buku na awa", term_doc_detected: "Buku ekomi", term_format: "Format", term_color: "Couleur", term_bw: "Noir & Blanc", term_color_hd: "Couleur HD", term_finish: "Mikongo & Protection", term_binding: "Reliure", term_laminate: "Plastifier", term_pages: "Pages", term_copies: "Exemplaires", term_type: "Type", term_recto: "Recto Seul", term_recto_verso: "Recto / Verso", term_dest_title: "Destination", term_ph_name: "Nkombo mobimba", term_ph_phone: "WhatsApp", term_ph_addr: "Adrese", term_payment: "Kobimisa", term_total: "Total Commande", term_currency: "FC", term_printing: "Kobima", term_finishes: "Mikongo", term_back: "Kozwa", term_continue: "Kosukola", term_confirm: "Kobimisa", term_uploading: "Tinda...", term_confirmed: "Confirmé !", term_redirect: "Kozwa...", market_desc: "Bolia ba packs...", services_title: "Services & Tarifs", services_desc: "Prix transparente...", srv_pricing: "Grille Tarifaire", srv_format: "Format", srv_bw: "Noir & Blanc", srv_color: "Couleur", srv_premium: "Premium", srv_binding: "Reliure", srv_binding_desc: "Spirale, etc...", srv_laminate: "Plastification", srv_laminate_desc: "Protection...", srv_cut: "Découpe", srv_cut_desc: "Découpe...", mkt_item1_title: "Pack Mémoire", mkt_item1_desc: "Kobima + Reliure...", mkt_item2_title: "Pack Badges", mkt_item2_desc: "50 Cartes...", mkt_item3_title: "Kit Comm", mkt_item3_desc: "Affiches...", mkt_item4_title: "Perso", mkt_item4_desc: "T-shirts...", nav_orders: "Mikanda", nav_settings: "Ndimi", nav_help: "Aide", settings_lang: "Lokota", settings_save: "Tia", btn_send: "Tinda", settings_profile: "Lingomba na yo", settings_notifs: "Notifications", footer_about: "Bokoli...", footer_services: "Misala", footer_company: "Kompani", footer_contact: "Komisa" },
+            tu: { nav_navigation: "Buvui", nav_about: "Bidi bitangila benu", nav_home: "Kadi", nav_market: "Kabuadi", nav_services: "Miyila", nav_account: "Ditumbu", nav_orders: "Babui", nav_settings: "Mwididi", nav_help: "Lubulayi", nav_login: "Kuluka", btn_start: "Yuka", term_config: "1. Config", term_send: "2. Tuma", term_pay: "3. Dija", term_config_title: "Configuration", term_upload_placeholder: "Kokota tuma buku na awa", term_doc_detected: "Buku dijwidi", term_format: "Format", term_color: "Couleur", term_bw: "Noir & Blanc", term_color_hd: "Couleur HD", term_finish: "Midi & Dija", term_binding: "Reliure", term_laminate: "Lamina", term_pages: "Makon", term_copies: "Kadisadi", term_type: "Mutundu", term_recto: "Tshitshi", term_recto_verso: "Tshitshi / Mutundu", term_dest_title: "Muadi", term_ph_name: "Dina mobimba", term_ph_phone: "WhatsApp", term_ph_addr: "Adrese", term_payment: "Kulipa", term_total: "Total Commande", term_currency: "FC", term_printing: "Kubaja", term_finishes: "Midi", term_back: "Kubajikula", term_continue: "Kosuka", term_confirm: "Kulipa", term_uploading: "Kutuma...", term_confirmed: "Bwakaji !", term_redirect: "Kujikula...", hero_title_part1: "Buvui ya", hero_title_part2: "mutundu", hero_title_highlight: "wa bule.", hero_desc: "Dija masalu a eletronique, twa ku buka butashi wa bule na", btn_print_now: "Bubaja Ubu", btn_demo: "Laja", portfolio_title: "Ndimi wa Bule.", cta_title: "Waba udi bubaja ?", btn_launch_order: "Simula Babui", term_config_title: "Configuration", term_upload_placeholder: "Kokota tuma buku na awa", term_doc_detected: "Buku dijwidi", term_format: "Format", term_color: "Couleur", term_bw: "Noir & Blanc", term_color_hd: "Couleur HD", term_finish: "Midi & Dija", term_binding: "Reliure", term_laminate: "Lamina", term_pages: "Makon", term_copies: "Kadisadi", term_type: "Mutundu", term_recto: "Tshitshi", term_recto_verso: "Tshitshi / Mutundu", term_dest_title: "Muadi", term_ph_name: "Dina mobimba", term_ph_phone: "WhatsApp", term_ph_addr: "Adrese", term_payment: "Kulipa", term_total: "Total Commande", term_currency: "FC", term_printing: "Kubaja", term_finishes: "Midi", term_back: "Kubajikula", term_continue: "Kosuka", term_confirm: "Kulipa", term_uploading: "Kutuma...", term_confirmed: "Bwakaji !", term_redirect: "Kujikula..." },
+            sw: { nav_navigation: "Miondoko", nav_home: "Nyumbani", nav_about: "Kuhusu sisi", nav_market: "Soko", nav_services: "Huduma", nav_account: "Akaunti", nav_orders: "Oda", nav_settings: "Mipangilio", nav_help: "Msaada", nav_login: "Ingia", btn_start: "Anza", term_config: "1. Config", term_send: "2. Tuma", term_pay: "3. Lipia", term_config_title: "Mipangilio", term_upload_placeholder: "Bofya au paka faili hapa", term_doc_detected: "Faili Imeibainwa", term_format: "Ukubwa", term_color: "Rangi", term_bw: "Nyeusi & Njivu", term_color_hd: "Rangi HD", term_finish: "Maliza & Kinga", term_binding: "Uunganishaji", term_laminate: "Lamine", term_pages: "Ukurasa", term_copies: "Nakala", term_type: "Aina", term_recto: "Upande Mmoja", term_recto_verso: "Upande Wote", term_dest_title: "Mahali", term_ph_name: "Jina Kamili", term_ph_phone: "WhatsApp", term_ph_addr: "Anwani ya Kupokelea", term_payment: "Lipa", term_total: "Jumla ya Oda", term_currency: "FC", term_printing: "Uchapishaji", term_finishes: "Mikwabo", term_back: "Nyuma", term_continue: "Endelea", term_confirm: "Thibitisha Lipa", term_uploading: "Kutuma salama...", term_confirmed: "Imethibitishwa!", term_redirect: "Kurudi nyumbani...", hero_title_part1: "Miundombinu ya", hero_title_part2: "waraka", hero_title_highlight: "ya nguvu.", hero_desc: "Badilisha mtiririko wako, sisi tunato ubora wa", btn_print_now: "Chapisha Sasa", btn_demo: "Tazama Demo", portfolio_title: "Vigezo vya Ubora.", cta_title: "Uko tayari kuchapisha?", btn_launch_order: "Anza Oda", term_config_title: "Mipangilio", term_upload_placeholder: "Bofya au paka faili hapa", term_doc_detected: "Faili Imeibainwa", term_format: "Ukubwa", term_color: "Rangi", term_bw: "Nyeusi & Njivu", term_color_hd: "Rangi HD", term_finish: "Maliza & Kinga", term_binding: "Uunganishaji", term_laminate: "Lamine", term_pages: "Ukurasa", term_copies: "Nakala", term_type: "Aina", term_recto: "Upande Mmoja", term_recto_verso: "Upande Wote", term_dest_title: "Mahali", term_ph_name: "Jina Kamili", term_ph_phone: "WhatsApp", term_ph_addr: "Anwani ya Kupokelea", term_payment: "Lipa", term_total: "Jumla ya Oda", term_currency: "FC", term_printing: "Uchapishaji", term_finishes: "Mikwabo", term_back: "Nyuma", term_continue: "Endelea", term_confirm: "Thibitisha Lipa", term_uploading: "Kutuma salama...", term_confirmed: "Imethibitishwa!", term_redirect: "Kurudi nyumbani..." },
             kg: { nav_navigation: "Zina", nav_home: "Mboka", nav_market: "Mpemba", nav_services: "Nsadila", nav_account: "Ntangu", nav_orders: "Bisalu", nav_settings: "Nkidila", nav_help: "Lusadisu", nav_login: "Vata", btn_start: "Yuka", term_config: "1. Config", term_send: "2. Tuma", term_pay: "3. Lipa", term_config_title: "Configuration", term_upload_placeholder: "Kokota tuma buku na awa", term_doc_detected: "Buku dijwidi", term_format: "Format", term_color: "Couleur", term_bw: "Noir & Blanc", term_color_hd: "Couleur HD", term_finish: "Kusala & Kinga", term_binding: "Reliure", term_laminate: "Lamina", term_pages: "Makon", term_copies: "Kadisadi", term_type: "Aina", term_recto: "Tshitshi", term_recto_verso: "Tshitshi / Mutundu", term_dest_title: "Muadi", term_ph_name: "Dina mobimba", term_ph_phone: "WhatsApp", term_ph_addr: "Adrese", term_payment: "Lipa", term_total: "Total Commande", term_currency: "FC", term_printing: "Kubaja", term_finishes: "Midi", term_back: "Kubajikula", term_continue: "Kosuka", term_confirm: "Kulipa", term_uploading: "Kutuma...", term_confirmed: "Bwakaji !", term_redirect: "Kujikula...", hero_title_part1: "Bukundu wa", hero_title_part2: "nkandu", hero_title_highlight: "wa nene.", hero_desc: "Tia zina a eletronique, biso twa ku kanga mpete wa nene na", btn_print_now: "Buka Mboka", btn_demo: "Vata", portfolio_title: "Nkidila wa Nene.", cta_title: "Yaka udi buka ?", btn_launch_order: "Yuka Bisalu", term_config_title: "Configuration", term_upload_placeholder: "Kokota tuma buku na awa", term_doc_detected: "Buku dijwidi", term_format: "Format", term_color: "Couleur", term_bw: "Noir & Blanc", term_color_hd: "Couleur HD", term_finish: "Kusala & Kinga", term_binding: "Reliure", term_laminate: "Lamina", term_pages: "Makon", term_copies: "Kadisadi", term_type: "Aina", term_recto: "Tshitshi", term_recto_verso: "Tshitshi / Mutundu", term_dest_title: "Muadi", term_ph_name: "Dina mobimba", term_ph_phone: "WhatsApp", term_ph_addr: "Adrese", term_payment: "Lipa", term_total: "Total Commande", term_currency: "FC", term_printing: "Kubaja", term_finishes: "Midi", term_back: "Kubajikula", term_continue: "Kosuka", term_confirm: "Kulipa", term_uploading: "Kutuma...", term_confirmed: "Bwakaji !", term_redirect: "Kujikula..." }
         };
 
@@ -1345,6 +1708,9 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
             window.location.replace('login.html'); 
             return; // On arrête l'exécution du script ici
         }
+
+        // Ajoutez cette ligne pour charger les articles dynamiques
+         loadMarketplaceArticles();
         // --- FIN DU GARDE-FOU ---
     
         // Si on arrive ici, c'est que l'utilisateur est connecté.
@@ -1444,7 +1810,9 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
         function toggleSettings() { genericToggle('settings-overlay', 'settings-panel', 'div:first-child'); updateStats(); } 
         function toggleSupport() { genericToggle('support-overlay', 'support-panel', 'div:first-child'); }
         function toggleOrders() { renderOrders(); genericToggle('orders-overlay', 'orders-panel', 'div:first-child'); }
-
+        function toggleAbout() {
+            genericToggle('about-overlay', 'about-panel', 'div:first-child');
+        }
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container'); const toast = document.createElement('div');
             toast.className = `toast ${type}`;
@@ -1576,27 +1944,51 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
         }
         
         // Charger les infos du profil depuis Supabase
-        async function loadUserProfile() {
-            // 1. Récupérer l'utilisateur connecté
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            if (!user) return;
+       async function loadUserProfile() {
+    try {
+        // 1. Récupérer l'utilisateur connecté depuis la session
+        const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
         
-            // 2. Récupérer les données supplémentaires de la table 'profiles'
-            const { data: profile, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', user.id)
-                .single();
-        
-            if (profile) {
+        if (authError || !user) {
+            console.log("Utilisateur non connecté");
+            return;
+        } checkAdminStatus();
+
+        // 2. Récupérer les données de la table 'profiles'
+        // On utilise 'profile' comme nom de variable pour correspondre à votre suite de code
+        const { data: profile, error } = await supabaseClient
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id) // CORRECTION : On utilise user.id ici
+            .maybeSingle();
+
+        if (error) {
+            console.error("Erreur lors de la récupération :", error.message);
+            return;
+        }
+
+        // 3. Mise à jour de l'interface (DOM)
+        if (profile) {
+            console.log("Profil trouvé :", profile);
+            
+            // Remplissage des champs (avec repli sur les métadonnées si profil incomplet)
+            if (document.getElementById('p-name'))
                 document.getElementById('p-name').value = profile.full_name || user.user_metadata.full_name || '';
-                document.getElementById('p-email').value = profile.email || user.email;
+            
+            if (document.getElementById('p-email'))
+                document.getElementById('p-email').value = user.email || ''; // L'email vient souvent de Auth
+            
+            if (document.getElementById('p-phone'))
                 document.getElementById('p-phone').value = profile.phone || '';
+            
+            if (document.getElementById('p-bio'))
                 document.getElementById('p-bio').value = profile.bio || '';
-                
-                const imgDisplay = document.getElementById('profile-avatar-img');
-                const iconDisplay = document.getElementById('profile-avatar-icon');
-                
+
+            // Gestion de l'avatar (Image vs Icône)
+            const imgDisplay = document.getElementById('profile-avatar-img');
+            const iconDisplay = document.getElementById('profile-avatar-icon');
+
+            if (imgDisplay && iconDisplay) {
                 if (profile.avatar_url) {
                     imgDisplay.src = profile.avatar_url;
                     imgDisplay.classList.remove('hidden');
@@ -1606,8 +1998,13 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
                     iconDisplay.classList.remove('hidden');
                 }
             }
+        } else {
+            console.log("Aucun profil trouvé dans la table 'profiles' pour cet ID.");
         }
-        
+    } catch (err) {
+        console.error("Erreur inattendue :", err);
+    }
+}
         // Gestion de l'image de profil (Upload Supabase Storage)
         let avatarFile = null; // Variable temporaire pour stocker le fichier choisi
         
@@ -1630,74 +2027,82 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
         
         // Sauvegarder le profil (Upload image + Update BDD)
         async function saveProfile(e) {
-            e.preventDefault();
+    e.preventDefault();
+    
+    // 1. Gestion de l'état du bouton
+    const btn = e.target.querySelector('button[type="submit"]');
+    const originalText = btn.innerHTML; // Utiliser innerHTML au cas où il y aurait des icônes
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enregistrement...';
+    btn.disabled = true;
+
+    try {
+        // 2. Vérification de l'utilisateur
+        const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+        if (userError || !user) throw new Error("Session expirée. Veuillez vous reconnecter.");
+
+        let avatarUrl = null;
+
+        // 3. Gestion de l'Upload (si avatarFile existe dans votre scope global)
+        // Note : assurez-vous que 'avatarFile' est bien défini quand l'utilisateur choisit un fichier
+        if (typeof avatarFile !== 'undefined' && avatarFile) {
+            // Nettoyage du nom de fichier (enlever les caractères spéciaux)
+            const fileExt = avatarFile.name.split('.').pop();
+            const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+            const { data: uploadData, error: uploadError } = await supabaseClient.storage
+                .from('avatars')
+                .upload(fileName, avatarFile, {
+                    upsert: true // Écrase si le fichier existe déjà
+                });
+
+            if (uploadError) throw new Error("Erreur d'upload : " + uploadError.message);
+
+            // Récupérer l'URL publique
+            const { data: publicUrlData } = supabaseClient.storage
+                .from('avatars')
+                .getPublicUrl(fileName);
             
-            const btn = e.target.querySelector('button[type="submit"]');
-            const originalText = btn.innerText;
-            btn.innerText = "Enregistrement...";
-            btn.disabled = true;
-        
-            try {
-                // 1. Récupérer l'utilisateur
-                const { data: { user } } = await supabaseClient.auth.getUser();
-                if (!user) throw new Error("Utilisateur non connecté");
-        
-                let avatarUrl = null;
-        
-                // 2. Si une nouvelle image est sélectionnée, on l'upload
-                if (avatarFile) {
-                    const fileName = `${user.id}/${Date.now()}_${avatarFile.name}`;
-                    const { data: uploadData, error: uploadError } = await supabaseClient.storage
-                        .from('avatars')
-                        .upload(fileName, avatarFile);
-        
-                    if (uploadError) throw uploadError;
-        
-                    // Récupérer l'URL publique
-                    const { data: publicUrlData } = supabaseClient.storage
-                        .from('avatars')
-                        .getPublicUrl(fileName);
-                    
-                    avatarUrl = publicUrlData.publicUrl;
-                } else {
-                    // Si pas de nouvelle image, garder l'ancienne (on doit la récupérer ou la laisser null)
-                    // Pour simplifier ici, on ne change l'URL que si on upload. 
-                    // Idéalement, on refetch l'ancienne URL si besoin.
-                }
-        
-                // 3. Mettre à jour la table 'profiles'
-                const updates = {
-                    id: user.id,
-                    email: document.getElementById('p-email').value,
-                    full_name: document.getElementById('p-name').value,
-                    phone: document.getElementById('p-phone').value,
-                    bio: document.getElementById('p-bio').value,
-                    updated_at: new Date()
-                };
-        
-                // On ajoute l'URL de l'avatar seulement si on en a une nouvelle
-                if (avatarUrl) {
-                    updates.avatar_url = avatarUrl;
-                }
-        
-                const { error } = await supabase
-                    .from('profiles')
-                    .upsert(updates);
-        
-                if (error) throw error;
-        
-                showToast("Profil mis à jour avec succès !", "success");
-                toggleProfile();
-        
-            } catch (error) {
-                console.error(error);
-                showToast("Erreur lors de la mise à jour : " + error.message, "error");
-            } finally {
-                btn.innerText = originalText;
-                btn.disabled = false;
-                avatarFile = null; // Reset
-            }
+            avatarUrl = publicUrlData.publicUrl;
         }
+
+        // 4. Préparation des données pour la table 'profiles'
+        const updates = {
+            id: user.id,
+            // Ne pas mettre à jour l'email si votre table 'profiles' ne le gère pas (l'email est déjà dans auth.users)
+            full_name: document.getElementById('p-name').value.trim(),
+            phone: document.getElementById('p-phone').value.trim(),
+            bio: document.getElementById('p-bio').value.trim(),
+            updated_at: new Date().toISOString()
+        };
+
+        if (avatarUrl) {
+            updates.avatar_url = avatarUrl;
+        }
+
+        // 5. Mise à jour dans la base de données
+        const { error: updateError } = await supabaseClient
+            .from('profiles')
+            .upsert(updates, { onConflict: 'id' }); // Plus précis que upsert seul
+
+        if (updateError) throw updateError;
+
+        // 6. Succès
+        showToast("Profil mis à jour avec succès ! ✅", "success");
+        
+        // Rafraîchir l'interface si la fonction existe
+        if (typeof loadUserProfile === 'function') await loadUserProfile();
+        if (typeof toggleProfile === 'function') toggleProfile();
+
+    } catch (error) {
+        console.error("Erreur saveProfile:", error);
+        showToast(error.message, "error");
+    } finally {
+        // 7. Reset de l'état
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        if (typeof avatarFile !== 'undefined') avatarFile = null; 
+    }
+}
         
         // Déconnexion
         async function logout() {
@@ -1727,6 +2132,198 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
             if (!isConnected) return;
             originalToggleOrders();
         }
+
+
+
+
+                /* --- GESTION DE L'ESPACE ADMIN --- */
+
+let isCurrentUserAdmin = false;
+
+// 1. Vérifier si l'utilisateur est admin lors du chargement du profil
+async function checkAdminStatus() {
+    try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+
+        // Utilisation de .maybeSingle() pour éviter l'erreur 406 si le profil n'existe pas encore
+        const { data: profile, error } = await supabaseClient
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', user.id)
+            .maybeSingle(); 
+
+        // On ignore l'erreur ici, on vérifie juste si on a un profil admin
+        if (profile && profile.is_admin) {
+            isCurrentUserAdmin = true;
+            // Afficher le lien Admin dans le menu
+            const adminLink = document.getElementById('nav-admin-link');
+            if (adminLink) adminLink.classList.remove('hidden');
+        }
+    } catch (error) {
+        console.error("Erreur vérification admin :", error);
+    }
+}
+
+// 2. Charger les articles dans la vue Admin
+async function loadAdminArticles() {
+    const list = document.getElementById('admin-articles-list');
+    list.innerHTML = '<div class="text-center py-10"><i class="fas fa-circle-notch fa-spin text-2xl text-indigo-600"></i></div>';
+
+    const { data: articles, error } = await supabaseClient
+        .from('articles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        list.innerHTML = '<p class="text-red-500 text-center">Erreur de chargement: ' + error.message + '</p>';
+        return;
+    }
+
+    if (articles.length === 0) {
+        list.innerHTML = '<div class="text-center py-10 text-slate-400">Aucun article pour le moment.</div>';
+        return;
+    }
+
+    list.innerHTML = articles.map(art => `
+        <div class="glass p-6 flex justify-between items-start group">
+            <div class="flex gap-4">
+                ${art.image_url ? `<img src="${art.image_url}" class="w-20 h-20 object-cover rounded-lg bg-slate-100">` : '<div class="w-20 h-20 bg-slate-100 rounded-lg flex items-center justify-center text-slate-300"><i class="fas fa-file-image"></i></div>'}
+                <div>
+                    <span class="text-[10px] font-bold text-indigo-600 uppercase bg-indigo-50 px-2 py-1 rounded">${art.category || 'News'}</span>
+                    <h3 class="text-xl font-bold text-slate-900 mt-1">${art.title}</h3>
+                    <p class="text-xs text-slate-400 mt-1">${new Date(art.created_at).toLocaleDateString('fr-FR')}</p>
+                </div>
+            </div>
+            <button onclick="deleteArticle(${art.id})" class="text-slate-300 hover:text-red-500 transition-colors p-2"><i class="fas fa-trash"></i></button>
+        </div>
+    `).join('');
+}
+
+// 3. Ouvrir/Fermer la modale
+function openArticleModal() {
+    document.getElementById('article-modal').classList.remove('hidden');
+    document.getElementById('article-form').reset();
+}
+function closeArticleModal() {
+    document.getElementById('article-modal').classList.add('hidden');
+}
+
+// 4. Sauvegarder un nouvel article
+async function saveArticle(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.innerText = "Publication...";
+
+    const title = document.getElementById('art-title').value;
+    const content = document.getElementById('art-content').value;
+    const category = document.getElementById('art-category').value;
+    const image_url = document.getElementById('art-image').value;
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+
+    const { error } = await supabaseClient.from('articles').insert([{
+        title,
+        content,
+        category,
+        image_url,
+        author_id: user.id
+    }]);
+
+    if (error) {
+        alert("Erreur lors de la publication : " + error.message);
+        btn.disabled = false;
+        btn.innerText = "Publier";
+    } else {
+        showToast("Article publié avec succès !", "success");
+        closeArticleModal();
+        loadAdminArticles(); // Rafraîchir la liste
+        btn.disabled = false;
+        btn.innerText = "Publier";
+    }
+}
+
+// 5. Supprimer un article
+async function deleteArticle(id) {
+    if(!confirm("Êtes-vous sûr de vouloir supprimer cet article ?")) return;
+    
+    const { error } = await supabaseClient.from('articles').delete().eq('id', id);
+    if (error) {
+        showToast("Erreur de suppression", "error");
+    } else {
+        showToast("Article supprimé", "success");
+        loadAdminArticles();
+    }
+}
+
+
+
+        /* --- AFFICHER LES ARTICLES ADMIN DANS LA MARKETPLACE --- */
+
+async function loadMarketplaceArticles() {
+    try {
+        // 1. Récupérer les articles depuis Supabase
+        const { data: articles, error } = await supabaseClient
+            .from('articles')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error("Erreur chargement articles marketplace :", error);
+            return;
+        }
+
+        if (!articles || articles.length === 0) return;
+
+        // 2. Le conteneur où l'on va mettre les articles
+        const grid = document.getElementById('products-grid');
+        
+        // 3. Créer le HTML pour chaque article
+        articles.forEach(art => {
+            // Définition des couleurs d'arrière-plan selon la catégorie (comme vos produits fixes)
+            let bgClass = 'bg-slate-50'; 
+            let iconClass = 'fas fa-newspaper text-slate-200';
+            
+            if (art.category === 'academique') {
+                bgClass = 'bg-indigo-50'; iconClass = 'fas fa-graduation-cap text-indigo-200';
+            } else if (art.category === 'corporate') {
+                bgClass = 'bg-emerald-50'; iconClass = 'fas fa-briefcase text-emerald-200';
+            } else if (art.category === 'marketing') {
+                bgClass = 'bg-orange-50'; iconClass = 'fas fa-bullhorn text-orange-200';
+            }
+
+            // Création de la Carte
+            const articleHTML = `
+                <div class="market-item glass flex flex-col group overflow-hidden" data-category="${art.category || 'all'}">
+                    <div class="h-48 ${bgClass} relative">
+                        ${art.image_url 
+                            ? `<img src="${art.image_url}" class="w-full h-full object-cover transition-all duration-700 group-hover:scale-110">`
+                            : `<div class="absolute inset-0 flex items-center justify-center ${iconClass} text-6xl"><i class="${iconClass.replace('text-', ' text-')}"></i></div>`
+                        }
+                        <span class="absolute top-4 left-4 bg-indigo-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase">Pub</span>
+                    </div>
+                    <div class="p-6 flex-1 flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">${art.title}</h3>
+                        <p class="text-sm text-slate-500 mb-4 flex-1 line-clamp-2">${art.content.substring(0, 80)}...</p>
+                        <div class="flex items-center justify-between mt-auto">
+                            <span class="text-xl font-black text-slate-900">Info</span>
+                            <a href="javascript:void(0)" class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-indigo-600 transition-colors">
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // 4. Injecter le HTML au début de la grille (ou à la fin avec .innerHTML +=)
+            grid.insertAdjacentHTML('afterbegin', articleHTML);
+        });
+
+    } catch (err) {
+        console.error("Erreur marketplace :", err);
+    }
+}
     </script>
 </body>
 </html>
