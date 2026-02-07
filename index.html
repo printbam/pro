@@ -481,6 +481,52 @@ body.dark-mode #terminal-wrapper .text-gradient {
         body.dark-mode #profile-role-display {
             color: #818cf8 !important; /* Indigo clair en mode sombre */
         }
+
+        /* --- CHAT STYLES --- */
+#chat-panel { display: flex; flex-direction: column; height: 100%; }
+
+/* Bulle de message */
+.chat-msg {
+    max-width: 80%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    position: relative;
+    animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+
+/* Style des autres */
+.chat-msg.other {
+    background: white;
+    color: #334155;
+    align-self: flex-start;
+    border-bottom-left-radius: 2px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+}
+
+/* Style de l'utilisateur connecté */
+.chat-msg.me {
+    background: #4f46e5; /* Indigo 600 */
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 2px;
+    box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3);
+}
+
+/* Infos du message (Auteur & Date) */
+.chat-meta {
+    display: block;
+    font-size: 0.65rem;
+    margin-bottom: 2px;
+    opacity: 0.7;
+    font-weight: 600;
+}
+.chat-msg.me .chat-meta { text-align: right; color: #e0e7ff; }
+.chat-msg.other .chat-meta { color: #64748b; }
     </style>
 </head>
 <body>
@@ -603,7 +649,9 @@ body.dark-mode #terminal-wrapper .text-gradient {
             </a>
             <div class="hidden md:flex items-center gap-1">
                 <a onclick="switchPage('home')" class="nav-link-pro rounded-lg"><span data-i18n="nav_home">Accueil</span></a>
-                <a onclick="switchPage('services')" class="nav-link-pro rounded-lg"><span data-i18n="nav_orders">Services</span></a>
+                <a href="javascript:void(0)" onclick="toggleChat()" class="nav-link-pro rounded-lg">
+                    <i class="fas fa-comments"></i> <span>Discussion</span>
+                </a>
                 <a onclick="switchPage('marketplace')" class="nav-link-pro rounded-lg"><span data-i18n="nav_market">Marketplace</span></a>
             </div>
             <div class="flex items-center gap-3">
@@ -1650,9 +1698,12 @@ body.dark-mode #terminal-wrapper .text-gradient {
     <!-- MOBILE DOCK -->
     <div class="mobile-dock md:hidden bg-white rounded-2xl px-2 py-2 flex items-center justify-between shadow-xl border border-slate-100">
         <a onclick="switchPage('home')" class="flex flex-1 flex-col items-center gap-1 group cursor-pointer"><i class="fas fa-house text-lg text-indigo-600"></i><span class="text-[9px] font-medium text-indigo-600">Accueil</span></a>
-        <a onclick="switchPage('marketplace')" class="flex flex-1 flex-col items-center gap-1 group cursor-pointer"><i class="fas fa-tags text-lg text-slate-400 group-hover:text-slate-600"></i><span class="text-[9px] font-medium text-slate-400">Marketplace</span></a>
+        <a onclick="switchPage('marketplace')" class="flex flex-1 flex-col items-center gap-1 group cursor-pointer"><i class="fas fa-shopping-bag text-lg text-slate-400 group-hover:text-slate-600"></i><span class="text-[9px] font-medium text-slate-400">Marketplace</span></a>
         <div class="flex flex-1 justify-center -mt-6"><a href="javascript:void(0)" onclick="openTerminal()" class="relative group cursor-pointer"><div class="w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-indigo-200 border-4 border-slate-50"><i class="fas fa-print text-white text-lg"></i></div></a></div>
-        <a onclick="switchPage('services')" class="flex flex-1 flex-col items-center gap-1 group cursor-pointer"><i class="fas fa-file-invoice-dollar text-lg text-slate-400 group-hover:text-slate-600"></i><span class="text-[9px] font-medium text-slate-400">Tarifs</span></a>
+        <a href="javascript:void(0)" onclick="toggleChat()" class="flex flex-1 flex-col items-center gap-1 group cursor-pointer">
+            <i class="fab fa-facebook-messenger text-lg text-slate-400 group-hover:text-indigo-600"></i>
+            <span class="text-[9px] font-medium text-slate-400">Messages</span>
+        </a>
         <!-- Nouveau code (à mettre à la place) -->
         <a href="javascript:void(0)" onclick="toggleProfile()" class="flex flex-1 flex-col items-center gap-1 group">
             <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
@@ -1862,6 +1913,47 @@ body.dark-mode #terminal-wrapper .text-gradient {
             <div class="p-6 border-t border-slate-100 bg-white"><div class="flex justify-between items-center mb-4"><span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Total Dépensé</span><span id="total-spent" class="text-xl font-bold text-slate-900">0 FC</span></div><button id="btn-clear-history" onclick="confirmClearHistory()" class="w-full py-3 rounded-xl border border-red-100 text-red-500 text-xs font-bold uppercase hover:bg-red-50 transition-all">Vider l'historique</button></div>
         </div>
     </div>
+
+
+
+    <!-- CHAT OVERLAY -->
+<div id="chat-overlay" class="fixed inset-0 z-[8500] invisible transition-all duration-500">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm opacity-0 transition-opacity duration-500" onclick="toggleChat()"></div>
+    <div id="chat-panel" class="absolute right-0 top-0 h-full w-full md:w-[450px] translate-x-full transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col shadow-2xl bg-white border-l border-slate-100">
+        
+        <!-- Header Chat -->
+        <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-indigo-600 text-white">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <i class="fas fa-users text-lg"></i>
+                </div>
+                <div>
+                    <h2 class="font-bold text-sm">Discussion Générale</h2>
+                    <p class="text-[10px] text-indigo-200 opacity-80">Espace communautaire</p>
+                </div>
+            </div>
+            <button onclick="toggleChat()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Zone des Messages -->
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+            <!-- Les messages s'afficheront ici via JS -->
+            <div class="text-center text-xs text-slate-400 my-4">Bienvenue dans la discussion Printbam.</div>
+        </div>
+
+        <!-- Zone de saisie -->
+        <div class="p-4 border-t border-slate-100 bg-white">
+            <form onsubmit="sendChatMessage(event)" class="flex gap-2">
+                <input type="text" id="chat-input" placeholder="Écrivez votre message..." class="flex-1 bg-slate-100 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <button type="submit" class="w-12 h-12 bg-indigo-600 text-white rounded-xl flex items-center justify-center hover:bg-indigo-700 transition-colors shadow-lg">
+                    <i class="fas fa-paper-plane text-sm"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
 
     <!-- MODAL DE SUIVI (TRACKING) - AVEC WHATSAPP ET DATE -->
     <div id="track-modal" class="fixed inset-0 z-[8500] invisible transition-all duration-500">
@@ -2997,6 +3089,112 @@ async function loadMarketplaceArticles() {
 
     } catch (err) {
         console.error("Erreur marketplace :", err);
+    }
+}
+        /* --- GESTION DU CHAT --- */
+let chatInterval = null;
+
+// Ouvrir/Fermer le chat
+async function toggleChat() {
+    // Vérifier l'auth
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) {
+        showToast("Connectez-vous pour discuter", "error");
+        return;
+    }
+
+    const overlay = document.getElementById('chat-overlay');
+    const panel = document.getElementById('chat-panel');
+    
+    if (overlay.classList.contains('invisible')) {
+        // Ouvrir
+        overlay.classList.remove('invisible');
+        setTimeout(() => {
+            overlay.querySelector('div:first-child').classList.replace('opacity-0', 'opacity-100');
+            panel.classList.replace('translate-x-full', 'translate-x-0');
+        }, 10);
+        
+        // Charger les messages et démarrer le rafraîchissement
+        loadChatMessages();
+        if(!chatInterval) chatInterval = setInterval(loadChatMessages, 3000); // Actualiser toutes les 3s
+        
+        // Focus sur l'input
+        setTimeout(() => document.getElementById('chat-input').focus(), 500);
+    } else {
+        // Fermer
+        overlay.querySelector('div:first-child').classList.replace('opacity-100', 'opacity-0');
+        panel.classList.replace('translate-x-0', 'translate-x-full');
+        setTimeout(() => overlay.classList.add('invisible'), 500);
+        
+        // Arrêter le rafraîchissement
+        if(chatInterval) {
+            clearInterval(chatInterval);
+            chatInterval = null;
+        }
+    }
+}
+
+// Charger les messages depuis Supabase
+async function loadChatMessages() {
+    const container = document.getElementById('chat-messages');
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if(!user) return;
+
+    // Récupérer les 50 derniers messages
+    const { data: messages, error } = await supabaseClient
+        .from('messages')
+        .select('*')
+        .order('created_at', { ascending: true })
+        .limit(50);
+
+    if (error) return console.error("Erreur chat:", error);
+
+    // Vider le conteneur (sauf le message de bienvenue si vous voulez le garder)
+    container.innerHTML = '';
+
+    messages.forEach(msg => {
+        const isMe = msg.user_id === user.id;
+        const div = document.createElement('div');
+        div.className = `chat-msg ${isMe ? 'me' : 'other'}`;
+        
+        const time = new Date(msg.created_at).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
+        
+        div.innerHTML = `
+            <span class="chat-meta">${isMe ? 'Moi' : (msg.user_email || 'Utilisateur')} • ${time}</span>
+            ${msg.content}
+        `;
+        container.appendChild(div);
+    });
+
+    // Scroll en bas
+    container.scrollTop = container.scrollHeight;
+}
+
+// Envoyer un message
+async function sendChatMessage(e) {
+    e.preventDefault();
+    const input = document.getElementById('chat-input');
+    const content = input.value.trim();
+    
+    if (!content) return;
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return;
+
+    // Envoyer à Supabase
+    const { error } = await supabaseClient
+        .from('messages')
+        .insert([{
+            user_id: user.id,
+            user_email: user.email, // Pour savoir qui parle
+            content: content
+        }]);
+
+    if (error) {
+        showToast("Erreur d'envoi", "error");
+    } else {
+        input.value = ''; // Vider le champ
+        loadChatMessages(); // Recharger immédiatement
     }
 }
     </script>
