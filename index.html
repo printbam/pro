@@ -538,6 +538,23 @@ body.dark-mode #terminal-wrapper .text-gradient {
                 <i class="fa-solid fa-receipt w-5 text-center text-sm"></i> 
                 <span data-i18n="nav_orders">Mes Commandes</span>
             </a>
+        </div>
+    </div>
+    <!-- SECTION OUTILS -->
+    <div>
+        <p class="px-4 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider" data-i18n="nav_outils">Outils</p>
+        <div class="flex flex-col gap-2">
+            <!-- BOUTON CONVERTIR FICHIER -->
+            <a href="javascript:void(0)" onclick="switchPage('convert')" class="nav-link-pro">
+                <i class="fa-solid fa-file-import w-5 text-center text-sm"></i> 
+                <span>Conversion fichiers</span>
+            </a>
+        </div>
+    </div>
+    <!-- SECTION APPLICATION (NOUVEAU) -->
+    <div class="mt-8">
+        <p class="px-4 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider"data-i18n="nav_app">Application</p>
+        <div class="flex flex-col gap-2">
             <a href="javascript:void(0)" onclick="toggleSettings()" class="nav-link-pro">
                 <i class="fa-solid fa-gear w-5 text-center text-sm"></i> 
                 <span data-i18n="nav_settings">Paramètres</span>
@@ -546,18 +563,10 @@ body.dark-mode #terminal-wrapper .text-gradient {
                 <i class="fa-solid fa-headset w-5 text-center text-sm"></i> 
                 <span data-i18n="nav_help">Aide</span>
             </a>
-        </div>
-    </div>
-
-    <!-- SECTION APPLICATION (NOUVEAU) -->
-    <div class="mt-8">
-        <p class="px-4 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Application</p>
-        <div class="flex flex-col gap-2">
             <a href="javascript:void(0)" onclick="toggleAbout()" class="nav-link-pro">
                 <i class="fa-solid fa-circle-info w-5 text-center text-sm"></i> 
                 <span data-i18n="nav_about">À propos</span>
             </a>
-            
             <!-- Lien Admin (Caché par défaut) -->
             <a href="javascript:void(0)" onclick="switchPage('admin')" id="nav-admin-link" class="nav-link-pro hidden">
                 <i class="fa-solid fa-shield-halved w-5 text-center text-sm"></i> 
@@ -972,6 +981,672 @@ body.dark-mode #terminal-wrapper .text-gradient {
 </div>
     <!-- </div> <!-- END MAIN CONTENT -->
 
+
+
+    <!-- PAGE 5: FLUX CONVERT (CONVERTISSEUR) -->
+<div id="convert-view" class="page-view">
+    
+    <!-- STYLE SPÉCIFIQUE POUR ISOLER LE CONVERTISSEUR -->
+    <!-- On force les variables et la position pour que cela ne touche pas au reste de Printbam -->
+    <style>
+        /* --- DESIGN TOKENS (SYSTEM) --- */
+        :root {
+            /* Palette "Slate" (Professional Dark Grey) */
+            --bg-body: #f8fafc;
+            --bg-surface: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-tertiary: #94a3b8;
+            
+            /* Brand Colors (Stripe-ish Blue) */
+            --brand-50: #eff6ff;
+            --brand-500: #3b82f6;
+            --brand-600: #2563eb;
+            --brand-900: #1e3a8a;
+            
+            /* Functional */
+            --border-subtle: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            
+            /* Animation Curve */
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            
+            /* Radius */
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+            --radius-full: 9999px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            padding-top: 10px;
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+        }
+        .badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: var(--brand-50);
+            color: var(--brand-600);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            border: 1px solid rgba(59, 130, 246, 0.1);
+        }
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 40px;
+        }
+        
+        /* --- APP INTERFACE (The Core) --- */
+        .app-wrapper {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px 80px 24px;
+            position: relative;
+            z-index: 10;
+        }
+        
+        /* Tab Control (Segmented) */
+        .control-panel {
+            background: white;
+            padding: 6px;
+            border-radius: var(--radius-full);
+            display: inline-flex;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-subtle);
+            margin-bottom: 32px;
+            position: relative;
+        }
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s var(--ease-out-expo);
+            position: relative;
+            z-index: 2;
+        }
+        .tab-btn.active {
+            color: var(--text-primary);
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* Tool Grid (Masonry-ish) */
+        .grid-tools {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 40px;
+            display: none; /* Hidden logic */
+        }
+        .grid-tools.active { display: grid; animation: fadeIn 0.5s var(--ease-out-expo); }
+
+        .tool-card {
+            background: white;
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-subtle);
+            cursor: pointer;
+            transition: all 0.2s var(--ease-out-expo);
+            position: relative;
+            overflow: hidden;
+        }
+        .tool-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--brand-200);
+        }
+        .tool-card.selected {
+            background: var(--bg-body);
+            border-color: var(--brand-500);
+            box-shadow: 0 0 0 1px var(--brand-500);
+        }
+        .tool-header {
+            display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;
+        }
+        .tool-icon {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            color: white;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+        .arrow-icon { color: var(--text-tertiary); transition: transform 0.2s; }
+        .tool-card:hover .arrow-icon { transform: translateX(4px); color: var(--brand-500); }
+
+        /* Main Converter Window */
+        .converter-window {
+            background: white;
+            border-radius: 24px;
+            box-shadow: var(--shadow-xl);
+            border: 1px solid var(--border-subtle);
+            overflow: hidden;
+            position: relative;
+            min-height: 500px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Upload State */
+        .dropzone {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 60px;
+            transition: background 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+        .dropzone.dragover { background: var(--brand-50); }
+        .dropzone-content { pointer-events: none; }
+        .dropzone-illustration {
+            width: 100px; height: 100px;
+            background: white;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 24px auto;
+            box-shadow: var(--shadow-lg);
+            color: var(--brand-500);
+            transition: transform 0.3s var(--ease-out-expo);
+        }
+        .dropzone:hover .dropzone-illustration { transform: scale(1.05) rotate(5deg); }
+        
+        .btn-large-upload {
+            background: var(--text-primary);
+            color: white;
+            padding: 14px 32px;
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: var(--shadow-md);
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-large-upload:hover { transform: translateY(-1px); box-shadow: var(--shadow-lg); }
+
+        /* File List (Pro Table Style) */
+        .file-list-container {
+            display: none;
+            padding: 24px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        .file-item {
+            display: grid;
+            grid-template-columns: 40px 1fr 100px 40px;
+            align-items: center;
+            padding: 16px;
+            background: var(--bg-body);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+        .file-item:hover { border-color: var(--brand-200); background: white; box-shadow: var(--shadow-sm); }
+        
+        .progress-container { height: 4px; background: #e2e8f0; border-radius: 2px; overflow: hidden; margin-top: 6px; }
+        .progress-bar { height: 100%; background: var(--brand-500); width: 0%; transition: width 0.2s; }
+
+        /* Success Screen */
+        .success-screen {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px;
+            animation: slideUp 0.6s var(--ease-out-expo);
+        }
+        .success-visual {
+            width: 80px; height: 80px;
+            background: #dcfce7; color: #16a34a;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        /* --- FEATURES SECTION (Trust) --- */
+        .features-section {
+            background: white;
+            border-top: 1px solid var(--border-subtle);
+            padding: 100px 24px;
+        }
+        .features-grid {
+            max-width: 1200px; margin: 0 auto;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 60px;
+        }
+        .feature-item h3 { font-size: 1.25rem; font-weight: 700; margin-bottom: 12px; }
+        .feature-item p { color: var(--text-secondary); line-height: 1.6; font-size: 1rem; }
+
+        /* --- FOOTER (Minimalist) --- */
+        footer {
+            background: white;
+            padding: 80px 24px 40px 24px;
+            border-top: 1px solid var(--border-subtle);
+        }
+        .footer-container {
+            max-width: 1200px; margin: 0 auto;
+            display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 40px;
+        }
+        .footer-logo { font-weight: 800; font-size: 1.5rem; margin-bottom: 20px; display: block; }
+        .footer-heading {
+            font-size: 0.85rem; font-weight: 600; color: var(--text-primary);
+            margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        .footer-links a {
+            display: block; color: var(--text-secondary);
+            text-decoration: none; margin-bottom: 12px; font-size: 0.95rem;
+        }
+        .footer-links a:hover { color: var(--brand-600); }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Utility */
+        .hidden { display: none !important; }
+        
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            .footer-container { grid-template-columns: 1fr; }
+            .file-item { grid-template-columns: 40px 1fr 30px; }
+            .file-item div:nth-child(3) { display: none; } /* Hide status on mobile */
+        }
+    </style>
+    <!-- HERO -->
+    <div class="hero">
+        <div class="badge">
+            <span style="width:6px; height:6px; background:currentColor; border-radius:50%;"></span>
+            Printbam - Convert
+        </div>
+        <h1 H>La plateforme de conversion gratuit <br>pour les équipes modernes.</h1>
+        <p>Convertissez, compressez et éditez des documents directement dans votre navigateur. Zéro installation, confidentialité absolue.</p>
+    </div>
+
+    <!-- APP -->
+    <div class="app-wrapper">
+        
+        <!-- Control Tabs -->
+        <div style="text-align:center; margin-bottom:24px;">
+            <div class="control-panel">
+                <button class="tab-btn active" onclick="switchCat('docs')">Documents</button>
+                <button class="tab-btn" onclick="switchCat('images')">Images</button>
+                <button class="tab-btn" onclick="switchCat('pdf')">PDF Tools</button>
+            </div>
+        </div>
+
+        <!-- Grids -->
+        <div id="grid-docs" class="grid-tools active">
+            <div class="tool-card selected" onclick="setTool('word-pdf', '.doc,.docx', 'word')">
+                <div class="tool-header">
+                    <div class="tool-icon" style="background:#2563eb;">W</div>
+                    <div class="arrow-icon">→</div>
+                </div>
+                <div style="font-weight:600; margin-bottom:4px;">Word vers PDF</div>
+                <div style="font-size:0.8rem; color:var(--text-secondary);">.docx → .pdf</div>
+            </div>
+            <div class="tool-card" onclick="setTool('excel-pdf', '.xls,.xlsx', 'excel')">
+                <div class="tool-header">
+                    <div class="tool-icon" style="background:#16a34a;">X</div>
+                    <div class="arrow-icon">→</div>
+                </div>
+                <div style="font-weight:600; margin-bottom:4px;">Excel vers PDF</div>
+                <div style="font-size:0.8rem; color:var(--text-secondary);">.xlsx → .pdf</div>
+            </div>
+            <div class="tool-card" onclick="setTool('ppt-pdf', '.ppt,.pptx', 'ppt')">
+                <div class="tool-header">
+                    <div class="tool-icon" style="background:#f97316;">P</div>
+                    <div class="arrow-icon">→</div>
+                </div>
+                <div style="font-weight:600; margin-bottom:4px;">PowerPoint vers PDF</div>
+                <div style="font-size:0.8rem; color:var(--text-secondary);">.pptx → .pdf</div>
+            </div>
+            <div class="tool-card" onclick="setTool('pdf-word', '.pdf', 'pdf')">
+                <div class="tool-header">
+                    <div class="tool-icon" style="background:#ef4444;">PDF</div>
+                    <div class="arrow-icon">→</div>
+                </div>
+                <div style="font-weight:600; margin-bottom:4px;">PDF vers Word</div>
+                <div style="font-size:0.8rem; color:var(--text-secondary);">.pdf → .docx</div>
+            </div>
+        </div>
+
+        <div id="grid-images" class="grid-tools">
+            <div class="tool-card" onclick="setTool('img-pdf', '.jpg,.png,.webp', 'img')">
+                <div class="tool-header">
+                    <div class="tool-icon" style="background:#9333ea;">IMG</div>
+                    <div class="arrow-icon">→</div>
+                </div>
+                <div style="font-weight:600; margin-bottom:4px;">Images vers PDF</div>
+                <div style="font-size:0.8rem; color:var(--text-secondary);">.jpg, .png → .pdf</div>
+            </div>
+             <div class="tool-card" onclick="setTool('heic-jpg', '.heic,.heif', 'img')">
+                <div class="tool-header">
+                    <div class="tool-icon" style="background:#9333ea;">HEIC</div>
+                    <div class="arrow-icon">→</div>
+                </div>
+                <div style="font-weight:600; margin-bottom:4px;">HEIC vers JPG</div>
+                <div style="font-size:0.8rem; color:var(--text-secondary);">.heic → .jpg</div>
+            </div>
+        </div>
+
+        <div id="grid-pdf" class="grid-tools">
+             <div class="tool-card" onclick="setTool('pdf-compress', '.pdf', 'pdf')">
+                <div class="tool-header">
+                    <div class="tool-icon" style="background:#ef4444;">ZIP</div>
+                    <div class="arrow-icon">→</div>
+                </div>
+                <div style="font-weight:600; margin-bottom:4px;">Compresser PDF</div>
+                <div style="font-size:0.8rem; color:var(--text-secondary);">Réduire la taille</div>
+            </div>
+        </div>
+
+        <!-- CONVERTER WINDOW -->
+        <div class="converter-window">
+            <input type="file" id="fileInput" hidden multiple>
+
+            <!-- UPLOAD VIEW -->
+            <div id="uploadView" class="dropzone">
+                <div class="dropzone-content">
+                    <div class="dropzone-illustration">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    </div>
+                    <h3 style="font-size:1.5rem; margin-bottom:8px; font-weight:700;">Glissez vos fichiers</h3>
+                    <p style="color:var(--text-secondary); margin-bottom:24px;">ou parcourir depuis votre ordinateur</p>
+                    <button class="btn-large-upload" onclick="document.getElementById('fileInput').click()">
+                        Sélectionner des fichiers
+                    </button>
+                    <div style="margin-top:16px; font-size:0.85rem; color:var(--text-tertiary);">
+                        Max 100MB par fichier • Supporte <strong id="supportLabel">.doc, .docx</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LIST VIEW -->
+            <div id="listView" class="file-list-container"></div>
+            
+            <!-- ACTIONS -->
+            <div id="actionBar" class="hidden" style="padding:20px 24px; border-top:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.8);">
+                <div style="font-size:0.9rem; color:var(--text-secondary);">
+                    <span id="fileCount">0</span> fichiers prêts
+                </div>
+                <button class="btn-large-upload" onclick="startProcess()">
+                    Convertir
+                </button>
+            </div>
+
+            <!-- SUCCESS VIEW -->
+            <div id="successView" class="success-screen">
+                <div class="success-visual">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <h2 style="font-size:1.5rem; margin-bottom:8px;">Conversion terminée</h2>
+                <p style="color:var(--text-secondary); margin-bottom:32px;">Vos fichiers ont été traités avec succès.</p>
+                <a id="dlBtn" class="btn-large-upload" style="text-decoration:none; background:#16a34a;">
+                    Télécharger tout
+                </a>
+                <button onclick="resetApp()" style="margin-top:16px; background:none; border:none; color:var(--text-secondary); cursor:pointer; font-size:0.9rem;">
+                    Convertir d'autres fichiers
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- FEATURES (On les cache ou on les garde ?) -->
+    <!-- Je les laisse visibles car ça fait pro, mais je limite la hauteur -->
+    <section class="features-section" id="features" style="padding: 40px 24px;">
+        <div class="features-grid" style="display: grid; gap: 30px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+            <div class="feature-item">
+                <h3>🔒 Sécurité Bancaire</h3>
+                <p>Chiffrement TLS 1.3 de bout en bout. Vos fichiers sont supprimés automatiquement de nos serveurs après 1 heure.</p>
+            </div>
+            <div class="feature-item">
+                <h3>⚡ Vitesse Éclair</h3>
+                <p>Infrastructure distribuée sur 5 continents. Latence moyenne inférieure à 200ms pour le traitement.</p>
+            </div>
+            <div class="feature-item">
+                <h3>🏢 API Entreprise</h3>
+                <p>Intégrez nos moteurs de conversion directement dans votre workflow CRM ou ERP via notre API REST.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- JAVASCRIPT DU CONVERTISSEUR -->
+    <script>
+        // On encapsule pour éviter les conflits avec le reste du site
+        (function() {
+            let files = [];
+            const colors = {
+                word: '#2563eb', excel: '#16a34a', ppt: '#f97316', pdf: '#ef4444', img: '#9333ea'
+            };
+
+            const dom = {
+                tabs: document.querySelectorAll('#convert-view .tab-btn'),
+                grids: document.querySelectorAll('#convert-view .grid-tools'),
+                upload: document.getElementById('uploadView'),
+                list: document.getElementById('listView'),
+                action: document.getElementById('actionBar'),
+                success: document.getElementById('successView'),
+                fileInput: document.getElementById('fileInput'),
+                supportLabel: document.getElementById('supportLabel'),
+                count: document.getElementById('fileCount'),
+                dlBtn: document.getElementById('dlBtn')
+            };
+
+            let config = { accept: '.doc,.docx', target: 'PDF' };
+
+            // Drag & Drop
+            ['dragenter','dragover'].forEach(e => dom.upload.addEventListener(e, () => dom.upload.classList.add('dragover')));
+            ['dragleave','drop'].forEach(e => dom.upload.addEventListener(e, () => dom.upload.classList.remove('dragover')));
+            dom.upload.addEventListener('drop', e => handleFiles(e.dataTransfer.files));
+            dom.upload.addEventListener('click', () => dom.fileInput.click());
+            dom.fileInput.addEventListener('change', e => handleFiles(e.target.files));
+
+            window.switchCat = function(cat) {
+                dom.tabs.forEach(t => t.classList.remove('active'));
+                event.target.classList.add('active');
+                dom.grids.forEach(g => g.classList.remove('active'));
+                const targetGrid = document.getElementById(`grid-${cat}`);
+                if(targetGrid) targetGrid.classList.add('active');
+            }
+
+                    // --- AJOUTEZ CETTE FONCTION ---
+        function resetApp() {
+            files = []; // 1. Vider la liste des fichiers en mémoire
+            dom.list.innerHTML = ''; // 2. Vider l'affichage HTML de la liste
+            dom.upload.classList.remove('hidden'); // 3. Réafficher la zone de glisser-déposer
+            dom.list.style.display = 'none'; // 4. Cacher la liste des fichiers
+            dom.action.classList.add('hidden'); // 5. Cacher la barre d'action (bouton convertir)
+            dom.action.style.display = 'none'; // 6. Forcer le style inline à none (sécurité)
+            dom.success.style.display = 'none'; // 7. Cacher l'écran de succès
+            dom.fileInput.value = ''; // 8. Réinitialiser l'input file
+        }
+        // -----------------------------
+
+            window.setTool = function(tool, accept, type) {
+                config.accept = accept;
+                config.target = type; 
+                
+                if(dom.supportLabel) dom.supportLabel.textContent = accept;
+                const cards = document.querySelectorAll('#convert-view .tool-card');
+                cards.forEach(c => c.classList.remove('selected'));
+                if(event && event.currentTarget) event.currentTarget.classList.add('selected');
+                resetApp();
+            }
+
+            function handleFiles(list) {
+                Array.from(list).forEach(f => files.push(f));
+                renderList();
+                dom.upload.classList.add('hidden');
+                dom.list.style.display = 'block';
+                dom.action.classList.remove('hidden');
+                dom.action.style.display = 'flex';
+            }
+
+            function renderList() {
+                dom.list.innerHTML = '';
+                dom.count.textContent = files.length;
+                files.forEach((f, i) => {
+                    const ext = f.name.split('.').pop();
+                    let c = colors.word;
+                    if(['xls','xlsx'].includes(ext)) c = colors.excel;
+                    if(['ppt','pptx'].includes(ext)) c = colors.ppt;
+                    if(['pdf'].includes(ext)) c = colors.pdf;
+                    if(['jpg','png','heic'].includes(ext)) c = colors.img;
+
+                    const div = document.createElement('div');
+                    div.className = 'file-item';
+                    div.innerHTML = `
+                        <div style="width:32px; height:32px; background:${c}; border-radius:6px; color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.7rem;">${ext.toUpperCase()}</div>
+                        <div>
+                            <div style="font-weight:500; font-size:0.95rem;">${f.name}</div>
+                            <div class="progress-container"><div class="progress-bar" id="bar-${i}"></div></div>
+                        </div>
+                        <div style="text-align:right; font-size:0.8rem; font-weight:600; color:var(--text-tertiary);" id="status-${i}">Prêt</div>
+                        <div style="text-align:right; cursor:pointer; color:#cbd5e1;" onclick="removeFile(${i})">×</div>
+                    `;
+                    dom.list.appendChild(div);
+                });
+            }
+
+            window.removeFile = function(i) {
+                files.splice(i, 1);
+                renderList();
+                if(!files.length) resetApp();
+            };
+
+                   window.startProcess = async () => {
+    // 1. Masquer le bouton de la vue action du convertisseur (Je cible le bouton par son ID #actionBar car btn-login était trop spécifique à l'accueil)
+    const actionBtn = document.getElementById('actionBar');
+    if(actionBtn) actionBtn.classList.add('hidden'); // Le bouton action de la vue convertisseur s'appelle 'hidden' dans votre code
+
+    // 2. Préparer les données
+    const formData = new FormData();
+    
+    // On envoie le premier fichier de la liste
+    // const files = []; // Assurez que 'files' est bien défini globalement
+    if(files.length === 0) return alert("Aucun fichier sélectionné");
+    
+    formData.append("file", files[0]); 
+
+    // On envoie le type de conversion sélectionné (basé sur la config actuelle)
+    const selectedTool = document.querySelector('.tool-card.selected');
+    let conversionType = 'word-pdf';
+    
+    if(selectedTool) {
+        // Détecter le type par le contenu du bouton (Texte)
+        if(selectedTool.innerText.includes('Image')) conversionType = 'img-pdf';
+        // Ajoutez d'autres conditions ici selon vos onglets...
+    }
+    
+    formData.append("type", conversionType);
+
+    // UI Feedback : En cours
+    const st = document.getElementById(`status-0`);
+    const bar = document.getElementById(`bar-0`);
+    if(st) {
+        st.textContent = 'Envoi au serveur...';
+        if(bar) {
+            bar.style.width = '50%';
+            bar.style.backgroundColor = '#3b82f6'; // Bleu
+        }
+    }
+
+    try {
+        // APPELER LA FONCTION SUPABASE (Assurez que cette fonction existe bien dans votre HTML)
+        const { data, error } = await supabaseClient.functions.invoke('convert-doc', {
+            body: { name: 'test' },
+            // Assurez-vous que supabase est bien initialisé avec votre URL et KEY
+        });
+
+        if (error) throw error;
+
+        // GESTION DU SUCCÈS
+        const result = data; 
+        
+        // Finir la barre de chargement
+        if(bar) {
+            bar.style.width = '100%';
+            bar.style.backgroundColor = '#3b82f6'; 
+            if(st) {
+                st.textContent = '✓';
+                st.style.color = '#16a34a'; // Vert
+            }
+        }
+
+        // Simuler une petite attente pour l'effet visuel
+        setTimeout(() => {
+            finish(result.url); // On passe l'URL réelle à la fonction finish()
+        }, 800);
+
+    } catch (err) {
+        console.error("Erreur lors de la conversion : " + err.message);
+        alert("Erreur lors de la conversion : " + err.message);
+        // Reset en cas d'erreur
+        if(st) {
+            st.textContent = 'Erreur';
+            st.style.color = '#ef4444'; // Rouge
+        }
+        if(bar) bar.style.width = '0%';
+        if(actionBtn) actionBtn.classList.remove('hidden'); // Remontrer le bouton
+    }
+}; // Assurez que cette fonction est bien fermée avec un };
+
+
+// Vérifiez que vous avez bien fermé la fonction startProcess avec ces deux } comme montré ci-dessus.
+
+                        function finish(downloadUrl) {
+                dom.list.style.display = 'none';
+                dom.success.style.display = 'flex';
+                
+                if (downloadUrl && dom.dlBtn) {
+                    dom.dlBtn.href = downloadUrl;
+                    const cleanName = downloadUrl.split(/[?&]/).pop().split('.')[0];
+                    dom.dlBtn.download = cleanName || "document_converti.pdf"; 
+                } else {
+                    const blob = new Blob(['Erreur serveur'], {type:'text/plain'});
+                    dom.dlBtn.href = URL.createObjectURL(blob);
+                }
+            }
+        })(); // <--- CETTE ACOLADE EST CRUCIALE (Elle ferme le (function() { ... })
+    </script>
+</div>
+    
     <!-- MOBILE DOCK -->
     <div class="mobile-dock md:hidden bg-white rounded-2xl px-2 py-2 flex items-center justify-between shadow-xl border border-slate-100">
         <a onclick="switchPage('home')" class="flex flex-1 flex-col items-center gap-1 group cursor-pointer"><i class="fas fa-house text-lg text-indigo-600"></i><span class="text-[9px] font-medium text-indigo-600">Accueil</span></a>
@@ -1702,7 +2377,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         const { data: { session }, error } = await supabaseClient.auth.getSession();
     
         if (!session || error) {
-            console.log("Aucune session trouvée. Redirection vers login...");
+            console.log("Votre session a expiré. Veuillez vous reconnecter.");
             // On NE retire PAS le loader, l'utilisateur verra l'écran de chargement
             // pendant la redirection.
             window.location.replace('login.html'); 
