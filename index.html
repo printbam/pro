@@ -482,51 +482,168 @@ body.dark-mode #terminal-wrapper .text-gradient {
             color: #818cf8 !important; /* Indigo clair en mode sombre */
         }
 
-        /* --- CHAT STYLES --- */
-#chat-panel { display: flex; flex-direction: column; height: 100%; }
+/* --- ULTRA PRO CHAT STYLES --- */
 
-/* Bulle de message */
-.chat-msg {
-    max-width: 80%;
-    padding: 10px 14px;
-    border-radius: 12px;
-    font-size: 0.9rem;
-    line-height: 1.4;
-    position: relative;
-    animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+/* Le panneau principal : Effet verre et bordure fine */
+#chat-panel {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: -10px 0 40px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    border-left: 1px solid rgba(255, 255, 255, 0.5);
 }
 
-@keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-
-/* Style des autres */
-.chat-msg.other {
-    background: white;
-    color: #334155;
-    align-self: flex-start;
-    border-bottom-left-radius: 2px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    border: 1px solid #e2e8f0;
+/* Header du chat */
+#chat-panel .p-4 {
+    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+    box-shadow: 0 4px 20px -5px rgba(79, 70, 229, 0.4);
 }
 
-/* Style de l'utilisateur connecté */
-.chat-msg.me {
-    background: #4f46e5; /* Indigo 600 */
-    color: white;
-    align-self: flex-end;
-    border-bottom-right-radius: 2px;
-    box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3);
+/* Container des messages */
+#chat-messages {
+    background-image: 
+        radial-gradient(#e0e7ff 1px, transparent 1px), 
+        radial-gradient(#e0e7ff 1px, transparent 1px);
+    background-size: 20px 20px;
+    background-position: 0 0, 10px 10px;
+    background-color: #f8fafc;
+    scroll-behavior: smooth;
 }
 
-/* Infos du message (Auteur & Date) */
-.chat-meta {
-    display: block;
-    font-size: 0.65rem;
-    margin-bottom: 2px;
-    opacity: 0.7;
+/* Scrollbar fine et stylisée */
+#chat-messages::-webkit-scrollbar { width: 6px; }
+#chat-messages::-webkit-scrollbar-track { background: transparent; }
+#chat-messages::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+#chat-messages::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* Structure de la ligne de message */
+.chat-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    align-items: flex-end; /* Aligne les bulles en bas */
+    animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUpFade {
+    from { opacity: 0; transform: translateY(15px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Avatar */
+.chat-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #64748b;
+    border: 2px solid white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
+.chat-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Conteneur du contenu du message */
+.chat-content {
+    max-width: 75%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* En-tête du message (Nom + Heure) */
+.chat-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 4px;
+    font-size: 0.75rem;
     font-weight: 600;
 }
-.chat-msg.me .chat-meta { text-align: right; color: #e0e7ff; }
-.chat-msg.other .chat-meta { color: #64748b; }
+
+/* Bulle de message Autre (Gris/Blanc) */
+.chat-bubble.other {
+    background: white;
+    color: #334155;
+    padding: 12px 16px;
+    border-radius: 4px 18px 18px 18px; /* Coin gauche plat */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1);
+    border: 1px solid #f1f5f9;
+    line-height: 1.5;
+    font-size: 0.95rem;
+}
+
+/* Bulle de message Moi (Dégradé Pro) */
+.chat-bubble.me {
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 18px 4px 18px 18px; /* Coin droit plat */
+    box-shadow: 0 4px 15px -3px rgba(79, 70, 229, 0.4);
+    line-height: 1.5;
+    font-size: 0.95rem;
+    position: relative;
+}
+
+/* Petit indicateur de réception (optionnel) */
+.chat-bubble.me::after {
+    content: '';
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    width: 6px;
+    height: 6px;
+    background: rgba(255,255,255,0.4);
+    border-radius: 50%;
+}
+
+/* Zone de saisie (Style Search Bar) */
+#chat-input {
+    background: #f1f5f9;
+    border: none;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+    transition: all 0.3s;
+}
+#chat-input:focus {
+    background: white;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Bouton d'envoi */
+#chat-form button {
+    background: linear-gradient(135deg, #4f46e5, #4338ca);
+    transition: transform 0.2s;
+}
+#chat-form button:hover { transform: scale(1.05); }
+#chat-form button:active { transform: scale(0.95); }
+
+/* Dark Mode Adaptation */
+body.dark-mode #chat-panel {
+    background: rgba(15, 23, 42, 0.95);
+    border-left-color: rgba(255,255,255,0.1);
+}
+body.dark-mode #chat-messages {
+    background-color: #0f172a;
+    background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+}
+body.dark-mode .chat-bubble.other {
+    background: #1e293b;
+    color: #e2e8f0;
+    border-color: #334155;
+}
+body.dark-mode #chat-input {
+    background: #1e293b;
+    color: white;
+}
+body.dark-mode .chat-header { color: #94a3b8; }
     </style>
 </head>
 <body>
@@ -1919,41 +2036,62 @@ body.dark-mode #terminal-wrapper .text-gradient {
     <!-- CHAT OVERLAY -->
 <div id="chat-overlay" class="fixed inset-0 z-[8500] invisible transition-all duration-500">
     <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm opacity-0 transition-opacity duration-500" onclick="toggleChat()"></div>
-    <div id="chat-panel" class="absolute right-0 top-0 h-full w-full md:w-[450px] translate-x-full transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col shadow-2xl bg-white border-l border-slate-100">
+    
+    <div id="chat-panel" class="absolute right-0 top-0 h-full w-full md:w-[480px] translate-x-full transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col shadow-2xl">
         
-        <!-- Header Chat -->
-        <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-indigo-600 text-white">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                    <i class="fas fa-users text-lg"></i>
+        <!-- HEADER PRO -->
+        <div class="p-4 flex items-center justify-between text-white relative z-10">
+            <div class="flex items-center gap-4">
+                <div class="relative">
+                    <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md">
+                        <i class="fas fa-comments text-lg"></i>
+                    </div>
+                    <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-indigo-600 rounded-full"></div> <!-- Status Online -->
                 </div>
                 <div>
-                    <h2 class="font-bold text-sm">Discussion Générale</h2>
-                    <p class="text-[10px] text-indigo-200 opacity-80">Espace communautaire</p>
+                    <h2 class="font-bold text-sm tracking-wide">Communauté Printbam</h2>
+                    <p class="text-[10px] text-indigo-200 opacity-80 flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+                        24 membres en ligne
+                    </p>
                 </div>
             </div>
-            <button onclick="toggleChat()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
+            <button onclick="toggleChat()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all duration-200">
                 <i class="fas fa-times"></i>
             </button>
         </div>
 
-        <!-- Zone des Messages -->
-        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
-            <!-- Les messages s'afficheront ici via JS -->
-            <div class="text-center text-xs text-slate-400 my-4">Bienvenue dans la discussion Printbam.</div>
+        <!-- MESSAGES -->
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-6">
+            <!-- Message système de bienvenue -->
+            <div class="text-center my-6">
+                <span class="inline-block bg-indigo-50 text-indigo-600 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full border border-indigo-100">
+                    Aujourd'hui
+                </span>
+            </div>
+            
+            <!-- Les messages seront injectés ici -->
         </div>
 
-        <!-- Zone de saisie -->
-        <div class="p-4 border-t border-slate-100 bg-white">
-            <form onsubmit="sendChatMessage(event)" class="flex gap-2">
-                <input type="text" id="chat-input" placeholder="Écrivez votre message..." class="flex-1 bg-slate-100 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                <button type="submit" class="w-12 h-12 bg-indigo-600 text-white rounded-xl flex items-center justify-center hover:bg-indigo-700 transition-colors shadow-lg">
-                    <i class="fas fa-paper-plane text-sm"></i>
+        <!-- INPUT AREA -->
+        <div class="p-4 bg-white border-t border-slate-100 z-10">
+            <form id="chat-form" onsubmit="sendChatMessage(event)" class="relative flex items-center gap-3">
+                <button type="button" class="text-slate-400 hover:text-indigo-500 transition-colors p-2">
+                    <i class="fas fa-plus-circle text-xl"></i>
+                </button>
+                <input type="text" id="chat-input" placeholder="Écrivez votre message..." class="flex-1 bg-slate-50 rounded-2xl px-5 py-3 text-sm focus:outline-none transition-all shadow-inner">
+                <button type="submit" class="w-10 h-10 rounded-full text-white flex items-center justify-center shadow-lg hover:shadow-indigo-500/40">
+                    <i class="fas fa-paper-plane text-sm transform translate-x-[-1px] translate-y-[1px]"></i>
                 </button>
             </form>
+            <div class="text-center mt-2">
+                 <p class="text-[9px] text-slate-400 font-medium">Soyez respectueux. Pas de spam.</p>
+            </div>
         </div>
     </div>
 </div>
+
+    
 
     <!-- MODAL DE SUIVI (TRACKING) - AVEC WHATSAPP ET DATE -->
     <div id="track-modal" class="fixed inset-0 z-[8500] invisible transition-all duration-500">
@@ -3091,15 +3229,41 @@ async function loadMarketplaceArticles() {
         console.error("Erreur marketplace :", err);
     }
 }
-        /* --- GESTION DU CHAT --- */
+
+
+        
+        /* --- FONCTIONS JS ULTRA PRO CHAT --- */
+
+// Fonction utilitaire pour générer l'avatar (Photo ou Initiales)
+function getAvatarHtml(userEmail, avatarUrl, isMe) {
+    // Si on a une URL d'image
+    if (avatarUrl) {
+        return `<img src="${avatarUrl}" class="w-full h-full object-cover">`;
+    }
+    
+    // Sinon, générer des initiales
+    const initials = userEmail ? userEmail.substring(0, 2).toUpperCase() : '??';
+    // Couleur aléatoire mais cohérente basée sur l'email
+    const colors = ['#ef4444', '#f97316', '#f59e0b', '#10b981', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#ec4899'];
+    const colorIndex = userEmail ? userEmail.length % colors.length : 0;
+    const bgColor = colors[colorIndex];
+    
+    return `<span style="background-color: ${bgColor}; color: white;">${initials}</span>`;
+}
+
+
+
+        /* --- GESTION DE L'OUVERTURE DU CHAT (A AJOUTER ABSOLUMENT) --- */
 let chatInterval = null;
 
-// Ouvrir/Fermer le chat
-async function toggleChat() {
-    // Vérifier l'auth
+// On utilise window.toggleChat pour s'assurer qu'elle est accessible globalement
+window.toggleChat = async function() {
+    // 1. Vérifier si l'utilisateur est connecté
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) {
-        showToast("Connectez-vous pour discuter", "error");
+        showToast("Veuillez vous connecter pour accéder au chat", "error");
+        // Optionnel : Rediriger vers login
+        // window.location.href = 'login.html';
         return;
     }
 
@@ -3107,40 +3271,54 @@ async function toggleChat() {
     const panel = document.getElementById('chat-panel');
     
     if (overlay.classList.contains('invisible')) {
-        // Ouvrir
+        // --- OUVERTURE DU CHAT ---
         overlay.classList.remove('invisible');
+        
+        // Animation d'entrée
         setTimeout(() => {
             overlay.querySelector('div:first-child').classList.replace('opacity-0', 'opacity-100');
             panel.classList.replace('translate-x-full', 'translate-x-0');
         }, 10);
-        
-        // Charger les messages et démarrer le rafraîchissement
+
+        // Charger les messages existants
         loadChatMessages();
-        if(!chatInterval) chatInterval = setInterval(loadChatMessages, 3000); // Actualiser toutes les 3s
         
-        // Focus sur l'input
-        setTimeout(() => document.getElementById('chat-input').focus(), 500);
+        // Démarrer le rafraîchissement automatique (toutes les 3 secondes)
+        if (!chatInterval) {
+            chatInterval = setInterval(loadChatMessages, 3000);
+        }
+        
+        // Focus sur le champ de saisie après l'animation
+        setTimeout(() => {
+            const input = document.getElementById('chat-input');
+            if (input) input.focus();
+        }, 500);
+
     } else {
-        // Fermer
+        // --- FERMETURE DU CHAT ---
         overlay.querySelector('div:first-child').classList.replace('opacity-100', 'opacity-0');
         panel.classList.replace('translate-x-0', 'translate-x-full');
-        setTimeout(() => overlay.classList.add('invisible'), 500);
         
-        // Arrêter le rafraîchissement
-        if(chatInterval) {
+        setTimeout(() => {
+            overlay.classList.add('invisible');
+        }, 500);
+
+        // Arrêter le rafraîchissement pour ne pas surcharger le navigateur
+        if (chatInterval) {
             clearInterval(chatInterval);
             chatInterval = null;
         }
     }
-}
+};
 
-// Charger les messages depuis Supabase
+
+        
+// Charger les messages (Version Améliorée)
 async function loadChatMessages() {
     const container = document.getElementById('chat-messages');
     const { data: { user } } = await supabaseClient.auth.getUser();
     if(!user) return;
 
-    // Récupérer les 50 derniers messages
     const { data: messages, error } = await supabaseClient
         .from('messages')
         .select('*')
@@ -3149,53 +3327,50 @@ async function loadChatMessages() {
 
     if (error) return console.error("Erreur chat:", error);
 
-    // Vider le conteneur (sauf le message de bienvenue si vous voulez le garder)
-    container.innerHTML = '';
+    // Ne pas recharger si le nombre de messages n'a pas changé (optimisation simple)
+    if (container.children.length > 2 && messages.length === container.querySelectorAll('.chat-row').length) return;
+
+    container.innerHTML = ''; // On vide proprement
+
+    // Message de date fixe
+    const dateDiv = document.createElement('div');
+    dateDiv.className = 'text-center my-6';
+    dateDiv.innerHTML = '<span class="inline-block bg-indigo-50 text-indigo-600 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full border border-indigo-100">Discussion en direct</span>';
+    container.appendChild(dateDiv);
 
     messages.forEach(msg => {
         const isMe = msg.user_id === user.id;
-        const div = document.createElement('div');
-        div.className = `chat-msg ${isMe ? 'me' : 'other'}`;
         
+        const row = document.createElement('div');
+        // Si c'est moi, je m'aligne à droite, sinon à gauche
+        row.className = `chat-row ${isMe ? 'flex-row-reverse' : 'flex-row'}`;
+
+        const avatarHtml = getAvatarHtml(msg.user_email, null, isMe); // Note: On pourrait passer avatar_url depuis la BDD si on l'a stockée
+
         const time = new Date(msg.created_at).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
-        
-        div.innerHTML = `
-            <span class="chat-meta">${isMe ? 'Moi' : (msg.user_email || 'Utilisateur')} • ${time}</span>
-            ${msg.content}
+        const name = isMe ? 'Moi' : (msg.user_email.split('@')[0]); // Prend la partie avant le @
+
+        row.innerHTML = `
+            <div class="chat-avatar shadow-md border-2 ${isMe ? 'border-indigo-100' : 'border-white'}">
+                ${avatarHtml}
+            </div>
+            <div class="chat-content ${isMe ? 'items-end' : 'items-start'} text-right">
+                <div class="chat-header ${isMe ? 'flex-row-reverse text-indigo-100' : 'text-indigo-600'}">
+                    <span>${name}</span>
+                    <span class="opacity-60 font-normal">${time}</span>
+                </div>
+                <div class="chat-bubble ${isMe ? 'me' : 'other'} shadow-sm">
+                    ${msg.content}
+                </div>
+            </div>
         `;
-        container.appendChild(div);
+        container.appendChild(row);
     });
 
-    // Scroll en bas
-    container.scrollTop = container.scrollHeight;
-}
-
-// Envoyer un message
-async function sendChatMessage(e) {
-    e.preventDefault();
-    const input = document.getElementById('chat-input');
-    const content = input.value.trim();
-    
-    if (!content) return;
-
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return;
-
-    // Envoyer à Supabase
-    const { error } = await supabaseClient
-        .from('messages')
-        .insert([{
-            user_id: user.id,
-            user_email: user.email, // Pour savoir qui parle
-            content: content
-        }]);
-
-    if (error) {
-        showToast("Erreur d'envoi", "error");
-    } else {
-        input.value = ''; // Vider le champ
-        loadChatMessages(); // Recharger immédiatement
-    }
+    // Scroll fluide vers le bas
+    setTimeout(() => {
+        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    }, 100);
 }
     </script>
 </body>
