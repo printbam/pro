@@ -782,62 +782,36 @@ body.dark-mode .chat-header { color: #94a3b8; }
             </div>
         </nav>
     </div>
-
+<br>
+    <br>
     <!-- MAIN CONTENT WRAPPER -->
-    <div id="main-content" class="relative z-0">
+   <!-- PAGE 1: ACCUEIL (FEED GLOBAL) -->
+<div id="home-view" class="page-view active">
+    <section class="max-w-2xl mx-auto px-4 pt-6 pb-20">
+        
+        <!-- HEADER DU FEED -->
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-0xl font-black text-slate-900 dark:text-white tracking-tight">
+                Fil d'actualité
+            </h1>
+            <button onclick="openNewPostModal()" class="bg-indigo-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg hover:bg-indigo-700 transition flex items-center gap-2">
+                <i class="fas fa-plus"></i> Publier
+            </button>
+        </div>
+
+        <!-- CONTENEUR DES POSTS -->
+        <!-- Les posts s'afficheront ici -->
+        <div id="global-feed-container" class="space-y-6">
+            <!-- Loader initial -->
+            <div class="flex justify-center py-10">
+                <i class="fas fa-circle-notch fa-spin text-indigo-500 text-2xl"></i>
+            </div>
+        </div>
+    </section>
+</div>
 
         <!-- SPACER FOR HEADER -->
         <div class="h-20 md:h-24"></div>
-
-        <!-- PAGE 1: ACCUEIL -->
-        <div id="home-view" class="page-view active">
-            <section class="max-w-7xl mx-auto px-4 pt-4 pb-8 text-center relative">
-                <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-900 mb-4 leading-tight">
-                    <span data-i18n="hero_title_part1">L'infrastructure</span> <br class="hidden md:block" />
-                    <span data-i18n="hero_title_part2">documentaire</span> <span class="text-gradient" data-i18n="hero_title_highlight">haute performance.</span>
-                </h1>
-                <p class="text-lg md:text-xl text-slate-500 font-medium leading-relaxed mb-6 max-w-2xl mx-auto">
-                    <span data-i18n="hero_desc">Digitalisez vos flux, nous matérialisons l'excellence avec une</span> <span id="typewriter"></span>
-                </p>
-                <div class="flex flex-wrap justify-center gap-4 mb-4">
-                    <a href="javascript:void(0)" onclick="openTerminal()" class="px-8 py-4 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 hover:shadow-indigo-300 hover:-translate-y-1 flex items-center gap-2"><i class="fas fa-cloud-upload-alt"></i> <span data-i18n="btn_print_now">Imprimer maintenant</span></a>
-                    <a onclick="switchPage('services')" class="px-8 py-4 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-sm hover:border-slate-300 hover:bg-slate-50 transition-all shadow-sm flex items-center gap-2 cursor-pointer"><i class="fas fa-play-circle text-indigo-500"></i> <span data-i18n="btn_demo">Voir la démo</span></a>
-                </div>
-            </section>
-
-            <section class="max-w-7xl mx-auto px-6 pb-25">
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-[280px]">
-                    <div class="md:col-span-8 glass p-6 md:p-8 flex flex-col min-h-[250px] justify-between group reveal-up overflow-hidden">
-                        <div class="relative z-10">
-                            <div class="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center mb-6 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300"><i class="fas fa-layer-group text-xl"></i></div>
-                            <h3 class="text-2xl font-bold mb-3 text-slate-900 tracking-tight" data-i18n="feat_arch_title">Architecture Documentaire</h3>
-                            <p class="text-slate-500 text-sm leading-snug w-full mb-6" data-i18n="feat_arch_desc">Traitement architectural de vos documents. Précision au millimètre pour vos manuscrits exigeants et mémoires académiques.</p>
-                        </div>
-                        <div class="relative z-10 flex flex-wrap gap-2"><span class="text-[10px] font-bold tracking-wide uppercase py-2 px-3 rounded-full bg-slate-50 text-slate-500 border border-slate-100">Reliure Canon</span><span class="text-[10px] font-bold tracking-wide uppercase py-2 px-3 rounded-full bg-slate-50 text-slate-500 border border-slate-100">Papier Premium 80g</span></div>
-                    </div>
-                    <div class="md:col-span-4 glass p-8 flex flex-col items-center justify-center text-center group bg-gradient-to-br from-indigo-50 to-white border-indigo-100 reveal-up" style="transition-delay: 100ms;"><div class="relative z-10"><div class="text-5xl md:text-6xl font-black text-indigo-600 mb-2 group-hover:scale-110 transition-transform duration-300">120<span class="text-xl">min</span></div><p class="text-xs font-bold uppercase tracking-[0.2em] text-indigo-400" data-i18n="feat_delivery">Livraison Express</p></div><div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div></div>
-                    <div class="md:col-span-4 glass p-8 flex flex-col justify-center group reveal-up" style="transition-delay: 200ms;"><div class="relative z-10"><i class="fas fa-id-card text-4xl mb-5 text-indigo-500"></i><h3 class="text-xl font-bold mb-2 text-slate-900" data-i18n="feat_badge_title">Badges PVC</h3><p class="text-slate-500 text-sm" data-i18n="feat_badge_desc">Cartes de service haute définition avec protection thermique et codage magnétique.</p></div></div>
-                    <div class="md:col-span-8 glass p-8 flex items-center gap-10 group reveal-up" style="transition-delay: 300ms;"><div class="hidden md:flex w-24 h-24 bg-indigo-50 rounded-2xl items-center justify-center border border-indigo-100 shrink-0 group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-colors duration-300"><i class="fas fa-server text-3xl text-indigo-600 group-hover:text-white"></i></div><div class="relative z-10"><h3 class="text-2xl font-bold mb-2 text-slate-900 tracking-tight" data-i18n="feat_cloud_title">Infrastructure Cloud Pro</h3><p class="text-slate-500" data-i18n="feat_cloud_desc">Envoyez vos fichiers de n'importe où. Notre réseau sécurisé s'occupe du traitement et de l'impression.</p></div></div>
-                </div>
-            </section>
-
-            <section class="max-w-7xl mx-auto px-5 py-8 relative">
-                <div class="flex flex-col md:flex-row justify-between items-end mb-8 gap-6">
-                    <div class="max-w-xl reveal-up"><h2 class="text-indigo-600 font-black text-xs uppercase tracking-widest mb-3">Portfolio</h2><h3 class="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight" data-i18n="portfolio_title">Standards d'Excellence.</h3></div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div class="glass group flex flex-col h-full reveal-up"><div class="h-64 overflow-hidden rounded-t-2xl relative"><img src="https://images.unsplash.com/photo-1586717791821-3f44a563eb4c?auto=format&fit=crop&w=800&q=80" loading="lazy" class="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"><div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div></div><div class="p-6 flex-1 flex flex-col justify-between"><div><span class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest" data-i18n="card1_cat">Rapports</span><h4 class="text-xl font-bold mt-2 text-slate-900" data-i18n="card1_title">Rapports Institutionnels</h4><p class="text-slate-500 text-sm mt-3 leading-relaxed" data-i18n="card1_desc">Papier couché 120g avec reliure thermique invisible pour une finition premium.</p></div></div></div>
-                    <div class="glass group flex flex-col h-full reveal-up" style="transition-delay: 100ms;"><div class="h-64 overflow-hidden rounded-t-2xl relative"><img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80" loading="lazy" class="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"><div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div></div><div class="p-6 flex-1 flex flex-col justify-between"><div><span class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest" data-i18n="card2_cat">Identité Visuelle</span><h4 class="text-xl font-bold mt-2 text-slate-900" data-i18n="card2_title">Cartes de Membre</h4><p class="text-slate-500 text-sm mt-3 leading-relaxed" data-i18n="card2_desc">Impression sublimation haute résistance avec hologramme de sécurité personnalisé.</p></div></div></div>
-                    <div class="glass group flex flex-col h-full reveal-up" style="transition-delay: 200ms;"><div class="h-64 overflow-hidden rounded-t-2xl relative"><img src="https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=800&q=80" loading="lazy" class="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"><div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div></div><div class="p-6 flex-1 flex flex-col justify-between"><div><span class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest" data-i18n="card3_cat">Technique</span><h4 class="text-xl font-bold mt-2 text-slate-900" data-i18n="card3_title">Plans & Blueprints</h4><p class="text-slate-500 text-sm mt-3 leading-relaxed" data-i18n="card3_desc">Traçage grand format A0/A1 haute précision sur papier technique translucide.</p></div></div></div>
-                </div>
-            </section>
-
-            <section class="relative py-5 md:py-8 my-5 overflow-hidden">
-                <div class="absolute inset-0 bg-slate-900"><img src="https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1500&q=80" class="w-full h-full object-cover opacity-20 mix-blend-overlay"><div class="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/90 to-transparent"></div></div>
-                <div class="relative text-center px-6 z-10"><h2 class="text-3xl md:text-5xl font-bold text-white mb-6 tracking-tight" data-i18n="cta_title">Prêt pour l'impression ?</h2><a href="javascript:void(0)" onclick="openTerminal()" class="inline-block bg-indigo-600 px-10 py-4 rounded-xl font-bold text-sm uppercase tracking-wide text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-900/50 hover:shadow-indigo-600/50 transform hover:-translate-y-1"><span data-i18n="btn_launch_order">Lancer une commande</span></a></div>
-            </section>
-        </div> <!-- FIN HOME VIEW -->
-
 
 <!-- PAGE : PROFIL SOCIAL (DESIGN FLAT STYLE CAPTURE) -->
 <div id="profile-social-view" class="page-view">
@@ -2116,7 +2090,54 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
                 <i class="fas fa-times text-slate-500"></i>
             </button>
         </div>
+<!-- PAGE 1: ACCUEIL -->
+            <section class="max-w-7xl mx-auto px-4 pt-4 pb-8 text-center relative">
+                <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-900 mb-4 leading-tight">
+                    <span data-i18n="hero_title_part1">L'infrastructure</span> <br class="hidden md:block" />
+                    <span data-i18n="hero_title_part2">documentaire</span> <span class="text-gradient" data-i18n="hero_title_highlight">haute performance.</span>
+                </h1>
+                <p class="text-lg md:text-xl text-slate-500 font-medium leading-relaxed mb-6 max-w-2xl mx-auto">
+                    <span data-i18n="hero_desc">Digitalisez vos flux, nous matérialisons l'excellence avec une</span> <span id="typewriter"></span>
+                </p>
+                <div class="flex flex-wrap justify-center gap-4 mb-4">
+                    <a href="javascript:void(0)" onclick="openTerminal()" class="px-8 py-4 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 hover:shadow-indigo-300 hover:-translate-y-1 flex items-center gap-2"><i class="fas fa-cloud-upload-alt"></i> <span data-i18n="btn_print_now">Imprimer maintenant</span></a>
+                    <a onclick="switchPage('services')" class="px-8 py-4 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-sm hover:border-slate-300 hover:bg-slate-50 transition-all shadow-sm flex items-center gap-2 cursor-pointer"><i class="fas fa-play-circle text-indigo-500"></i> <span data-i18n="btn_demo">Voir la démo</span></a>
+                </div>
+            </section>
 
+            <section class="max-w-7xl mx-auto px-6 pb-25">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-[280px]">
+                    <div class="md:col-span-8 glass p-6 md:p-8 flex flex-col min-h-[250px] justify-between group reveal-up overflow-hidden">
+                        <div class="relative z-10">
+                            <div class="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center mb-6 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300"><i class="fas fa-layer-group text-xl"></i></div>
+                            <h3 class="text-2xl font-bold mb-3 text-slate-900 tracking-tight" data-i18n="feat_arch_title">Architecture Documentaire</h3>
+                            <p class="text-slate-500 text-sm leading-snug w-full mb-6" data-i18n="feat_arch_desc">Traitement architectural de vos documents. Précision au millimètre pour vos manuscrits exigeants et mémoires académiques.</p>
+                        </div>
+                        <div class="relative z-10 flex flex-wrap gap-2"><span class="text-[10px] font-bold tracking-wide uppercase py-2 px-3 rounded-full bg-slate-50 text-slate-500 border border-slate-100">Reliure Canon</span><span class="text-[10px] font-bold tracking-wide uppercase py-2 px-3 rounded-full bg-slate-50 text-slate-500 border border-slate-100">Papier Premium 80g</span></div>
+                    </div>
+                    <div class="md:col-span-4 glass p-8 flex flex-col items-center justify-center text-center group bg-gradient-to-br from-indigo-50 to-white border-indigo-100 reveal-up" style="transition-delay: 100ms;"><div class="relative z-10"><div class="text-5xl md:text-6xl font-black text-indigo-600 mb-2 group-hover:scale-110 transition-transform duration-300">120<span class="text-xl">min</span></div><p class="text-xs font-bold uppercase tracking-[0.2em] text-indigo-400" data-i18n="feat_delivery">Livraison Express</p></div><div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div></div>
+                    <div class="md:col-span-4 glass p-8 flex flex-col justify-center group reveal-up" style="transition-delay: 200ms;"><div class="relative z-10"><i class="fas fa-id-card text-4xl mb-5 text-indigo-500"></i><h3 class="text-xl font-bold mb-2 text-slate-900" data-i18n="feat_badge_title">Badges PVC</h3><p class="text-slate-500 text-sm" data-i18n="feat_badge_desc">Cartes de service haute définition avec protection thermique et codage magnétique.</p></div></div>
+                    <div class="md:col-span-8 glass p-8 flex items-center gap-10 group reveal-up" style="transition-delay: 300ms;"><div class="hidden md:flex w-24 h-24 bg-indigo-50 rounded-2xl items-center justify-center border border-indigo-100 shrink-0 group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-colors duration-300"><i class="fas fa-server text-3xl text-indigo-600 group-hover:text-white"></i></div><div class="relative z-10"><h3 class="text-2xl font-bold mb-2 text-slate-900 tracking-tight" data-i18n="feat_cloud_title">Infrastructure Cloud Pro</h3><p class="text-slate-500" data-i18n="feat_cloud_desc">Envoyez vos fichiers de n'importe où. Notre réseau sécurisé s'occupe du traitement et de l'impression.</p></div></div>
+                </div>
+            </section>
+
+            <section class="max-w-7xl mx-auto px-5 py-8 relative">
+                <div class="flex flex-col md:flex-row justify-between items-end mb-8 gap-6">
+                    <div class="max-w-xl reveal-up"><h2 class="text-indigo-600 font-black text-xs uppercase tracking-widest mb-3">Portfolio</h2><h3 class="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight" data-i18n="portfolio_title">Standards d'Excellence.</h3></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="glass group flex flex-col h-full reveal-up"><div class="h-64 overflow-hidden rounded-t-2xl relative"><img src="https://images.unsplash.com/photo-1586717791821-3f44a563eb4c?auto=format&fit=crop&w=800&q=80" loading="lazy" class="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"><div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div></div><div class="p-6 flex-1 flex flex-col justify-between"><div><span class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest" data-i18n="card1_cat">Rapports</span><h4 class="text-xl font-bold mt-2 text-slate-900" data-i18n="card1_title">Rapports Institutionnels</h4><p class="text-slate-500 text-sm mt-3 leading-relaxed" data-i18n="card1_desc">Papier couché 120g avec reliure thermique invisible pour une finition premium.</p></div></div></div>
+                    <div class="glass group flex flex-col h-full reveal-up" style="transition-delay: 100ms;"><div class="h-64 overflow-hidden rounded-t-2xl relative"><img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80" loading="lazy" class="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"><div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div></div><div class="p-6 flex-1 flex flex-col justify-between"><div><span class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest" data-i18n="card2_cat">Identité Visuelle</span><h4 class="text-xl font-bold mt-2 text-slate-900" data-i18n="card2_title">Cartes de Membre</h4><p class="text-slate-500 text-sm mt-3 leading-relaxed" data-i18n="card2_desc">Impression sublimation haute résistance avec hologramme de sécurité personnalisé.</p></div></div></div>
+                    <div class="glass group flex flex-col h-full reveal-up" style="transition-delay: 200ms;"><div class="h-64 overflow-hidden rounded-t-2xl relative"><img src="https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=800&q=80" loading="lazy" class="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"><div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div></div><div class="p-6 flex-1 flex flex-col justify-between"><div><span class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest" data-i18n="card3_cat">Technique</span><h4 class="text-xl font-bold mt-2 text-slate-900" data-i18n="card3_title">Plans & Blueprints</h4><p class="text-slate-500 text-sm mt-3 leading-relaxed" data-i18n="card3_desc">Traçage grand format A0/A1 haute précision sur papier technique translucide.</p></div></div></div>
+                </div>
+            </section>
+
+            <section class="relative py-5 md:py-8 my-5 overflow-hidden">
+                <div class="absolute inset-0 bg-slate-900"><img src="https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1500&q=80" class="w-full h-full object-cover opacity-20 mix-blend-overlay"><div class="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/90 to-transparent"></div></div>
+                <div class="relative text-center px-6 z-10"><h2 class="text-3xl md:text-5xl font-bold text-white mb-6 tracking-tight" data-i18n="cta_title">Prêt pour l'impression ?</h2><a href="javascript:void(0)" onclick="openTerminal()" class="inline-block bg-indigo-600 px-10 py-4 rounded-xl font-bold text-sm uppercase tracking-wide text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-900/50 hover:shadow-indigo-600/50 transform hover:-translate-y-1"><span data-i18n="btn_launch_order">Lancer une commande</span></a></div>
+            </section>
+        </div> <!-- FIN HOME VIEW -->
+    
         <!-- Contenu (Adapté du footer en colonne simple) -->
         <div class="flex-1 overflow-y-auto p-6 space-y-8">
             
@@ -2186,7 +2207,6 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         </div>
 
     </div>
-</div>
     
     <!-- ORDERS & TRACKING MODAL -->
     <div id="orders-overlay" class="fixed inset-0 z-[8000] invisible transition-all duration-500">
@@ -2549,6 +2569,15 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             if (pageId === 'profile-social') {
             loadSocialProfile();
         }
+             // Charger le Feed si on va sur l'accueil
+    if (pageId === 'home') {
+        loadGlobalFeed();
+    }
+
+    // Charger le Profil Social si on va sur le profil
+    if (pageId === 'profile-social') {
+        loadSocialProfile();
+    }
             
             // --- FOOTER VISIBILITY LOGIC ---
         //     const footer = document.getElementById('main-footer');
@@ -3890,16 +3919,16 @@ async function handleNewPost(e) {
         if (insertError) throw insertError;
 
         closeNewPostModal();
-        loadSocialProfile();
+        loadSocialProfile(); // Rafraîchir le profil
+        loadGlobalFeed();    // Rafraîchir le feed d'accueil aussi
+
         showToast("Publié !", "success");
-    } catch (err) {
-        console.error(err);
-        showToast("Erreur", "error");
-    } finally {
-        btn.innerText = "Partager";
-        btn.disabled = false;
+
+    } catch (error) {
+        console.error("Erreur de publication:", error.message);
+        showToast("Erreur lors de la publication", "danger");
     }
-}
+} // <--- C'est cette accolade qui ferme la fonction
 
         /* --- FONCTION DÉCONNEXION SOCIALE --- */
 function confirmSocialLogout() {
@@ -3920,6 +3949,318 @@ function confirmSocialLogout() {
             }
         });
     }
+}
+        /* --- LOGIQUE DU FEED GLOBAL --- */
+
+// 1. Charger le Feed (Tous les utilisateurs)
+async function loadGlobalFeed() {
+
+    const container = document.getElementById('global-feed-container');
+
+    if (!container) return;
+
+
+
+    try {
+
+        const { data: { user } } = await supabaseClient.auth.getUser();
+
+
+
+        // REQUÊTE OPTIMISÉE
+
+        const { data: posts, error } = await supabaseClient
+
+            .from('posts')
+
+            .select(`
+
+                *,
+
+                profiles ( full_name, username, avatar_url, is_certified ),
+
+                post_likes!left ( user_id ), 
+
+                likes_count: post_likes ( count ),
+
+                comments_count: post_comments ( count )
+
+            `)
+
+            .order('created_at', { ascending: false })
+
+            .limit(20);
+
+
+
+        if (error) throw error;
+
+
+
+        container.innerHTML = posts.map(post => {
+
+            const profile = post.profiles || {};
+
+            
+
+            // Correction Placeholder & Nom
+
+            const userName = profile.full_name || 'Anonyme';
+
+            const avatarUrl = profile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=random`;
+
+            
+
+            // Extraction des compteurs (Supabase renvoie [{count: X}])
+
+            const likeCount = post.likes_count?.[0]?.count || 0;
+
+            const commentCount = post.comments_count?.[0]?.count || 0;
+
+
+
+            // VRAIE VÉRIFICATION DU LIKE :
+
+            // On regarde si l'ID de l'utilisateur actuel est présent dans le tableau post_likes
+
+            const hasLiked = user && post.post_likes?.some(l => l.user_id === user.id);
+
+            const heartClass = hasLiked ? 'fas fa-heart text-red-500' : 'far fa-heart';
+
+
+
+            return `
+
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden mb-6">
+
+                <div class="p-4 flex items-center gap-3 border-b border-slate-100 dark:border-slate-700">
+
+                    <img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border border-slate-200">
+
+                    <div class="flex-1">
+
+                        <div class="flex items-center gap-1">
+
+                            <span class="font-bold text-sm text-slate-900 dark:text-white">${userName}</span>
+
+                            ${profile.is_certified ? '<i class="fas fa-check-circle text-blue-500 text-xs"></i>' : ''}
+
+                        </div>
+
+                        <div class="text-xs text-slate-500">${getTimeAgo(new Date(post.created_at))}</div>
+
+                    </div>
+
+                </div>
+
+
+
+                ${post.image_url ? `<img src="${post.image_url}" class="w-full max-h-[500px] object-contain mx-auto bg-black">` : ''}
+
+                
+
+                ${post.caption ? `
+
+                <div class="p-4">
+
+                    <p class="text-sm"><span class="font-bold mr-1">${userName}</span>${post.caption}</p>
+
+                </div>` : ''}
+
+
+
+                <div class="px-4 py-3 flex gap-6 text-slate-600 dark:text-slate-400 text-xl border-t border-slate-100 dark:border-slate-700 items-center">
+
+                    <button onclick="toggleLike('${post.id}', this)" class="hover:text-red-500 transition flex items-center gap-2 group">
+
+                        <i class="${heartClass}" id="icon-like-${post.id}"></i>
+
+                        <span id="count-like-${post.id}" class="text-sm font-bold">${likeCount}</span>
+
+                    </button>
+
+                    
+
+                    <button onclick="toggleCommentSection('${post.id}')" class="hover:text-blue-500 transition flex items-center gap-2 group">
+
+                        <i class="far fa-comment"></i>
+
+                        <span id="count-comment-${post.id}" class="text-sm font-bold">${commentCount}</span>
+
+                    </button>
+
+                    
+
+                    <button onclick="sharePost('${post.id}')" class="hover:text-green-500 transition ml-auto">
+
+                        <i class="far fa-share-square"></i>
+
+                    </button>
+
+                </div>
+
+
+
+                <div id="comments-${post.id}" class="hidden bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-slate-100 dark:border-slate-700">
+
+                    <div id="comment-list-${post.id}" class="space-y-3 mb-3 max-h-60 overflow-y-auto"></div>
+
+                    <form onsubmit="submitComment(event, '${post.id}')" class="flex gap-2">
+
+                        <input type="text" name="content" placeholder="Écrire un commentaire..." required 
+
+                               class="flex-1 text-sm px-3 py-2 rounded-lg border dark:bg-slate-800 focus:ring-1 focus:ring-indigo-500">
+
+                        <button type="submit" class="text-indigo-600 font-bold text-sm px-2">Envoyer</button>
+
+                    </form>
+
+                </div>
+
+            </div>`;
+
+        }).join('');
+
+
+
+    } catch (err) {
+
+        console.error("Erreur Feed:", err);
+
+    }
+
+}
+
+        /* --- ACTIONS : LIKE, COMMENT, SHARE --- */
+
+// 1. Gérer le Like
+// 1. LIKE : Optimisé et robuste
+async function toggleLike(postId, btnElement) {
+    const icon = document.getElementById(`icon-like-${postId}`);
+    const countSpan = document.getElementById(`count-like-${postId}`);
+    
+    // On récupère l'user actuel (vérifie si tu peux stocker ça globalement au chargement de la page)
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) {
+        alert("Vous devez être connecté pour liker.");
+        return;
+    }
+
+    const isLiked = icon.classList.contains('fas');
+    
+    // Calcul intelligent du nombre
+    let rawText = countSpan.innerText.toUpperCase().replace(',', '.');
+    let currentCount = rawText.includes('K') ? parseFloat(rawText) * 1000 : parseInt(rawText);
+
+    try {
+        if (isLiked) {
+            // UI : On retire le like immédiatement (Optimistic)
+            icon.classList.replace('fas', 'far');
+            icon.classList.remove('text-red-500');
+            countSpan.innerText = formatNumber(Math.max(0, currentCount - 1));
+
+            const { error } = await supabaseClient
+                .from('post_likes')
+                .delete()
+                .eq('post_id', postId)
+                .eq('user_id', user.id);
+            
+            if (error) throw error;
+        } else {
+            // UI : On ajoute le like immédiatement
+            icon.classList.replace('far', 'fas');
+            icon.classList.add('text-red-500');
+            countSpan.innerText = formatNumber(currentCount + 1);
+
+            const { error } = await supabaseClient
+                .from('post_likes')
+                .insert([{ post_id: postId, user_id: user.id }]);
+            
+            if (error) throw error;
+        }
+    } catch (err) {
+        console.error("Erreur Like:", err);
+        // En cas d'erreur, on recharge le feed pour remettre les bons chiffres
+        loadGlobalFeed(); 
+    }
+}
+
+// 2. COMMENTAIRE : Corrigé
+async function submitComment(e, postId) {
+    e.preventDefault();
+    const form = e.target;
+    const content = form.content.value.trim();
+    const listElement = document.getElementById(`comment-list-${postId}`);
+    const countSpan = document.getElementById(`count-comment-${postId}`);
+
+    if (!content) return;
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+
+    const { error } = await supabaseClient
+        .from('post_comments')
+        .insert([{ user_id: user.id, post_id: postId, content: content }]);
+
+    if (!error) {
+        // Ajout visuel
+        const newComment = document.createElement('div');
+        newComment.className = 'text-sm animate-fade-in'; // Petite animation si tu as le CSS
+        newComment.innerHTML = `<span class="font-bold text-indigo-700">Vous</span> <span class="text-slate-600">${content}</span>`;
+        listElement.appendChild(newComment);
+        form.reset();
+        
+        // Mise à jour du compteur
+        let rawText = countSpan.innerText.toUpperCase().replace(',', '.');
+        let currentCount = rawText.includes('K') ? parseFloat(rawText) * 1000 : parseInt(rawText);
+        countSpan.innerText = formatNumber(currentCount + 1);
+    } else {
+        console.error("Erreur Commentaire:", error);
+    }
+}
+
+// 3. FONCTION FORMATNUMBER (Indispensable pour que le code ci-dessus fonctionne)
+function formatNumber(num) {
+    if (num >= 1000) {
+        return (num / 1000).toFixed(1).replace('.0', '') + 'K';
+    }
+    return num.toString();
+}
+// 5. Partager (Simulation)
+function sharePost(postId) {
+    // Récupérer l'URL actuelle
+    const url = window.location.href.split('#')[0] + '?post=' + postId;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'Regarde cette publication sur Printbam',
+            url: url,
+        }).catch(console.error);
+    } else {
+        // Fallback : copier dans le presse-papier
+        navigator.clipboard.writeText(url);
+        showToast("Lien copié !", "success");
+    }
+}
+
+// Fonction utilitaire pour le temps relatif (ex: 2h)
+function getTimeAgo(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+    let interval = seconds / 31536000;
+    if (interval > 1) return Math.floor(interval) + " an";
+    interval = seconds / 2592000;
+    if (interval > 1) return Math.floor(interval) + " mois";
+    interval = seconds / 86400;
+    if (interval > 1) return Math.floor(interval) + " j";
+    interval = seconds / 3600;
+    if (interval > 1) return Math.floor(interval) + " h";
+    interval = seconds / 60;
+    if (interval > 1) return Math.floor(interval) + " min";
+    return "À l'instant";
+}
+        // Fonction pour formater 1200 en "1.2K"
+function formatNumber(num) {
+    if (!num) return '0';
+    return num >= 1000 ? (num / 1000).toFixed(1) + 'K' : num;
 }
 </script>
 </body>
