@@ -2011,8 +2011,13 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         <a onclick="switchPage('marketplace')" class="flex flex-1 flex-col items-center gap-1 group cursor-pointer"><i class="fas fa-shopping-bag text-lg text-slate-400 group-hover:text-slate-600"></i><span class="text-[9px] font-medium text-slate-400">Marketplace</span></a>
         <div class="flex flex-1 justify-center -mt-6"><a href="javascript:void(0)" onclick="openTerminal()" class="relative group cursor-pointer"><div class="w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-indigo-200 border-4 border-slate-50"><i class="fas fa-print text-white text-lg"></i></div></a></div>
         <!-- NOUVEAU CODE POUR L'ONGLET MESSAGES -->
-<a href="javascript:void(0)" onclick="switchPage('messages')" class="flex flex-1 flex-col items-center gap-1 group cursor-pointer">
-    <i class="fab fa-facebook-messenger text-lg text-slate-400 group-hover:text-indigo-600 transition-colors"></i>
+<!-- LIEN MESSAGES AVEC BADGE -->
+<a href="javascript:void(0)" onclick="switchPage('messages')" class="flex flex-1 flex-col items-center gap-1 group cursor-pointer relative">
+    <div class="relative">
+        <i class="far fa-paper-plane text-lg text-slate-400 group-hover:text-indigo-600 transition-colors"></i>
+        <!-- LE BADGE (Caché par défaut) -->
+        <span id="msg-badge-count" class="hidden absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center shadow-sm border-2 border-white dark:border-slate-900">0</span>
+    </div>
     <span class="text-[9px] font-medium text-slate-400">Messages</span>
 </a>
         <!-- LIEN PROFIL MODIFIÉ -->
@@ -2933,7 +2938,8 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         updateLanguage(savedLang);
         setTheme(localStorage.getItem('printbam-theme') || 'light', false);
         
-        // ... le reste de votre code existant ...
+        // Lancer la vérification au chargement
+updateMessageBadge();
         
         // On retire le loader SEULEMENT si on est connecté
         setTimeout(() => { 
@@ -3935,7 +3941,7 @@ async function loadSocialProfile(targetUserId = null) {
                 
                 // Appel de ta fonction de création de boutons (Abonnement + Message)
                 // Assure-toi que cette fonction utilise followContainer pour injecter le HTML
-                await initFollowButtonOnProfile(profileId, followContainer); 
+                await initFollowButtonOnProfile(profileId, currentUser.id); 
             }
         }
 
@@ -4182,7 +4188,7 @@ async function loadGlobalFeed() {
             const profile = post.profiles || {};
             
             // Fallbacks visuels
-            const avatarUrl = profile.avatar_url || 'https://via.placeholder.com/50'; 
+            const avatarUrl = profile.avatar_url || 'https://api.dicebear.com/7.x/identicon/svg?seed=NomUtilisateur'; 
             const userName = profile.full_name || 'Utilisateur';
             const userUsername = profile.username ? `@${profile.username}` : '';
             const isCertified = profile.is_certified || false;
@@ -4584,7 +4590,7 @@ async function loadChatList() {
         const userIds = chats.map(c => c.user_1_id === user.id ? c.user_2_id : c.user_1_id);
         const { data: profiles } = await supabaseClient
             .from('profiles')
-            .select('id, full_name, avatar_url')
+            .select('id, full_name, avatar_url, is_certified')
             .in('id', userIds);
 
         const profileMap = new Map(profiles?.map(p => [p.id, p]));
@@ -4596,6 +4602,8 @@ async function loadChatList() {
             const lastMsg = chat.messages && chat.messages.length > 0 
                 ? chat.messages[chat.messages.length - 1].content 
                 : 'Nouvelle discussion';
+            const time = chat.messages && chat.messages[0] ? getTimeAgo(new Date(chat.messages[0].created_at)) : '';
+
 
             return `
             <div onclick="openChatRoom('${chat.id}', '${otherUserId}')" 
@@ -4603,7 +4611,8 @@ async function loadChatList() {
                 <img src="${profile.avatar_url || 'https://ui-avatars.com/api/?name=' + profile.full_name}" class="w-12 h-12 rounded-full object-cover bg-slate-200">
                 <div class="flex-1 min-w-0">
                     <div class="flex justify-between items-baseline mb-1">
-                        <h4 class="font-bold text-slate-900 dark:text-white truncate">${profile.full_name}</h4>
+                        <h4 class="font-bold text-slate-900 dark:text-white truncate">${profile.full_name} ${profile.is_certified ? '<i class="fas fa-check-circle text-blue-500 text-xs ml-1"></i>' : ''}</h4>
+                        <span class="text-xs text-slate-400">${time}</span>
                     </div>
                     <p class="text-sm text-slate-500 dark:text-slate-400 truncate">${lastMsg}</p>
                 </div>
@@ -4625,66 +4634,104 @@ async function openChatRoom(chatId, targetUserId) {
 
     const { data: profile } = await supabaseClient
         .from('profiles')
-        .select('full_name, avatar_url')
+        .select('full_name, avatar_url, is_certified')
         .eq('id', targetUserId)
         .maybeSingle();
     
     if (profile) {
-        document.getElementById('chat-header-name').innerText = profile.full_name;
-        document.getElementById('chat-header-avatar').src = profile.avatar_url || `https://ui-avatars.com/api/?name=${profile.full_name}`;
-    }
-
-    loadChatMessages(chatId);
-
-    if (chatInterval) clearInterval(chatInterval);
-    chatInterval = setInterval(() => loadChatMessages(chatId), 3000);
+    document.getElementById('chat-header-name').innerHTML = `
+        ${profile.full_name}
+        ${profile.is_certified ? '<i class="fas fa-check-circle text-blue-500 text-xs ml-1"></i>' : ''}
+    `;
+    document.getElementById('chat-header-avatar').src = profile.avatar_url || 'https://api.dicebear.com/7.x/identicon/svg?seed=NomUtilisateur';
 }
 
-// 4. Charger les messages
+    loadChatMessages(chatId);
+    
+// Marquer tout de suite comme lu
+markChatAsRead(chatId);
+    
+    // Dans openChatRoom ...
+if (chatInterval) clearInterval(chatInterval);
+chatInterval = setInterval(() => {
+    // 1. Charger les nouveaux messages
+    loadChatMessages(currentChatId);
+    // 2. Vérifier le badge (pour s'il y a des messages dans d'autres chats)
+    updateMessageBadge();
+}, 3000);
+    setInterval(() => {
+    updateMessageBadge();
+}, 5000); 
+}
+
+// 5. Charger les messages (AVEC GROUPING PAR DATE)
 async function loadChatMessages(chatId) {
     const container = document.getElementById('chat-messages-container');
-    if (!container) return;
-
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) return;
 
-    const { data: messages, error } = await supabaseClient
-        .from('messages')
-        .select('*')
-        .eq('chat_id', chatId)
-        .order('created_at', { ascending: true });
+    try {
+        const { data: messages, error } = await supabaseClient
+            .from('messages')
+            .select('*')
+            .eq('chat_id', chatId)
+            .order('created_at', { ascending: true });
 
-    if (error || !messages) return;
+        if (error) throw error;
+        if (!messages || messages.length === 0) {
+            container.innerHTML = '<div class="text-center py-10 text-slate-400 text-xs">Commencez la conversation !</div>';
+            return;
+        }
 
-    // OPTIMISATION : On ne redessine que s'il y a de nouveaux messages
-    if (messages.length === lastMessageCount) return;
-    lastMessageCount = messages.length;
+        // On vide le conteneur
+        container.innerHTML = '';
 
-    container.innerHTML = ''; 
+        // Variable pour mémoriser la date du message précédent
+        let lastDate = null;
 
-    messages.forEach(msg => {
-        const isMe = msg.sender_id === user.id;
-        const row = document.createElement('div');
-        row.className = `flex w-full mb-4 ${isMe ? 'justify-end' : 'justify-start'}`;
-        
-        const bubbleClass = isMe 
-            ? 'bg-blue-600 text-white rounded-2xl rounded-tr-sm shadow-sm' 
-            : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-2xl rounded-tl-sm border border-slate-100 dark:border-slate-700 shadow-sm';
+        messages.forEach(msg => {
+            // 1. Récupérer la date "pure" (sans l'heure), ex: "12/10/2024"
+            const msgDate = new Date(msg.created_at).toLocaleDateString('fr-FR');
 
-        row.innerHTML = `
-            <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[80%]">
-                <div class="${bubbleClass} px-4 py-2 text-sm break-words">
-                    ${msg.content}
+            // 2. Si la date change par rapport au message précédent, on affiche le séparateur
+            if (lastDate !== msgDate) {
+                const dateSeparator = document.createElement('div');
+                dateSeparator.className = 'text-center my-4';
+                dateSeparator.innerHTML = `<span class="text-[10px] font-bold text-slate-400 uppercase bg-slate-200 dark:bg-slate-800 px-3 py-1 rounded-full">${msgDate}</span>`;
+                container.appendChild(dateSeparator);
+
+                // On met à jour la mémoire
+                lastDate = msgDate;
+            }
+
+            // 3. Affichage de la bulle de message (On garde l'heure dedans)
+            const isMe = msg.sender_id === user.id;
+            const bubbleClass = isMe 
+                ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-2xl rounded-tr-sm shadow-md' 
+                : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-2xl rounded-tl-sm shadow-sm border border-slate-100 dark:border-slate-700';
+
+            const row = document.createElement('div');
+            row.className = `flex w-full mb-4 ${isMe ? 'justify-end' : 'justify-start'}`;
+            row.innerHTML = `
+                <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%]">
+                    <div class="${bubbleClass} px-4 py-2 text-sm leading-relaxed break-words">
+                        ${msg.content}
+                    </div>
+                    <span class="text-[10px] text-slate-400 mt-1 mx-1">
+                        ${new Date(msg.created_at).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})}
+                    </span>
                 </div>
-                <span class="text-[10px] text-slate-400 mt-1 mx-1">${new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-            </div>
-        `;
-        container.appendChild(row);
-    });
+            `;
+            container.appendChild(row);
+        });
 
-    container.scrollTop = container.scrollHeight;
+        // Scroll en bas
+        container.scrollTop = container.scrollHeight;
+
+    } catch (err) {
+        console.error("Erreur loadMessages:", err);
+    }
 }
-
 // 5. Envoyer un message
 async function sendChatMessage(e) {
     if(e) e.preventDefault();
@@ -4725,6 +4772,71 @@ window.switchPage = function(pageId) {
         originalSwitchPage(pageId);
     }
 };
+        /* --- LOGIQUE DU BADGE (UNIQUEMENT SI NON LU) --- */
+
+async function updateMessageBadge() {
+    const badge = document.getElementById('msg-badge-count');
+    if (!badge) return;
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return;
+
+    try {
+        // 1. Récupérer tous les chats où je suis impliqué
+        const { data: myChats } = await supabaseClient
+            .from('chats')
+            .select('id')
+            .or(`user_1_id.eq.${user.id},user_2_id.eq.${user.id}`);
+
+        if (!myChats || myChats.length === 0) {
+            badge.classList.add('hidden'); // Cacher si pas de chats
+            return;
+        }
+
+        const myChatIds = myChats.map(c => c.id);
+
+        // 2. Compter uniquement les messages NON LUS envoyés par L'AUTRE
+        const { count } = await supabaseClient
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .in('chat_id', myChatIds)          // Dans mes chats
+            .neq('sender_id', user.id)        // Pas envoyé par moi
+            .eq('is_read', false);           // ET qui est NON LU (Ici c'est la clé)
+
+        const unreadCount = count || 0;
+
+        // 3. Afficher ou Cacher le badge selon le résultat
+        if (unreadCount > 0) {
+            badge.innerText = unreadCount > 99 ? '99+' : unreadCount;
+            badge.classList.remove('hidden'); // Afficher
+        } else {
+            badge.classList.add('hidden');    // Cacher
+        }
+
+    } catch (err) {
+        console.error("Erreur update badge:", err);
+    }
+}
+
+// 2. Marquer une conversation comme lue
+async function markChatAsRead(chatId) {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return;
+
+    try {
+        // Mettre à jour tous les messages de ce chat envoyés par l'autre
+        await supabaseClient
+            .from('messages')
+            .update({ is_read: true })
+            .eq('chat_id', chatId)
+            .neq('sender_id', user.id); // On ne marque pas les miens comme lus
+        
+        // Mettre à jour le badge immédiatement
+        updateMessageBadge();
+    } catch (err) {
+        console.error("Erreur mark read:", err);
+    }
+}
 </script>
 </body>
 </html>
