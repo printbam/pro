@@ -644,6 +644,10 @@ body.dark-mode #chat-input {
     color: white;
 }
 body.dark-mode .chat-header { color: #94a3b8; }
+        /* Classe pour forcer le masquage du Dock (priorité maximale) */
+.mobile-dock.dock-hidden {
+    display: none !important; 
+}
     </style>
 </head>
 <body>
@@ -693,9 +697,9 @@ body.dark-mode .chat-header { color: #94a3b8; }
     <div>
         <p class="px-4 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider" data-i18n="nav_account">Compte</p>
         <div class="flex flex-col gap-2">
-            <a href="javascript:void(0)" onclick="toggleProfile()" class="nav-link-pro">
+            <a href="javascript:void(0)" onclick="switchPage('profile-social')" class="nav-link-pro">
                 <i class="fa-solid fa-user-circle w-5 text-center text-sm"></i> 
-                <span data-i18n="nav_profile">Mon Profil</span>
+                <span>Mon Profil</span>
             </a>
             <a href="javascript:void(0)" onclick="toggleOrders()" class="nav-link-pro">
                 <i class="fa-solid fa-receipt w-5 text-center text-sm"></i> 
@@ -834,6 +838,113 @@ body.dark-mode .chat-header { color: #94a3b8; }
             </section>
         </div> <!-- FIN HOME VIEW -->
 
+
+<!-- PAGE : PROFIL SOCIAL (DESIGN FLAT STYLE CAPTURE) -->
+<div id="profile-social-view" class="page-view">
+    <!-- Container principal fond blanc pour cacher le fond de l'app -->
+    <div class="bg-white min-h-screen max-w-lg mx-auto shadow-sm relative z-20 pb-20">
+        
+        <!-- HEADER : Avatar + Nom + Stats -->
+        <div class="p-5 flex items-start gap-5 border-b border-gray-100">
+            <!-- Avatar (Rond, Bordure fine) -->
+            <div class="relative">
+                <div class="w-20 h-20 md:w-24 md:h-24 rounded-full border border-gray-200 p-1 bg-white">
+                    <img id="social-avatar" src="" alt="Profile" class="w-full h-full object-cover rounded-full hidden">
+                    <div id="social-avatar-placeholder" class="w-full h-full bg-gray-100 rounded-full flex items-center justify-center text-gray-300">
+                        <i class="fas fa-user text-2xl"></i>
+                    </div>
+                </div>
+                <!-- Badge Certifié (Petit cercle bleu en bas à droite) -->
+                <div id="social-badge" class="absolute bottom-1 right-1 w-6 h-6 bg-blue-500 rounded-full border-2 border-white flex items-center justify-center hidden">
+                    <i class="fas fa-check text-white text-[10px]"></i>
+                </div>
+            </div>
+
+            <!-- Infos Principales (Nom + Stats) -->
+            <div class="flex-1 pt-1">
+                <h1 id="social-fullname" class="text-xl font-bold text-black leading-tight mb-1">Chargement...</h1>
+                
+                <!-- Stats (Suivis / Abonnés) -->
+                <div class="text-sm text-gray-600 font-medium mb-2">
+                    <span id="stat-following">0</span> abonnements • 
+                    <span id="stat-followers">0</span> abonnés
+                </div>
+                
+                <!-- Petit bouton Modifier (Discret) -->
+                <button onclick="toggleProfile()" class="px-3 py-1 bg-gray-100 text-xs font-bold text-gray-700 rounded hover:bg-gray-200 transition">
+                    Modifier le profil
+                </button>
+            </div>
+        </div>
+
+        <!-- SECTION INFOS (Liste grise comme sur la capture) -->
+        <div class="bg-gray-50 px-5 py-4 space-y-3 border-b border-gray-200">
+            <!-- Téléphone -->
+            <div class="flex items-center gap-3">
+                <i class="fas fa-phone text-gray-400 w-4 text-center"></i>
+                <span id="social-phone" class="text-sm text-gray-700 font-medium">...</span>
+            </div>
+            <!-- Username -->
+            <div class="flex items-center gap-3">
+                <i class="fas fa-at text-gray-400 w-4 text-center"></i>
+                <span id="social-username" class="text-sm text-gray-700 font-medium">...</span>
+            </div>
+            <!-- Date de naissance -->
+            <div class="flex items-center gap-3">
+                <i class="fas fa-birthday-cake text-gray-400 w-4 text-center"></i>
+                <span id="social-dob" class="text-sm text-gray-700 font-medium">...</span>
+            </div>
+        </div>
+
+        <!-- ONGLETS (Publications / Archivées) -->
+        <div class="flex border-b border-gray-200">
+            <button onclick="switchSocialTab('publications')" class="social-tab-btn flex-1 py-4 text-sm font-bold text-black border-b-2 border-black transition-colors">
+                Publications
+            </button>
+            <button onclick="switchSocialTab('archives')" class="social-tab-btn flex-1 py-4 text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-gray-600 transition-colors">
+                Publications archivées
+            </button>
+        </div>
+
+        <!-- GRILLE DES PHOTOS (3 Colonnes, écart minime) -->
+        <div id="social-posts-grid" class="grid grid-cols-3 gap-1 bg-gray-100">
+            <!-- Les photos seront injectées ici par JS -->
+            <div class="col-span-3 flex flex-col items-center justify-center py-20 text-gray-400">
+                <i class="fas fa-camera text-3xl mb-2"></i>
+                <p class="text-xs">Aucune publication</p>
+            </div>
+        </div>
+
+        <!-- BOUTON AJOUTER FLOTTANT (En bas à droite ou fixe en bas) -->
+        <!-- La capture montre un bouton en bas. Je le place fixe en bas à droite pour l'effet moderne -->
+        <button onclick="openNewPostModal()" class="fixed bottom-6 right-6 md:absolute md:bottom-6 md:right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition-all z-50">
+            <i class="fas fa-plus text-xl"></i>
+        </button>
+
+    </div>
+</div>
+
+<!-- MODALE AJOUT PHOTO (Simple et blanche) -->
+<div id="new-post-modal" class="fixed inset-0 z-[9500] hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl">
+        <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+            <h3 class="font-bold text-black">Nouvelle publication</h3>
+            <button onclick="closeNewPostModal()" class="text-blue-500 font-bold text-sm">Annuler</button>
+        </div>
+        <div class="p-4">
+            <form id="new-post-form" onsubmit="handleNewPost(event)" class="space-y-4">
+                <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:bg-gray-50 transition cursor-pointer" onclick="document.getElementById('post-file-input').click()">
+                    <input type="file" id="post-file-input" accept="image/*" required class="hidden">
+                    <i class="fas fa-images text-3xl text-gray-400 mb-2"></i>
+                    <p class="text-xs text-gray-500 font-medium">Appuyez pour choisir une photo</p>
+                </div>
+                <textarea id="post-caption" rows="3" placeholder="Écrivez une légende..." class="w-full text-sm p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 resize-none"></textarea>
+                <button type="submit" class="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition">Partager</button>
+            </form>
+        </div>
+    </div>
+</div>
+  
         <!-- PAGE 2: MARKETPLACE -->
         <div id="marketplace-view" class="page-view">
             <section class="max-w-7xl mx-auto px-6 py-10">
@@ -1109,45 +1220,51 @@ body.dark-mode .chat-header { color: #94a3b8; }
         <!-- PAGE 4: ESPACE ADMIN (Caché par défaut) -->
         <!-- PAGE 4: ESPACE ADMIN (À coller AVANT le footer) -->
         <div id="admin-view" class="page-view">
-            <section class="max-w-7xl mx-auto px-6 py-10">
-                <div class="flex justify-between items-end mb-10 border-b border-slate-200 pb-6">
-                    <div>
-                        <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight mb-2"><span class="text-gradient">Espace Admin</span></h1>
-                        <p class="text-slate-500">Gérez le contenu de votre application.</p>
-                    </div>
-                    <button onclick="openArticleModal()" class="px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition-all flex items-center gap-2">
-                        <i class="fas fa-plus"></i> Nouvel Article
-                    </button>
-                </div>
-
-                <!-- Liste des articles -->
-                <div id="admin-articles-list" class="grid grid-cols-1 gap-6">
-                    <!-- Les articles s'afficheront ici via JS -->
-                    <div class="text-center py-10 text-slate-400">Chargement des articles...</div>
-                <!-- </div> -->
-            </section>
-        </div>
-        <!-- FOOTER (SHARED) -->
-        <!-- <footer id="main-footer" class="relative mt-10 border-t border-slate-200 bg-white pt-14 pb-10">
-            <div class="max-w-7xl mx-auto px-6">
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-12 mb-16">
-                    <div class="md:col-span-4 space-y-6">
-                        <div class="flex items-center gap-2"><div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white text-xs"><i class="fas fa-print"></i></div><span class="text-xl font-bold text-slate-900 tracking-tight">Print<span class="text-indigo-600">bam</span></span></div>
-                        <p class="text-slate-500 text-sm leading-relaxed" data-i18n="footer_about">L'infrastructure d'impression cloud leader en Afrique centrale. Fiabilité, rapidité et sécurité pour vos documents.</p>
-                        <div class="flex gap-4"><a href="#" class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-indigo-600 hover:text-white transition-all"><i class="fab fa-linkedin-in"></i></a><a href="#" class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-indigo-600 hover:text-white transition-all"><i class="fab fa-twitter"></i></a><a href="#" class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-indigo-600 hover:text-white transition-all"><i class="fab fa-whatsapp"></i></a></div>
-                    </div>
-                    <div class="md:col-span-2 space-y-4"><h4 class="text-slate-900 font-bold text-sm uppercase tracking-wider" data-i18n="footer_services">Services</h4><ul class="space-y-3 text-sm text-slate-500"><li><a href="javascript:void(0)" onclick="switchPage('services')" class="hover:text-indigo-600 transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px]"></i> Impression</a></li><li><a href="javascript:void(0)" onclick="switchPage('marketplace')" class="hover:text-indigo-600 transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px]"></i> Packs</a></li></ul></div>
-                    <div class="md:col-span-4 space-y-4"><h4 class="text-slate-900 font-bold text-sm uppercase tracking-wider" data-i18n="footer_contact">Contact</h4><div class="space-y-4"><div class="flex items-start gap-3"><i class="fas fa-map-marker-alt text-indigo-600 mt-1 text-sm"></i><div><p class="text-sm font-bold text-slate-900">Siège Social</p><p class="text-xs text-slate-500">Croix rouge, Kinshasa, RDC</p></div></div><div class="flex items-start gap-3"><i class="fas fa-envelope text-indigo-600 mt-1 text-sm"></i><div><p class="text-sm font-bold text-slate-900">Email Support</p><p class="text-xs text-slate-500">contact@printbam.pro</p></div></div></div></div>
-                </div>
-                <div class="pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4"><p class="text-[10px] text-slate-400 font-medium tracking-wider">© 2026 Printbam Technology Inc. Tous droits réservés.</p></div>
+    <section class="max-w-7xl mx-auto px-6 py-10">
+        <div class="flex justify-between items-end mb-10 border-b border-slate-200 pb-6">
+            <div>
+                <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight mb-2"><span class="text-gradient">Espace Admin</span></h1>
+                <p class="text-slate-500">Gérez le contenu de votre application.</p>
             </div>
-        </footer> -->
-    <!-- </section> -->
+            <button onclick="openArticleModal()" class="px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition-all flex items-center gap-2">
+                <i class="fas fa-plus"></i> Nouvel Article
+            </button>
+        </div>
+
+        <!-- Liste des articles -->
+        <div id="admin-articles-list" class="grid grid-cols-1 gap-6">
+            <!-- Les articles s'afficheront ici via JS -->
+            <div class="text-center py-10 text-slate-400">Chargement des articles...</div>
+        </div>
+
+        <!-- SECTION GESTION MEMBRES (BADGES) -->
+        <div class="mt-12 border-t border-slate-200 pt-8">
+            <h3 class="text-2xl font-black mb-6 flex items-center gap-2">
+                <i class="fas fa-certificate text-amber-500"></i> Certification Membres
+            </h3>
+            
+            <div class="glass overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-slate-600 uppercase font-bold text-xs">
+                            <tr>
+                                <th class="px-6 py-4">Utilisateur</th>
+                                <th class="px-6 py-4">Email</th>
+                                <th class="px-6 py-4 text-center">Statut Actuel</th>
+                                <th class="px-6 py-4 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-users-list" class="divide-y divide-slate-100">
+                            <!-- La liste se chargera via JS -->
+                            <tr><td colspan="4" class="p-4 text-center text-slate-400">Chargement...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
 </div>
-    <!-- </div> <!-- END MAIN CONTENT -->
-
-
-
+    </div> <!-- END MAIN CONTENT -->
     <!-- PAGE 5: FLUX CONVERT (CONVERTISSEUR) -->
 <div id="convert-view" class="page-view">
     
@@ -1613,6 +1730,16 @@ body.dark-mode .chat-header { color: #94a3b8; }
 
     <!-- JAVASCRIPT DU CONVERTISSEUR -->
     <script>
+                /* --- CONFIGURATION SUPABASE --- */
+const SUPABASE_URL = 'https://lqqtvumwdixlhamwmqii.supabase.co'; 
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxcXR2dW13ZGl4bGhhbXdtcWlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyOTQ1NjMsImV4cCI6MjA4NTg3MDU2M30.QKTBQbZ78iRVyM1o-hhtAPkWP23h_vXAMA3zrfuzipY'; // Votre clé
+
+// On récupère la fonction createClient de la librairie globale
+// const { createClient } = supabase;
+
+// On crée notre instance client avec un nom différent pour éviter le conflit
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
         // On encapsule pour éviter les conflits avec le reste du site
         (function() {
             let files = [];
@@ -1814,7 +1941,7 @@ body.dark-mode .chat-header { color: #94a3b8; }
     
     <!-- MOBILE DOCK -->
     <div class="mobile-dock md:hidden bg-white rounded-2xl px-2 py-2 flex items-center justify-between shadow-xl border border-slate-100">
-        <a onclick="switchPage('home')" class="flex flex-1 flex-col items-center gap-1 group cursor-pointer"><i class="fas fa-house text-lg text-indigo-600"></i><span class="text-[9px] font-medium text-indigo-600">Accueil</span></a>
+        <a onclick="switchPage('home')" class="flex flex-1 flex-col items-center gap-1 group cursor-pointer"><i class="fas fa-house text-lg text-indigo-600"></i><span class="text-[9px] font-medium text-indigo-600">Feed</span></a>
         <a onclick="switchPage('marketplace')" class="flex flex-1 flex-col items-center gap-1 group cursor-pointer"><i class="fas fa-shopping-bag text-lg text-slate-400 group-hover:text-slate-600"></i><span class="text-[9px] font-medium text-slate-400">Marketplace</span></a>
         <div class="flex flex-1 justify-center -mt-6"><a href="javascript:void(0)" onclick="openTerminal()" class="relative group cursor-pointer"><div class="w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-indigo-200 border-4 border-slate-50"><i class="fas fa-print text-white text-lg"></i></div></a></div>
         <a href="javascript:void(0)" onclick="toggleChat()" class="flex flex-1 flex-col items-center gap-1 group cursor-pointer">
@@ -1869,12 +1996,41 @@ body.dark-mode .chat-header { color: #94a3b8; }
                 <div id="profile-panel" class="absolute right-0 top-0 h-full w-full md:w-[400px] translate-x-full transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col shadow-2xl bg-white border-l border-slate-100">
                     
                     <!-- HEADER -->
+                                        <!-- HEADER (NOUVEAU AVEC BADGE) -->
                     <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
-                        <div>
-                            <h2 class="text-xl font-bold text-slate-900" data-i18n="nav_profile">Profil</h2>
-                            <p class="text-[10px] text-indigo-600 font-bold uppercase tracking-wider mt-1" id="profile-role-display">Membre Vérifié</p>
+                        <div class="flex items-center gap-3">
+                            <!-- AVATAR -->
+                            <div class="relative group cursor-pointer" onclick="document.getElementById('profile-pic-input').click()">
+                                <div class="w-16 h-16 rounded-full bg-slate-200 border-4 border-white shadow-lg overflow-hidden flex items-center justify-center relative">
+                                    <img id="profile-avatar-img" src="" alt="Avatar" class="w-full h-full object-cover hidden">
+                                    <i id="profile-avatar-icon" class="fas fa-user text-3xl text-slate-400"></i>
+                                    
+                                    <!-- BADGE DE CERTIFICATION ICI -->
+                                    <div id="profile-certified-badge" class="absolute -bottom-1 -right-1 bg-blue-500 text-white w-8 h-8 rounded-full flex items-center justify-center border-2 border-white shadow-lg hidden">
+                                        <i class="fas fa-check text-xs"></i>
+                                    </div>
+                                </div>
+                                
+                                <!-- Overlay Caméra (Gardez votre code existant ou utilisez celui-ci) -->
+                                <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <i class="fas fa-camera text-white"></i>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h2 class="text-xl font-bold text-slate-900" data-i18n="nav_profile">Profil</h2>
+                                    <!-- AFFICHAGE TEXTE DU STATUT -->
+                                    <span id="profile-role-display" class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-200 text-slate-600">Membre</span>
+                                </div>
+                                <p class="text-[10px] text-indigo-600 font-bold uppercase tracking-wider mt-1" id="profile-email-display">email@example.com</p>
+                            </div>
                         </div>
-                        <button onclick="toggleProfile()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors"><i class="fas fa-times text-slate-500"></i></button>
+                        
+                        <!-- Bouton Fermer (Indispensable) -->
+                        <button onclick="toggleProfile()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors">
+                            <i class="fas fa-times text-slate-500"></i>
+                        </button>
                     </div>
             
                     <!-- CONTENT -->
@@ -2355,16 +2511,6 @@ body.dark-mode .chat-header { color: #94a3b8; }
 
     <!-- SCRIPT PRINCIPAL -->
     <script>
-        /* --- CONFIGURATION SUPABASE --- */
-const SUPABASE_URL = 'https://lqqtvumwdixlhamwmqii.supabase.co'; 
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxcXR2dW13ZGl4bGhhbXdtcWlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyOTQ1NjMsImV4cCI6MjA4NTg3MDU2M30.QKTBQbZ78iRVyM1o-hhtAPkWP23h_vXAMA3zrfuzipY'; // Votre clé
-
-// On récupère la fonction createClient de la librairie globale
-// const { createClient } = supabase;
-
-// On crée notre instance client avec un nom différent pour éviter le conflit
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        
         /* --- PRO FEATURES VARIABLES --- */
         let currentInvoiceData = null;
 
@@ -2386,8 +2532,12 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
             
             if (pageId === 'admin') {
-                loadAdminArticles();
-            }
+            loadAdminArticles(); // Charge les articles
+            loadAdminUsers();   // <--- AJOUTEZ CETTE LIGNE C'EST CRUCIAL
+        }
+            if (pageId === 'profile-social') {
+            loadSocialProfile();
+        }
             
             // --- FOOTER VISIBILITY LOGIC ---
         //     const footer = document.getElementById('main-footer');
@@ -2819,37 +2969,37 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             setTimeout(() => { form.classList.add('hidden'); successMsg.classList.remove('hidden'); form.reset(); btn.disabled = false; btn.innerHTML = '<span data-i18n="btn_send">Envoyer</span><i class="fas fa-paper-plane text-[10px]"></i>'; showToast("Message envoyé au support !", "success"); }, 1500);
         }
 
-        /* --- GESTION DU PROFIL UTILISATEUR (AVEC SUPABASE) --- */
+       /* --- GESTION DU PROFIL UTILISATEUR (AVEC SUPABASE) --- */
 
-        // Fonction pour ouvrir/fermer le panneau
-        async function toggleProfile() {
-            // Vérification de sécurité via Supabase Auth
-            const isConnected = await checkAuth();
-            if (!isConnected) return;
-        
-            genericToggle('profile-overlay', 'profile-panel', 'div:first-child');
-            
-            // Charger les données si on ouvre
-            const overlay = document.getElementById('profile-overlay');
-            if (!overlay.classList.contains('invisible')) {
-                await loadUserProfile();
-            }
-        }
-        
-        // Vérifie si l'utilisateur est connecté via Supabase
-        async function checkAuth() {
-            const { data: { user }, error } = await supabaseClient.auth.getUser();
-            
-            if (error || !user) {
-                showToast("Veuillez vous connecter pour accéder à cette page.", "error");
-                setTimeout(() => { window.location.href = "login.html"; }, 1000);
-                return false;
-            }
-            return true;
-        }
-        
-        // Charger les infos du profil depuis Supabase
-       async function loadUserProfile() {
+// Fonction pour ouvrir/fermer le panneau
+async function toggleProfile() {
+    // Vérification de sécurité via Supabase Auth
+    const isConnected = await checkAuth();
+    if (!isConnected) return;
+    
+    genericToggle('profile-overlay', 'profile-panel', 'div:first-child');
+    
+    // Charger les données si on ouvre le panneau
+    const overlay = document.getElementById('profile-overlay');
+    if (!overlay.classList.contains('invisible')) {
+        await loadUserProfile();
+    }
+}
+
+// Vérifie si l'utilisateur est connecté via Supabase
+async function checkAuth() {
+    const { data: { user }, error } = await supabaseClient.auth.getUser();
+    
+    if (error || !user) {
+        showToast("Veuillez vous connecter pour accéder à cette page.", "error");
+        setTimeout(() => { window.location.href = "login.html"; }, 1000);
+        return false;
+    }
+    return true;
+}
+
+// Charger les infos du profil depuis Supabase
+async function loadUserProfile() {
     try {
         // 1. Récupérer l'utilisateur connecté depuis la session
         const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
@@ -2857,7 +3007,8 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         if (authError || !user) {
             console.log("Utilisateur non connecté");
             return;
-        } checkAdminStatus();
+        }
+        checkAdminStatus();
 
         // 2. Récupérer les données de la table 'profiles'
         // On utilise 'profile' comme nom de variable pour correspondre à votre suite de code
@@ -2865,7 +3016,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             .from('profiles')
             .select('*')
             .eq('id', user.id) // CORRECTION : On utilise user.id ici
-            .maybeSingle();
+            .maybeSingle(); 
 
         if (error) {
             console.error("Erreur lors de la récupération :", error.message);
@@ -2881,27 +3032,25 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
                 document.getElementById('p-name').value = profile.full_name || user.user_metadata.full_name || '';
             
             if (document.getElementById('p-email'))
-                document.getElementById('p-email').value = user.email || ''; // L'email vient souvent de Auth
+                document.getElementById('p-email').value = user.email || '';
             
-            if (document.getElementById('p-phone'))
+            if (document.getElementById('p-phone')) // Remplacez 'else if' par 'if'
                 document.getElementById('p-phone').value = profile.phone || '';
-            
+                        
             if (document.getElementById('p-bio'))
                 document.getElementById('p-bio').value = profile.bio || '';
 
-            // Gestion de l'avatar (Image vs Icône)
+            // Gestion de l'avatar (Image vs Icon)
             const imgDisplay = document.getElementById('profile-avatar-img');
             const iconDisplay = document.getElementById('profile-avatar-icon');
 
-            if (imgDisplay && iconDisplay) {
-                if (profile.avatar_url) {
-                    imgDisplay.src = profile.avatar_url;
-                    imgDisplay.classList.remove('hidden');
-                    iconDisplay.classList.add('hidden');
-                } else {
-                    imgDisplay.classList.add('hidden');
-                    iconDisplay.classList.remove('hidden');
-                }
+            if (profile.is_certified) {
+                // Afficher l'icône bleue
+                if(imgDisplay) imgDisplay.classList.remove('hidden');
+                iconDisplay.classList.add('hidden');
+            } else {
+                imgDisplay.classList.add('hidden');
+                iconDisplay.classList.remove('hidden');
             }
         } else {
             console.log("Aucun profil trouvé dans la table 'profiles' pour cet ID.");
@@ -2910,35 +3059,34 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         console.error("Erreur inattendue :", err);
     }
 }
-        // Gestion de l'image de profil (Upload Supabase Storage)
-        let avatarFile = null; // Variable temporaire pour stocker le fichier choisi
-        
-        function handleProfileImage(input) {
-            if (input.files && input.files[0]) {
-                avatarFile = input.files[0]; // On stocke le fichier pour l'upload plus tard
-                
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const imgDisplay = document.getElementById('profile-avatar-img');
-                    const iconDisplay = document.getElementById('profile-avatar-icon');
-                    
-                    imgDisplay.src = e.target.result;
-                    imgDisplay.classList.remove('hidden');
-                    iconDisplay.classList.add('hidden');
-                }
-                reader.readAsDataURL(input.files[0]);
-            }
+
+// Gestion de l'image de profil (Upload Supabase Storage)
+let avatarFile = null; // Variable temporaire pour stocker le fichier choisi
+
+function handleProfileImage(input) {
+    if (input.files && input.files[0]) {
+        avatarFile = input.files[0]; // On stocke le fichier pour l'upload plus tard
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const imgDisplay = document.getElementById('profile-avatar-img');
+            const iconDisplay = document.getElementById('profile-avatar-icon');
+            
+            imgDisplay.src = e.target.result;
+            imgDisplay.classList.remove('hidden');
+            iconDisplay.classList.add('hidden');
         }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
         
-        // Sauvegarder le profil (Upload image + Update BDD)
-        async function saveProfile(e) {
+// Sauvegarder le profil (Upload image + Update BDD)
+async function saveProfile(e) {
     e.preventDefault();
     
     // 1. Gestion de l'état du bouton
     const btn = e.target.querySelector('button[type="submit"]');
     const originalText = btn.innerHTML; // Utiliser innerHTML au cas où il y aurait des icônes
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enregistrement...';
-    btn.disabled = true;
 
     try {
         // 2. Vérification de l'utilisateur
@@ -2950,14 +3098,13 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         // 3. Gestion de l'Upload (si avatarFile existe dans votre scope global)
         // Note : assurez-vous que 'avatarFile' est bien défini quand l'utilisateur choisit un fichier
         if (typeof avatarFile !== 'undefined' && avatarFile) {
-            // Nettoyage du nom de fichier (enlever les caractères spéciaux)
             const fileExt = avatarFile.name.split('.').pop();
             const fileName = `${user.id}/${Date.now()}.${fileExt}`;
 
             const { data: uploadData, error: uploadError } = await supabaseClient.storage
                 .from('avatars')
                 .upload(fileName, avatarFile, {
-                    upsert: true // Écrase si le fichier existe déjà
+                    upsert: true
                 });
 
             if (uploadError) throw new Error("Erreur d'upload : " + uploadError.message);
@@ -2987,7 +3134,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         // 5. Mise à jour dans la base de données
         const { error: updateError } = await supabaseClient
             .from('profiles')
-            .upsert(updates, { onConflict: 'id' }); // Plus précis que upsert seul
+            .upsert(updates, { onConflict: 'id' }); 
 
         if (updateError) throw updateError;
 
@@ -3019,7 +3166,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
                 }, 1000);
             }
         }
-        
+    
         /* --- MISE À JOUR DES BLOCAGES D'ACCÈS --- */
         
         // Surcharge de la fonction openTerminal
@@ -3038,30 +3185,23 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             originalToggleOrders();
         }
 
+               /* --- GESTION DE L'ESPACE ADMIN --- */
 
-
-
-                /* --- GESTION DE L'ESPACE ADMIN --- */
-
-let isCurrentUserAdmin = false;
-
-// 1. Vérifier si l'utilisateur est admin lors du chargement du profil
 async function checkAdminStatus() {
     try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        if (!user) return;
+        // Correction de la parenthèse et de l'accolade ici :
+        const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+        
+        if (authError || !user) return;
 
-        // Utilisation de .maybeSingle() pour éviter l'erreur 406 si le profil n'existe pas encore
         const { data: profile, error } = await supabaseClient
             .from('profiles')
             .select('is_admin')
             .eq('id', user.id)
             .maybeSingle(); 
 
-        // On ignore l'erreur ici, on vérifie juste si on a un profil admin
         if (profile && profile.is_admin) {
             isCurrentUserAdmin = true;
-            // Afficher le lien Admin dans le menu
             const adminLink = document.getElementById('nav-admin-link');
             if (adminLink) adminLink.classList.remove('hidden');
         }
@@ -3073,7 +3213,10 @@ async function checkAdminStatus() {
 // 2. Charger les articles dans la vue Admin
 async function loadAdminArticles() {
     const list = document.getElementById('admin-articles-list');
-    list.innerHTML = '<div class="text-center py-10"><i class="fas fa-circle-notch fa-spin text-2xl text-indigo-600"></i></div>';
+    if (!list) return;
+
+    // Loader initial
+    list.innerHTML = '<div class="col-span-full text-center py-10"><i class="fas fa-circle-notch fa-spin text-2xl text-indigo-600"></i></div>';
 
     const { data: articles, error } = await supabaseClient
         .from('articles')
@@ -3081,31 +3224,63 @@ async function loadAdminArticles() {
         .order('created_at', { ascending: false });
 
     if (error) {
-        list.innerHTML = '<p class="text-red-500 text-center">Erreur de chargement: ' + error.message + '</p>';
+        list.innerHTML = `<p class="col-span-full text-red-500 text-center py-10">Erreur de chargement: ${error.message}</p>`;
         return;
     }
 
-    if (articles.length === 0) {
-        list.innerHTML = '<div class="text-center py-10 text-slate-400">Aucun article pour le moment.</div>';
+    if (!articles || articles.length === 0) {
+        list.innerHTML = '<div class="col-span-full text-center py-10 text-slate-400">Aucun article pour le moment.</div>';
         return;
     }
 
-    list.innerHTML = articles.map(art => `
-        <div class="glass p-6 flex justify-between items-start group">
-            <div class="flex gap-4">
-                ${art.image_url ? `<img src="${art.image_url}" class="w-20 h-20 object-cover rounded-lg bg-slate-100">` : '<div class="w-20 h-20 bg-slate-100 rounded-lg flex items-center justify-center text-slate-300"><i class="fas fa-file-image"></i></div>'}
-                <div>
-                    <span class="text-[10px] font-bold text-indigo-600 uppercase bg-indigo-50 px-2 py-1 rounded">${art.category || 'News'}</span>
-                    <h3 class="text-xl font-bold text-slate-900 mt-1">${art.title}</h3>
-                    <p class="text-xs text-slate-400 mt-1">${new Date(art.created_at).toLocaleDateString('fr-FR')}</p>
+    list.innerHTML = articles.map(art => {
+        // Préparation de l'image pour éviter les erreurs de backticks imbriqués
+        const imageContent = art.image_url 
+            ? `<img src="${art.image_url}" class="w-20 h-20 object-cover rounded-lg bg-slate-100 shadow-sm">` 
+            : `<div class="w-20 h-20 bg-slate-100 rounded-lg flex items-center justify-center text-slate-300 border border-slate-200"><i class="fas fa-image text-xl"></i></div>`;
+
+        // Nettoyage du contenu (enlève les balises HTML si présentes)
+        const plainText = art.content.replace(/<[^>]*>/g, '');
+        const excerpt = plainText.length > 80 ? plainText.substring(0, 80) + '...' : plainText;
+
+        return `
+        <div class="glass p-6 flex flex-col sm:flex-row gap-4 items-start group hover:shadow-lg transition-all border border-white/20">
+            <div class="flex-shrink-0">
+                ${imageContent}
+            </div>
+            
+            <div class="flex-1 flex flex-col h-full">
+                <div class="mb-2">
+                    <span class="text-[10px] font-bold text-indigo-600 uppercase bg-indigo-50 px-2 py-1 rounded-full border border-indigo-100 italic">
+                        ${art.category || 'Général'}
+                    </span>
+                    <h3 class="text-lg font-extrabold text-slate-900 mt-2 leading-tight group-hover:text-indigo-600 transition-colors">
+                        ${art.title}
+                    </h3>
+                </div>
+                
+                <p class="text-xs text-slate-500 mb-4 line-clamp-2">
+                    ${excerpt}
+                </p>
+                
+                <div class="flex items-center justify-between mt-auto pt-2 border-t border-slate-100/50">
+                    <span class="text-xs font-medium text-slate-400">
+                        <i class="far fa-calendar-alt mr-1"></i> 
+                        ${new Date(art.created_at).toLocaleDateString('fr-FR')}
+                    </span>
+                    <a href="javascript:void(0)" 
+                       onclick="editArticle('${art.id}')"
+                       class="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-indigo-600 hover:scale-110 transition-all">
+                        <i class="fas fa-pencil-alt text-[10px]"></i>
+                    </a>
                 </div>
             </div>
-            <button onclick="deleteArticle(${art.id})" class="text-slate-300 hover:text-red-500 transition-colors p-2"><i class="fas fa-trash"></i></button>
         </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
-// 3. Ouvrir/Fermer la modale
+// 3. Ouvrir/Fermermer la modale
 function openArticleModal() {
     document.getElementById('article-modal').classList.remove('hidden');
     document.getElementById('article-form').reset();
@@ -3118,34 +3293,53 @@ function closeArticleModal() {
 async function saveArticle(e) {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
+    
+    // État de chargement "Ultra Pro"
+    const originalText = btn.innerText;
     btn.disabled = true;
-    btn.innerText = "Publication...";
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> Publication...';
 
-    const title = document.getElementById('art-title').value;
-    const content = document.getElementById('art-content').value;
-    const category = document.getElementById('art-category').value;
-    const image_url = document.getElementById('art-image').value;
+    try {
+        const title = document.getElementById('art-title').value;
+        const content = document.getElementById('art-content').value;
+        const category = document.getElementById('art-category').value;
+        const image_url = document.getElementById('art-image').value;
 
-    const { data: { user } } = await supabaseClient.auth.getUser();
+        // CORRECTION : Ajout de la fermeture de l'objet et de la parenthèse
+        const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
 
-    const { error } = await supabaseClient.from('articles').insert([{
-        title,
-        content,
-        category,
-        image_url,
-        author_id: user.id
-    }]);
+        if (authError || !user) {
+            throw new Error("Session expirée ou utilisateur non trouvé.");
+        }
 
-    if (error) {
-        alert("Erreur lors de la publication : " + error.message);
-        btn.disabled = false;
-        btn.innerText = "Publier";
-    } else {
+        // Insertion dans Supabase
+        const { error } = await supabaseClient.from('articles').insert([{
+            title,
+            content,
+            category,
+            image_url,
+            author_id: user.id,
+            created_at: new Date().toISOString() // Bonne pratique pour le tri
+        }]);
+
+        if (error) throw error;
+
+        // Succès
         showToast("Article publié avec succès !", "success");
-        closeArticleModal();
-        loadAdminArticles(); // Rafraîchir la liste
+        
+        // Nettoyage et rafraîchissement
+        if (typeof closeArticleModal === 'function') closeArticleModal();
+        if (typeof loadAdminArticles === 'function') loadAdminArticles();
+        
+        e.target.reset(); // Vide le formulaire
+
+    } catch (error) {
+        console.error("Erreur publication:", error);
+        alert("Erreur lors de la publication : " + error.message);
+    } finally {
+        // Dans tous les cas (succès ou erreur), on réactive le bouton
         btn.disabled = false;
-        btn.innerText = "Publier";
+        btn.innerText = originalText;
     }
 }
 
@@ -3154,6 +3348,7 @@ async function deleteArticle(id) {
     if(!confirm("Êtes-vous sûr de vouloir supprimer cet article ?")) return;
     
     const { error } = await supabaseClient.from('articles').delete().eq('id', id);
+    
     if (error) {
         showToast("Erreur de suppression", "error");
     } else {
@@ -3161,9 +3356,6 @@ async function deleteArticle(id) {
         loadAdminArticles();
     }
 }
-
-
-
         /* --- AFFICHER LES ARTICLES ADMIN DANS LA MARKETPLACE --- */
 
 async function loadMarketplaceArticles() {
@@ -3195,128 +3387,222 @@ async function loadMarketplaceArticles() {
             } else if (art.category === 'corporate') {
                 bgClass = 'bg-emerald-50'; iconClass = 'fas fa-briefcase text-emerald-200';
             } else if (art.category === 'marketing') {
-                bgClass = 'bg-orange-50'; iconClass = 'fas fa-bullhorn text-orange-200';
+                bgClass = 'bg-orange-50'; iconClass = 'fa-bullhorn text-orange-200';
             }
 
             // Création de la Carte
             const articleHTML = `
-                <div class="market-item glass flex flex-col group overflow-hidden" data-category="${art.category || 'all'}">
-                    <div class="h-48 ${bgClass} relative">
-                        ${art.image_url 
-                            ? `<img src="${art.image_url}" class="w-full h-full object-cover transition-all duration-700 group-hover:scale-110">`
-                            : `<div class="absolute inset-0 flex items-center justify-center ${iconClass} text-6xl"><i class="${iconClass.replace('text-', ' text-')}"></i></div>`
-                        }
-                        <span class="absolute top-4 left-4 bg-indigo-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase">Pub</span>
-                    </div>
-                    <div class="p-6 flex-1 flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">${art.title}</h3>
-                        <p class="text-sm text-slate-500 mb-4 flex-1 line-clamp-2">${art.content.substring(0, 80)}...</p>
-                        <div class="flex items-center justify-between mt-auto">
-                            <span class="text-xl font-black text-slate-900">Info</span>
-                            <a href="javascript:void(0)" class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-indigo-600 transition-colors">
-                                <i class="fas fa-arrow-right"></i>
-                            </a>
-                        </div>
-                    </div>
+        <div class="market-item glass flex flex-col group overflow-hidden" data-category="${art.category || 'all'}">
+            <div class="h-48 ${bgClass || 'bg-slate-100'} relative overflow-hidden">
+                ${art.image_url 
+                    ? `<img src="${art.image_url}" class="w-full h-full object-cover transition-all duration-700 group-hover:scale-110">` 
+                    : `<div class="absolute inset-0 flex items-center justify-center text-slate-300 text-5xl">
+                         <i class="fas fa-image"></i>
+                       </div>`
+                }
+                <span class="absolute top-4 left-4 bg-indigo-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase shadow-lg z-10">
+                    Pub
+                </span>
+            </div>
+
+            <div class="p-6 flex-1 flex flex-col">
+                <h3 class="font-bold text-lg mb-2 text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-1">
+                    ${art.title}
+                </h3>
+                
+                <p class="text-sm text-slate-500 mb-4 flex-1 line-clamp-2">
+                    ${art.content ? art.content.replace(/<[^>]*>/g, '').substring(0, 80) + '...' : ''}
+                </p>
+
+                <div class="flex items-center justify-between mt-auto pt-4 border-t border-slate-100">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 italic">Détails</span>
+                    <a href="javascript:void(0)" 
+                       onclick="openTerminal()" 
+                       class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-indigo-600 hover:scale-110 transition-all shadow-md">
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Injection au début de la grille
+    grid.insertAdjacentHTML('afterbegin', articleHTML);
+    
+    });
+
+} catch (err) {
+        console.error("Erreur marketplace :", err);
+        
+        // Rendu visuel de l'erreur pour l'utilisateur
+        const grid = document.getElementById('products-grid'); // Remplacez par votre ID réel
+        if (grid) {
+            grid.innerHTML = `
+                <div class="col-span-full flex flex-col items-center py-12 text-slate-400">
+                    <i class="fas fa-exclamation-circle text-3xl mb-3 opacity-20"></i>
+                    <p class="text-sm font-medium">Impossible de charger les produits pour le moment.</p>
+                    <button onclick="location.reload()" class="mt-4 text-xs font-bold text-indigo-600 hover:text-indigo-500 underline uppercase tracking-widest">
+                        Réessayer
+                    </button>
                 </div>
             `;
-
-            // 4. Injecter le HTML au début de la grille (ou à la fin avec .innerHTML +=)
-            grid.insertAdjacentHTML('afterbegin', articleHTML);
-        });
-
-    } catch (err) {
-        console.error("Erreur marketplace :", err);
+        }
+        
+        // Optionnel : Notification Toast
+        if (typeof showToast === 'function') {
+            showToast("Problème de connexion à la marketplace", "error");
+        }
     }
 }
-
-
-        
-        /* --- FONCTIONS JS ULTRA PRO CHAT --- */
-
-// Fonction utilitaire pour générer l'avatar (Photo ou Initiales)
-function getAvatarHtml(userEmail, avatarUrl, isMe) {
-    // Si on a une URL d'image
-    if (avatarUrl) {
-        return `<img src="${avatarUrl}" class="w-full h-full object-cover">`;
+       /**
+ * Génère le HTML de l'avatar de manière élégante
+ * @param {string} userEmail - Email de l'utilisateur pour les initiales et la couleur
+ * @param {string} avatarUrl - URL optionnelle de la photo de profil
+ * @param {boolean} isMe - Optionnel : permet de styliser différemment mon propre avatar
+ */
+function getAvatarHtml(userEmail, avatarUrl, isMe = false) {
+    // 1. Si on a une URL d'image valide
+    if (avatarUrl && avatarUrl.trim() !== '') {
+        return `<img src="${avatarUrl}" class="w-full h-full object-cover rounded-full" onerror="this.parentElement.innerHTML='${getAvatarHtml(userEmail, null, isMe)}'">`;
     }
     
-    // Sinon, générer des initiales
-    const initials = userEmail ? userEmail.substring(0, 2).toUpperCase() : '??';
-    // Couleur aléatoire mais cohérente basée sur l'email
-    const colors = ['#ef4444', '#f97316', '#f59e0b', '#10b981', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#ec4899'];
-    const colorIndex = userEmail ? userEmail.length % colors.length : 0;
+    // 2. Préparation des initiales
+    const initials = userEmail && userEmail.includes('@') 
+        ? userEmail.split('@')[0].substring(0, 2).toUpperCase() 
+        : (userEmail ? userEmail.substring(0, 2).toUpperCase() : '??');
+
+    // 3. Palette de couleurs "Modern Business" (plus sobres et pros)
+    const colors = [
+        '#6366f1', // Indigo
+        '#8b5cf6', // Violet
+        '#ec4899', // Rose
+        '#3b82f6', // Bleu
+        '#06b6d4', // Cyan
+        '#10b981', // Emeraude
+        '#f59e0b', // Ambre
+        '#64748b'  // Ardoise
+    ];
+
+    // Génération d'un index de couleur constant pour le même utilisateur
+    const charCodeSum = userEmail ? userEmail.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) : 0;
+    const colorIndex = charCodeSum % colors.length;
     const bgColor = colors[colorIndex];
     
-    return `<span style="background-color: ${bgColor}; color: white;">${initials}</span>`;
+    // 4. Retourne le span avec centrage Flexbox parfait
+    return `
+        <div class="w-full h-full flex items-center justify-center font-bold text-[11px] tracking-tighter rounded-full text-white shadow-inner" 
+             style="background: linear-gradient(135deg, ${bgColor}CC, ${bgColor}); text-shadow: 0 1px 2px rgba(0,0,0,0.2);">
+            ${initials}
+        </div>
+    `;
 }
 
 
-
-        /* --- GESTION DE L'OUVERTURE DU CHAT (A AJOUTER ABSOLUMENT) --- */
+        /* --- GESTION DE L'OUVERTURE DU CHAT (MODIFIÉ) --- */
+/* --- GESTION DE L'OUVERTURE DU CHAT (CORRIGÉ POUR LE DOCK) --- */
 let chatInterval = null;
 
-// On utilise window.toggleChat pour s'assurer qu'elle est accessible globalement
 window.toggleChat = async function() {
-    // 1. Vérifier si l'utilisateur est connecté
-    const { data: { user } } = await supabaseClient.auth.getUser();
+    const { data: authData } = await supabaseClient.auth.getUser();
+    const user = authData?.user;
+
     if (!user) {
         showToast("Veuillez vous connecter pour accéder au chat", "error");
-        // Optionnel : Rediriger vers login
-        // window.location.href = 'login.html';
         return;
     }
 
     const overlay = document.getElementById('chat-overlay');
     const panel = document.getElementById('chat-panel');
+    const dock = document.querySelector('.mobile-dock');
+    
+    if (!overlay || !panel) return;
     
     if (overlay.classList.contains('invisible')) {
-        // --- OUVERTURE DU CHAT ---
+        // --- OUVERTURE ---
         overlay.classList.remove('invisible');
-        
-        // Animation d'entrée
         setTimeout(() => {
             overlay.querySelector('div:first-child').classList.replace('opacity-0', 'opacity-100');
             panel.classList.replace('translate-x-full', 'translate-x-0');
         }, 10);
 
-        // Charger les messages existants
         loadChatMessages();
-        
-        // Démarrer le rafraîchissement automatique (toutes les 3 secondes)
-        if (!chatInterval) {
-            chatInterval = setInterval(loadChatMessages, 3000);
-        }
-        
-        // Focus sur le champ de saisie après l'animation
+        if (!chatInterval) chatInterval = setInterval(loadChatMessages, 3000);
+
+        // --- CACHER LE DOCK ---
+        if (dock) dock.classList.add('dock-hidden');
+
         setTimeout(() => {
             const input = document.getElementById('chat-input');
             if (input) input.focus();
         }, 500);
-
     } else {
-        // --- FERMETURE DU CHAT ---
+        // --- FERMETURE ---
         overlay.querySelector('div:first-child').classList.replace('opacity-100', 'opacity-0');
         panel.classList.replace('translate-x-0', 'translate-x-full');
-        
-        setTimeout(() => {
-            overlay.classList.add('invisible');
-        }, 500);
+        setTimeout(() => overlay.classList.add('invisible'), 500);
 
-        // Arrêter le rafraîchissement pour ne pas surcharger le navigateur
         if (chatInterval) {
             clearInterval(chatInterval);
             chatInterval = null;
         }
+
+        // --- RÉAFFICHER LE DOCK ---
+        if (dock) dock.classList.remove('dock-hidden');
     }
 };
 
+        /* --- ENVOI DE MESSAGE CHAT --- */
+async function sendChatMessage(e) {
+    e.preventDefault(); // Empêche le rechargement de la page
 
-        
-// Charger les messages (Version Améliorée)
+    const input = document.getElementById('chat-input');
+    const content = input.value.trim();
+
+    if (!content) return; // Ne rien faire si le message est vide
+
+    // Vérifier que l'utilisateur est connecté
+    const { data: { user }, error } = await supabaseClient.auth.getUser();
+    if (error || !user) {
+        showToast("Vous devez être connecté pour chatter.", "error");
+        return;
+    }
+
+    // Petit effet visuel sur le bouton (optionnel)
+    const btn = e.target.querySelector('button[type="submit"]');
+    const originalIcon = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+
+    try {
+        // Insertion dans la table 'messages' de Supabase
+        const { error: insertError } = await supabaseClient
+            .from('messages')
+            .insert([{
+                user_id: user.id,
+                user_email: user.email, // Important pour l'affichage
+                content: content,
+                created_at: new Date().toISOString()
+            }]);
+
+        if (insertError) throw insertError;
+
+        // Succès
+        input.value = ''; // Vider le champ
+        await loadChatMessages(); // Recharger la liste pour voir son message
+
+    } catch (err) {
+        console.error("Erreur envoi message:", err);
+        showToast("Erreur lors de l'envoi du message", "error");
+    } finally {
+        // Remettre l'icône du bouton
+        btn.innerHTML = originalIcon;
+    }
+}
 async function loadChatMessages() {
     const container = document.getElementById('chat-messages');
-    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!container) return;
+
+    const { data: authData } = await supabaseClient.auth.getUser();
+    const user = authData?.user;
     if(!user) return;
 
     const { data: messages, error } = await supabaseClient
@@ -3326,35 +3612,23 @@ async function loadChatMessages() {
         .limit(50);
 
     if (error) return console.error("Erreur chat:", error);
+    if (container.querySelectorAll('.chat-row').length === messages.length) return;
 
-    // Ne pas recharger si le nombre de messages n'a pas changé (optimisation simple)
-    if (container.children.length > 2 && messages.length === container.querySelectorAll('.chat-row').length) return;
-
-    container.innerHTML = ''; // On vide proprement
-
-    // Message de date fixe
-    const dateDiv = document.createElement('div');
-    dateDiv.className = 'text-center my-6';
-    dateDiv.innerHTML = '<span class="inline-block bg-indigo-50 text-indigo-600 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full border border-indigo-100">Discussion en direct</span>';
-    container.appendChild(dateDiv);
+    container.innerHTML = '<div class="text-center my-6"><span class="inline-block bg-indigo-50 text-indigo-600 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full border border-indigo-100">Discussion en direct</span></div>';
 
     messages.forEach(msg => {
         const isMe = msg.user_id === user.id;
-        
         const row = document.createElement('div');
-        // Si c'est moi, je m'aligne à droite, sinon à gauche
         row.className = `chat-row ${isMe ? 'flex-row-reverse' : 'flex-row'}`;
-
-        const avatarHtml = getAvatarHtml(msg.user_email, null, isMe); // Note: On pourrait passer avatar_url depuis la BDD si on l'a stockée
-
+        
         const time = new Date(msg.created_at).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
-        const name = isMe ? 'Moi' : (msg.user_email.split('@')[0]); // Prend la partie avant le @
+        const name = isMe ? 'Moi' : (msg.user_email?.split('@')[0] || 'Anonyme');
 
         row.innerHTML = `
             <div class="chat-avatar shadow-md border-2 ${isMe ? 'border-indigo-100' : 'border-white'}">
-                ${avatarHtml}
+                ${getAvatarHtml(msg.user_email, null, isMe)}
             </div>
-            <div class="chat-content ${isMe ? 'items-end' : 'items-start'} text-right">
+            <div class="chat-content ${isMe ? 'items-end' : 'items-start'}">
                 <div class="chat-header ${isMe ? 'flex-row-reverse text-indigo-100' : 'text-indigo-600'}">
                     <span>${name}</span>
                     <span class="opacity-60 font-normal">${time}</span>
@@ -3362,16 +3636,257 @@ async function loadChatMessages() {
                 <div class="chat-bubble ${isMe ? 'me' : 'other'} shadow-sm">
                     ${msg.content}
                 </div>
-            </div>
-        `;
+            </div>`;
         container.appendChild(row);
     });
 
-    // Scroll fluide vers le bas
-    setTimeout(() => {
-        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
-    }, 100);
+    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
 }
-    </script>
+
+/* --- GESTION DES BADGES (ADMIN) --- */
+
+async function loadAdminUsers() {
+    const list = document.getElementById('admin-users-list');
+    if (!list) return;
+
+    const { data: profiles, error } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        list.innerHTML = `<tr><td colspan="4">Erreur: ${error.message}</td></tr>`;
+        return;
+    }
+
+    list.innerHTML = profiles.map(p => {
+        const isCert = Boolean(p.is_certified);
+        return `
+        <tr class="hover:bg-slate-50 border-b border-slate-100">
+            <td class="px-6 py-4 flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full overflow-hidden border shadow-sm">
+                     ${p.avatar_url ? `<img src="${p.avatar_url}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400"><i class="fas fa-user text-xs"></i></div>`}
+                </div>
+                <span class="font-bold text-slate-900">${p.full_name || 'Sans nom'}</span>
+            </td>
+            <td class="px-6 py-4 text-slate-500 text-xs">${p.email || 'N/A'}</td>
+            <td class="px-6 py-4 text-center">
+                ${isCert ? '<span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-xs font-bold"><i class="fas fa-check-circle"></i> Certifié</span>' : '<span class="text-slate-400 text-xs">Standard</span>'}
+            </td>
+            <td class="px-6 py-4 text-center">
+                <button onclick="toggleUserBadge('${p.id}', ${isCert})" class="px-3 py-1 text-xs font-bold border rounded ${isCert ? 'text-red-600 border-red-200' : 'text-green-600 border-green-200'}">
+                    ${isCert ? 'Révoquer' : 'Certifier'}
+                </button>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+async function toggleUserBadge(userId, currentStatus) {
+    const newStatus = !currentStatus;
+    const { error } = await supabaseClient.from('profiles').update({ is_certified: newStatus, certification_badge: newStatus ? 'Vérifié' : null }).eq('id', userId);
+
+    if (error) {
+        showToast("Erreur: " + error.message, "error");
+    } else {
+        showToast(newStatus ? "Utilisateur certifié !" : "Badge révoqué.", "success");
+        loadAdminUsers();
+    }
+}
+
+/* --- MISE À JOUR DU JS POUR LE NOUVEAU DESIGN --- */
+
+// 1. Charger le Profil (Version Flat)
+async function loadSocialProfile() {
+    try {
+        const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+        if (authError || !user) return;
+
+        const { data: profile, error } = await supabaseClient
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+
+        if (error) throw error;
+
+        if (profile) {
+            // Nom
+            document.getElementById('social-fullname').textContent = profile.full_name || 'Utilisateur';
+
+            // Username (Avec @)
+            const username = profile.username ? `@${profile.username}` : '@utilisateur';
+            document.getElementById('social-username').textContent = username;
+
+            // Stats (Format compact 23K, 850K)
+            const formatNumber = (num) => {
+                if (!num) return '0';
+                return num >= 1000 ? (num / 1000).toFixed(0) + 'K' : num;
+            };
+            document.getElementById('stat-following').textContent = formatNumber(profile.following_count);
+            document.getElementById('stat-followers').textContent = formatNumber(profile.followers_count);
+
+            // Phone
+            const phoneEl = document.getElementById('social-phone');
+            if (profile.phone) {
+                phoneEl.textContent = profile.phone; // Supabase stocke +243...
+                phoneEl.parentElement.style.display = 'flex';
+            } else {
+                phoneEl.parentElement.style.display = 'none';
+            }
+
+            // Date de naissance et Âge (Format : 10 juil., 2001 (24 ans))
+            const dobEl = document.getElementById('social-dob');
+            if (profile.birth_date) {
+                const date = new Date(profile.birth_date);
+                const age = new Date().getFullYear() - date.getFullYear();
+                const options = { day: 'numeric', month: 'short', year: 'numeric' };
+                const dateStr = date.toLocaleDateString('fr-FR', options);
+                
+                // Petit ajustement: Si l'anniversaire n'est pas passé cette année, on retire 1 an
+                const hasHadBirthday = new Date() > new Date(new Date().getFullYear(), date.getMonth(), date.getDate());
+                const finalAge = hasHadBirthday ? age : age - 1;
+
+                dobEl.textContent = `${dateStr} (${finalAge} ans)`;
+                dobEl.parentElement.style.display = 'flex';
+            } else {
+                dobEl.parentElement.style.display = 'none';
+            }
+
+            // Avatar
+            const imgEl = document.getElementById('social-avatar');
+            const placeholder = document.getElementById('social-avatar-placeholder');
+            const badge = document.getElementById('social-badge');
+
+            if (profile.avatar_url) {
+                imgEl.src = profile.avatar_url;
+                imgEl.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+            } else {
+                imgEl.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+            }
+
+            // Badge Certifié
+            if (profile.is_certified) {
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // Charger les photos (Grid)
+        loadSocialPosts(user.id);
+
+    } catch (err) {
+        console.error("Erreur:", err);
+    }
+}
+
+// 2. Gestion des Onglets (Style Noir/Gris)
+function switchSocialTab(type) {
+    // Reset styles
+    const tabs = document.querySelectorAll('.social-tab-btn');
+    tabs.forEach(t => {
+        t.classList.remove('text-black', 'border-black');
+        t.classList.add('text-gray-400', 'border-transparent');
+    });
+
+    // Active style
+    const activeTab = event.currentTarget;
+    activeTab.classList.remove('text-gray-400', 'border-transparent');
+    activeTab.classList.add('text-black', 'border-black');
+
+    if (type === 'archives') {
+        document.getElementById('social-posts-grid').innerHTML = '<div class="col-span-3 py-10 text-center text-gray-400 text-xs">Aucune publication archivée</div>';
+    } else {
+        // Recharger posts
+        const { data: { user } } = supabaseClient.auth.getUser();
+        if(user) loadSocialPosts(user.id);
+    }
+}
+
+// 3. Chargement des Photos (Grille 3 colonnes)
+async function loadSocialPosts(userId) {
+    const grid = document.getElementById('social-posts-grid');
+    try {
+        const { data: posts, error } = await supabaseClient
+            .from('posts')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        if (!posts || posts.length === 0) {
+            grid.innerHTML = `
+                <div class="col-span-3 flex flex-col items-center justify-center py-20 text-gray-400">
+                    <i class="fas fa-camera text-3xl mb-2"></i>
+                    <p class="text-xs">Aucune publication</p>
+                </div>`;
+            return;
+        }
+
+        // Génération HTML pour la grille (carrés parfaits)
+        grid.innerHTML = posts.map(post => `
+            <div class="aspect-square bg-gray-200 relative group cursor-pointer overflow-hidden">
+                <img src="${post.image_url}" class="w-full h-full object-cover" loading="lazy">
+                <!-- Overlay au survol (optionnel, style Instagram) -->
+                <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white text-xs font-bold">
+                    <span class="flex items-center gap-1"><i class="fas fa-heart"></i> 0</span>
+                </div>
+            </div>
+        `).join('');
+
+    } catch (err) {
+        console.error("Erreur posts:", err);
+    }
+}
+
+// 4. Modale (Garder l'ancien ou celui du HTML ci-dessus)
+function openNewPostModal() { document.getElementById('new-post-modal').classList.remove('hidden'); }
+function closeNewPostModal() { document.getElementById('new-post-modal').classList.add('hidden'); }
+
+// 5. Upload Post (Identique à avant)
+async function handleNewPost(e) {
+    e.preventDefault();
+    const fileInput = document.getElementById('post-file-input');
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.innerText = "Partage...";
+    btn.disabled = true;
+
+    try {
+        // Upload
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabaseClient.storage.from('posts').upload(fileName, file);
+        if (uploadError) throw uploadError;
+
+        const { data: publicUrlData } = supabaseClient.storage.from('posts').getPublicUrl(fileName);
+        
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        const { error: insertError } = await supabaseClient.from('posts').insert([{
+            user_id: user.id,
+            image_url: publicUrlData.publicUrl,
+            caption: document.getElementById('post-caption').value
+        }]);
+
+        if (insertError) throw insertError;
+
+        closeNewPostModal();
+        loadSocialProfile();
+        showToast("Publié !", "success");
+    } catch (err) {
+        console.error(err);
+        showToast("Erreur", "error");
+    } finally {
+        btn.innerText = "Partager";
+        btn.disabled = false;
+    }
+}
+</script>
 </body>
 </html>
