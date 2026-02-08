@@ -933,7 +933,84 @@ body.dark-mode .chat-header { color: #94a3b8; }
         </div>
     </div>
 </div>
-  
+
+
+            <!-- VUE 1 : LISTE DES MESSAGES (Style Photo 1) -->
+<div id="messages-view" class="page-view">
+    <section class="max-w-2xl mx-auto h-screen flex flex-col bg-white dark:bg-slate-900">
+        
+        <!-- Header -->
+        <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-white dark:bg-slate-900 sticky top-0 z-10">
+            <h2 class="text-xl font-bold text-slate-900 dark:text-white">Discussions</h2>
+            <button class="text-indigo-600"><i class="far fa-edit text-lg"></i></button>
+        </div>
+
+        <!-- Liste des conversations -->
+        <div id="chat-list-container" class="flex-1 overflow-y-auto">
+            <!-- Les éléments seront injectés ici par JS -->
+            <div class="flex flex-col items-center justify-center h-full text-slate-400">
+                <i class="fas fa-comments text-4xl mb-3 opacity-20"></i>
+                <p>Aucune discussion pour le moment.</p>
+            </div>
+        </div>
+
+        <!-- Barre de recherche (Optionnelle) -->
+        <div class="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+            <div class="relative">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input type="text" placeholder="Rechercher une discussion..." class="w-full pl-10 pr-4 py-2 rounded-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:text-white">
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- VUE 2 : ESPACE DE DISCUSSION (Style Photo 2) -->
+<div id="chat-view" class="page-view">
+    <section class="max-w-2xl mx-auto h-screen flex flex-col bg-white dark:bg-slate-900 relative">
+        
+        <!-- Header Discussion -->
+        <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3 bg-white dark:bg-slate-900 sticky top-0 z-20 shadow-sm">
+            <button onclick="switchPage('messages')" class="text-slate-500 hover:text-slate-900 dark:hover:text-white transition">
+                <i class="fas fa-arrow-left text-lg"></i>
+            </button>
+            <div class="flex items-center gap-3 flex-1">
+                <div class="relative">
+                    <img id="chat-header-avatar" src="" class="w-10 h-10 rounded-full object-cover border border-slate-200">
+                    <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white dark:border-slate-900"></div>
+                </div>
+                <div>
+                    <h3 id="chat-header-name" class="text-sm font-bold text-slate-900 dark:text-white leading-tight">...</h3>
+                    <p class="text-[10px] text-green-500 font-medium">En ligne</p>
+                </div>
+            </div>
+            <button class="text-slate-400 hover:text-indigo-600"><i class="fas fa-info-circle"></i></button>
+        </div>
+
+        <!-- Zone des Messages -->
+        <div id="chat-messages-container" class="flex-1 overflow-y-auto p-4 bg-slate-50 dark:bg-slate-950 scroll-smooth">
+            <!-- Les bulles seront injectées ici -->
+            <div class="flex justify-center my-4">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-200 dark:bg-slate-800 px-3 py-1 rounded-full">Aujourd'hui</span>
+            </div>
+        </div>
+
+        <!-- Zone de saisie -->
+        <div class="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700">
+            <form id="chat-form" onsubmit="sendChatMessage(event)" class="flex items-center gap-2">
+                <button type="button" class="text-slate-400 hover:text-indigo-600 p-2"><i class="fas fa-plus-circle text-xl"></i></button>
+                <div class="flex-1 relative">
+                    <input type="text" id="chat-input" placeholder="Écrire un message..." autocomplete="off"
+                           class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white transition">
+                    <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><i class="far fa-smile"></i></button>
+                </div>
+                <button type="submit" class="bg-indigo-600 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg hover:bg-indigo-700 transition transform active:scale-95">
+                    <i class="fas fa-paper-plane text-sm translate-x-[-1px] translate-y-[1px]"></i>
+                </button>
+            </form>
+        </div>
+    </section>
+</div>
+    
         <!-- PAGE 2: MARKETPLACE -->
         <div id="marketplace-view" class="page-view">
             <section class="max-w-7xl mx-auto px-6 py-10">
@@ -1933,10 +2010,11 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         <a onclick="switchPage('home')" class="flex flex-1 flex-col items-center gap-1 group cursor-pointer"><i class="fas fa-house text-lg text-indigo-600"></i><span class="text-[9px] font-medium text-indigo-600">Feed</span></a>
         <a onclick="switchPage('marketplace')" class="flex flex-1 flex-col items-center gap-1 group cursor-pointer"><i class="fas fa-shopping-bag text-lg text-slate-400 group-hover:text-slate-600"></i><span class="text-[9px] font-medium text-slate-400">Marketplace</span></a>
         <div class="flex flex-1 justify-center -mt-6"><a href="javascript:void(0)" onclick="openTerminal()" class="relative group cursor-pointer"><div class="w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-indigo-200 border-4 border-slate-50"><i class="fas fa-print text-white text-lg"></i></div></a></div>
-        <a href="javascript:void(0)" onclick="toggleChat()" class="flex flex-1 flex-col items-center gap-1 group cursor-pointer">
-            <i class="fab fa-facebook-messenger text-lg text-slate-400 group-hover:text-indigo-600"></i>
-            <span class="text-[9px] font-medium text-slate-400">Messages</span>
-        </a>
+        <!-- NOUVEAU CODE POUR L'ONGLET MESSAGES -->
+<a href="javascript:void(0)" onclick="switchPage('messages')" class="flex flex-1 flex-col items-center gap-1 group cursor-pointer">
+    <i class="fab fa-facebook-messenger text-lg text-slate-400 group-hover:text-indigo-600 transition-colors"></i>
+    <span class="text-[9px] font-medium text-slate-400">Messages</span>
+</a>
         <!-- LIEN PROFIL MODIFIÉ -->
 <a href="javascript:void(0)" onclick="switchPage('profile-social')" class="flex flex-1 flex-col items-center gap-1 group relative">
     
@@ -2236,65 +2314,82 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 
 
-    <!-- CHAT OVERLAY -->
-<div id="chat-overlay" class="fixed inset-0 z-[8500] invisible transition-all duration-500">
-    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm opacity-0 transition-opacity duration-500" onclick="toggleChat()"></div>
-    
-    <div id="chat-panel" class="absolute right-0 top-0 h-full w-full md:w-[480px] translate-x-full transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col shadow-2xl">
+    <!-- VUE 1 : LISTE DES MESSAGES (Style Photo 1) -->
+<div id="messages-view" class="page-view">
+    <section class="max-w-2xl mx-auto h-screen flex flex-col bg-white dark:bg-slate-900">
         
-        <!-- HEADER PRO -->
-        <div class="p-4 flex items-center justify-between text-white relative z-10">
-            <div class="flex items-center gap-4">
-                <div class="relative">
-                    <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md">
-                        <i class="fas fa-comments text-lg"></i>
-                    </div>
-                    <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-indigo-600 rounded-full"></div> <!-- Status Online -->
-                </div>
-                <div>
-                    <h2 class="font-bold text-sm tracking-wide">Communauté Printbam</h2>
-                    <p class="text-[10px] text-indigo-200 opacity-80 flex items-center gap-1">
-                        <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-                        24 membres en ligne
-                    </p>
-                </div>
-            </div>
-            <button onclick="toggleChat()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all duration-200">
-                <i class="fas fa-times"></i>
-            </button>
+        <!-- Header -->
+        <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-white dark:bg-slate-900 sticky top-0 z-10">
+            <h2 class="text-xl font-bold text-slate-900 dark:text-white">Discussions</h2>
+            <button class="text-indigo-600"><i class="far fa-edit text-lg"></i></button>
         </div>
 
-        <!-- MESSAGES -->
-        <div id="chat-messages" class="flex-1 overflow-y-auto p-6">
-            <!-- Message système de bienvenue -->
-            <div class="text-center my-6">
-                <span class="inline-block bg-indigo-50 text-indigo-600 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full border border-indigo-100">
-                    Aujourd'hui
-                </span>
+        <!-- Liste des conversations -->
+        <div id="chat-list-container" class="flex-1 overflow-y-auto">
+            <!-- Les éléments seront injectés ici par JS -->
+            <div class="flex flex-col items-center justify-center h-full text-slate-400">
+                <i class="fas fa-comments text-4xl mb-3 opacity-20"></i>
+                <p>Aucune discussion pour le moment.</p>
             </div>
-            
-            <!-- Les messages seront injectés ici -->
         </div>
 
-        <!-- INPUT AREA -->
-        <div class="p-4 bg-white border-t border-slate-100 z-10">
-            <form id="chat-form" onsubmit="sendChatMessage(event)" class="relative flex items-center gap-3">
-                <button type="button" class="text-slate-400 hover:text-indigo-500 transition-colors p-2">
-                    <i class="fas fa-plus-circle text-xl"></i>
-                </button>
-                <input type="text" id="chat-input" placeholder="Écrivez votre message..." class="flex-1 bg-slate-50 rounded-2xl px-5 py-3 text-sm focus:outline-none transition-all shadow-inner">
-                <button type="submit" class="w-10 h-10 rounded-full text-white flex items-center justify-center shadow-lg hover:shadow-indigo-500/40">
-                    <i class="fas fa-paper-plane text-sm transform translate-x-[-1px] translate-y-[1px]"></i>
-                </button>
-            </form>
-            <div class="text-center mt-2">
-                 <p class="text-[9px] text-slate-400 font-medium">Soyez respectueux. Pas de spam.</p>
+        <!-- Barre de recherche (Optionnelle) -->
+        <div class="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+            <div class="relative">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input type="text" placeholder="Rechercher une discussion..." class="w-full pl-10 pr-4 py-2 rounded-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:text-white">
             </div>
         </div>
-    </div>
+    </section>
 </div>
 
-    
+<!-- VUE 2 : ESPACE DE DISCUSSION (Style Photo 2) -->
+<div id="chat-view" class="page-view">
+    <section class="max-w-2xl mx-auto h-screen flex flex-col bg-white dark:bg-slate-900 relative">
+        
+        <!-- Header Discussion -->
+        <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3 bg-white dark:bg-slate-900 sticky top-0 z-20 shadow-sm">
+            <button onclick="switchPage('messages')" class="text-slate-500 hover:text-slate-900 dark:hover:text-white transition">
+                <i class="fas fa-arrow-left text-lg"></i>
+            </button>
+            <div class="flex items-center gap-3 flex-1">
+                <div class="relative">
+                    <img id="chat-header-avatar" src="" class="w-10 h-10 rounded-full object-cover border border-slate-200">
+                    <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white dark:border-slate-900"></div>
+                </div>
+                <div>
+                    <h3 id="chat-header-name" class="text-sm font-bold text-slate-900 dark:text-white leading-tight">...</h3>
+                    <p class="text-[10px] text-green-500 font-medium">En ligne</p>
+                </div>
+            </div>
+            <button class="text-slate-400 hover:text-indigo-600"><i class="fas fa-info-circle"></i></button>
+        </div>
+
+        <!-- Zone des Messages -->
+        <div id="chat-messages-container" class="flex-1 overflow-y-auto p-4 bg-slate-50 dark:bg-slate-950 scroll-smooth">
+            <!-- Les bulles seront injectées ici -->
+            <div class="flex justify-center my-4">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-200 dark:bg-slate-800 px-3 py-1 rounded-full">Aujourd'hui</span>
+            </div>
+        </div>
+
+        <!-- Zone de saisie -->
+        <div class="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700">
+            <form id="chat-form" onsubmit="sendChatMessage(event)" class="flex items-center gap-2">
+                <button type="button" class="text-slate-400 hover:text-indigo-600 p-2"><i class="fas fa-plus-circle text-xl"></i></button>
+                <div class="flex-1 relative">
+                    <input type="text" id="chat-input" placeholder="Écrire un message..." autocomplete="off"
+                           class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white transition">
+                    <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><i class="far fa-smile"></i></button>
+                </div>
+                <button type="submit" class="bg-indigo-600 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg hover:bg-indigo-700 transition transform active:scale-95">
+                    <i class="fas fa-paper-plane text-sm translate-x-[-1px] translate-y-[1px]"></i>
+                </button>
+            </form>
+        </div>
+    </section>
+</div> 
+    <!-- deuxième donné en haut -->
 
     <!-- MODAL DE SUIVI (TRACKING) - AVEC WHATSAPP ET DATE -->
     <div id="track-modal" class="fixed inset-0 z-[8500] invisible transition-all duration-500">
@@ -2593,6 +2688,11 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     // Charger le Profil Social si on va sur le profil
     if (pageId === 'profile-social') {
         loadSocialProfile();
+    }
+
+            // --- AJOUTEZ CECI POUR LES MESSAGES ---
+    if (pageId === 'messages') {
+        loadChatList(); // Charge la liste des discussions (Style Photo 1)
     }
             
             // --- FOOTER VISIBILITY LOGIC ---
@@ -3769,23 +3869,16 @@ async function toggleUserBadge(userId, currentStatus) {
 
 /* --- MISE À JOUR DU JS POUR LE NOUVEAU DESIGN --- */
 
-/* --- CHARGEMENT PROFIL (VERSION CORRIGÉE FINALE) --- */
+/* --- CHARGEMENT PROFIL (OPTIMISÉ) --- */
 async function loadSocialProfile(targetUserId = null) {
     try {
         const { data: { user: currentUser }, error: authError } = await supabaseClient.auth.getUser();
         if (authError || !currentUser) return;
 
-        let profileId = targetUserId;
-        let isMyProfile = false;
+        let profileId = targetUserId || currentUser.id;
+        let isMyProfile = (profileId === currentUser.id);
 
-        if (!profileId) {
-            profileId = currentUser.id;
-            isMyProfile = true;
-        } else {
-            isMyProfile = (profileId === currentUser.id);
-        }
-
-        // Requête sécurisée avec maybeSingle
+        // 1. Charger le profil
         const { data: profile, error } = await supabaseClient
             .from('profiles')
             .select('*')
@@ -3795,70 +3888,58 @@ async function loadSocialProfile(targetUserId = null) {
         if (error) throw error;
 
         if (!profile) {
-            // Gestion profil introuvable
-            const container = document.querySelector('#profile-social-view .max-w-2xl');
-            if (container) {
-                container.innerHTML = `
-                    <div class="text-center py-20">
-                        <h2 class="text-xl font-bold text-slate-900">Profil introuvable</h2>
-                        <button onclick="switchPage('home')" class="mt-4 text-indigo-600 underline">Retour</button>
-                    </div>
-                `;
-            }
+            const container = document.querySelector('#profile-social-view .max-w-2xl'); 
+            if (container) container.innerHTML = `<div class="text-center py-20"><h2 class="text-xl font-bold text-slate-900">Profil introuvable</h2></div>`;
             return;
         }
 
-        // --- MISE À JOUR DU DOM ---
+        // 2. Mise à jour du DOM de base
         const updateText = (id, text) => {
             const el = document.getElementById(id);
             if(el) el.textContent = text;
         };
 
         updateText('social-fullname', profile.full_name || 'Utilisateur');
-        const username = profile.username ? `@${profile.username}` : '@utilisateur';
-        updateText('social-username', username);
+        updateText('social-username', profile.username ? `@${profile.username}` : '@utilisateur');
 
-        // Stats (Calcul dynamique)
-        const formatNumber = (num) => num ? (num >= 1000 ? (num / 1000).toFixed(0) + 'K' : num) : '0';
-        
-        // Récupération des vrais chiffres
-        const { count: followersCount } = await supabaseClient.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', profileId);
-        const { count: followingCount } = await supabaseClient.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', profileId);
-        
-        updateText('stat-following', formatNumber(followingCount || 0));
-        updateText('stat-followers', formatNumber(followersCount || 0));
+        // 3. Stats (Optimisation : Lancement des deux requêtes en même temps)
+        const [followersRes, followingRes] = await Promise.all([
+            supabaseClient.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', profileId),
+            supabaseClient.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', profileId)
+        ]);
 
-        // --- GESTION CONDITIONNELLE : MON PROFIL vs PROFIL D'AUTRUI ---
+        const formatNumber = (num) => num >= 1000 ? (num / 1000).toFixed(1) + 'K' : (num || 0);
+        updateText('stat-followers', formatNumber(followersRes.count));
+        updateText('stat-following', formatNumber(followingRes.count));
 
-        // 1. GESTION DU DOCK (Seulement si c'est MOI)
-        if (isMyProfile) {
-            updateDockAvatar(profile.avatar_url);
-        }
-
-        // 2. GESTION DES BOUTONS D'ACTION (Modifier / Follow)
+        // 4. Gestion des éléments UI
         const editBtn = document.querySelector('button[onclick="toggleProfile()"]');
         const logoutBtn = document.querySelector('button[onclick="confirmSocialLogout()"]');
         const followContainer = document.getElementById('profile-follow-container');
 
         if (isMyProfile) {
-            // C'est MOI
             if(editBtn) editBtn.style.display = 'inline-block';
             if(logoutBtn) logoutBtn.style.display = 'flex';
-            if(followContainer) followContainer.style.display = 'none';
+            if(followContainer) {
+                followContainer.style.display = 'none';
+                followContainer.innerHTML = ''; 
+            }
+            updateDockAvatar(profile.avatar_url);
         } else {
-            // C'est QUELQU'UN D'AUTRE
             if(editBtn) editBtn.style.display = 'none';
             if(logoutBtn) logoutBtn.style.display = 'none';
             
-            // Afficher et initialiser le bouton Follow
-            if(followContainer) {
-                followContainer.style.display = 'block';
-                // On initialise le bouton
-                initFollowButtonOnProfile(profileId, currentUser.id);
+            if (followContainer) {
+                followContainer.style.display = 'flex';
+                followContainer.innerHTML = ''; // On vide pour laisser la fonction suivante remplir
+                
+                // Appel de ta fonction de création de boutons (Abonnement + Message)
+                // Assure-toi que cette fonction utilise followContainer pour injecter le HTML
+                await initFollowButtonOnProfile(profileId, followContainer); 
             }
         }
 
-        // --- AFFICHAGE AVATAR PRINCIPAL (Page) ---
+        // 5. Avatar principal (Correction fallback)
         const imgEl = document.getElementById('social-avatar');
         const placeholder = document.getElementById('social-avatar-placeholder');
         
@@ -3870,16 +3951,18 @@ async function loadSocialProfile(targetUserId = null) {
             } else {
                 imgEl.classList.add('hidden');
                 placeholder.classList.remove('hidden');
+                // Optionnel : Mettre une initiale dans le placeholder
+                placeholder.innerText = (profile.full_name || 'U').charAt(0).toUpperCase();
             }
         }
 
-        // Badge
+        // 6. Badge de certification
         const badgeInline = document.getElementById('social-badge-inline');
         if(badgeInline) {
-            if (profile.is_certified) badgeInline.classList.remove('hidden');
-            else badgeInline.classList.add('hidden');
+            profile.is_certified ? badgeInline.classList.remove('hidden') : badgeInline.classList.add('hidden');
         }
 
+        // 7. Charger les posts du profil
         loadSocialPosts(profileId);
 
     } catch (err) {
@@ -3887,60 +3970,54 @@ async function loadSocialProfile(targetUserId = null) {
     }
 }
 
-// Fonction pour initialiser le bouton Follow sur la page Profil
 async function initFollowButtonOnProfile(targetUserId, myId) {
     const container = document.getElementById('profile-follow-container');
-    if(!container) return;
+    if (!container) return;
 
-    container.style.display = 'block';
+    // 1. Sécurité : On définit cleanMyId proprement
+    let cleanMyId = (typeof myId === 'object' && myId !== null) ? myId.id : myId;
     
-    // Dans initFollowButtonOnProfile
-const { data: followCheck } = await supabaseClient
-    .from('follows')
-    .select('*')
-    .eq('follower_id', myId)
-    .eq('following_id', targetUserId)
-    .maybeSingle(); // <--- Utilisez .maybeSingle() pour éviter l'erreur si on ne suit pas encore
-    
-    const isFollowing = !!followCheck;
-
-    // Créer le bouton
-    container.innerHTML = `
-        <button onclick="toggleFollow('${targetUserId}', this)" class="${isFollowing ? 'following' : ''}">
-            ${isFollowing ? 'Abonné' : 'S\'abonner'}
-        </button>
-    `;
-    
-    // Appliquer le style initial
-    const btn = container.querySelector('button');
-    updateFollowButton(btn, isFollowing);
-}
-        
-// --- GESTION DES ONGLETS (CORRIGÉE) ---
-async function switchSocialTab(type) { // Ajout de "async"
-    
-    // Gestion du style des onglets
-    const tabs = document.querySelectorAll('.social-tab-btn');
-    tabs.forEach(t => {
-        t.classList.remove('text-black', 'border-black');
-        t.classList.add('text-gray-400', 'border-transparent');
-    });
-    
-    const activeTab = event.currentTarget;
-    activeTab.classList.remove('text-gray-400', 'border-transparent');
-    activeTab.classList.add('text-black', 'border-black');
-
-    if (type === 'archives') {
-        document.getElementById('social-posts-grid').innerHTML = '<div class="col-span-3 py-10 text-center text-gray-400 text-xs">Aucune publication archivée</div>';
-    } else {
-        // ICI C'ÉTAIT L'ERREUR : Il manquait "await"
+    // Si cleanMyId est toujours invalide, on le récupère via la session
+    if (!cleanMyId || typeof cleanMyId !== 'string') {
         const { data: { user } } = await supabaseClient.auth.getUser();
+        cleanMyId = user?.id;
+    }
+
+    if (!cleanMyId || !targetUserId) return;
+
+    try {
+        // 2. Vérification de l'abonnement
+        const { data: followCheck } = await supabaseClient
+            .from('follows')
+            .select('*')
+            .eq('follower_id', cleanMyId)
+            .eq('following_id', targetUserId)
+            .maybeSingle();
+
+        const isFollowing = !!followCheck;
+
+        // 3. Rendu HTML (Bouton Follow + Bouton Message)
+        container.style.display = 'flex';
+        container.className = "flex items-center gap-2 w-full mt-4";
         
-        if(user) {
-            loadSocialPosts(user.id);
-        } else {
-            console.warn("Utilisateur non connecté pour charger les posts");
-        }
+        container.innerHTML = `
+            <button id="main-follow-btn" 
+                onclick="toggleFollow('${targetUserId}', this)" 
+                class="flex-1 text-xs font-bold px-6 py-2.5 rounded-full transition-all active:scale-95 ${
+                    isFollowing 
+                    ? 'bg-slate-100 text-slate-600 border border-slate-200' 
+                    : 'bg-blue-600 text-white shadow-md hover:bg-blue-700'
+                }">
+                ${isFollowing ? 'Abonné' : 'S\'abonner'}
+            </button>
+            
+            <button onclick="startChat('${targetUserId}')" 
+                class="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center hover:bg-indigo-100 transition-all active:scale-90 shadow-sm border border-indigo-100">
+                <i class="fas fa-comment-dots"></i>
+            </button>
+        `;
+    } catch (err) {
+        console.error("Erreur initFollowButton:", err);
     }
 }
 
@@ -4430,6 +4507,224 @@ function viewUserProfile(userId) {
     // On passe l'ID en paramètre à la fonction
     loadSocialProfile(userId);
 }
+        /* --- SYSTÈME DE MESSAGERIE --- */
+
+let currentChatId = null;
+let currentTargetUserId = null;
+let lastMessageCount = 0; // Pour éviter le clignotement au rechargement
+
+// 1. Démarrer une conversation
+async function startChat(targetUserId) {
+    if (!targetUserId) return;
+    
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user || user.id === targetUserId) return;
+
+    showToast("Ouverture de la discussion...", "success");
+
+    try {
+        // Correction : .maybeSingle() au lieu de .single()
+        const { data: existingChat } = await supabaseClient
+            .from('chats')
+            .select('*')
+            .or(`and(user_1_id.eq.${user.id},user_2_id.eq.${targetUserId}),and(user_1_id.eq.${targetUserId},user_2_id.eq.${user.id})`)
+            .maybeSingle();
+
+        let chatId;
+
+        if (existingChat) {
+            chatId = existingChat.id;
+        } else {
+            const { data: newChat, error } = await supabaseClient
+                .from('chats')
+                .insert([{
+                    user_1_id: user.id,
+                    user_2_id: targetUserId
+                }])
+                .select()
+                .single();
+            
+            if (error) throw error;
+            chatId = newChat.id;
+        }
+
+        openChatRoom(chatId, targetUserId);
+
+    } catch (err) {
+        console.error("Erreur startChat:", err);
+        showToast("Erreur de connexion", "error");
+    }
+}
+
+// 2. Charger la liste des discussions
+async function loadChatList() {
+    const container = document.getElementById('chat-list-container');
+    if (!container) return;
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return;
+
+    try {
+        const { data: chats, error } = await supabaseClient
+            .from('chats')
+            .select(`
+                id, user_1_id, user_2_id, updated_at,
+                messages(content, created_at)
+            `)
+            .or(`user_1_id.eq.${user.id},user_2_id.eq.${user.id}`)
+            .order('updated_at', { ascending: false });
+
+        if (error) throw error;
+
+        if (!chats || chats.length === 0) {
+            container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-slate-400 p-8 text-center"><p>Aucune discussion pour le moment.</p></div>`;
+            return;
+        }
+
+        const userIds = chats.map(c => c.user_1_id === user.id ? c.user_2_id : c.user_1_id);
+        const { data: profiles } = await supabaseClient
+            .from('profiles')
+            .select('id, full_name, avatar_url')
+            .in('id', userIds);
+
+        const profileMap = new Map(profiles?.map(p => [p.id, p]));
+
+        container.innerHTML = chats.map(chat => {
+            const otherUserId = chat.user_1_id === user.id ? chat.user_2_id : chat.user_1_id;
+            const profile = profileMap.get(otherUserId) || { full_name: 'Utilisateur', avatar_url: null };
+            
+            const lastMsg = chat.messages && chat.messages.length > 0 
+                ? chat.messages[chat.messages.length - 1].content 
+                : 'Nouvelle discussion';
+
+            return `
+            <div onclick="openChatRoom('${chat.id}', '${otherUserId}')" 
+                 class="flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer border-b border-slate-100 dark:border-slate-800 transition">
+                <img src="${profile.avatar_url || 'https://ui-avatars.com/api/?name=' + profile.full_name}" class="w-12 h-12 rounded-full object-cover bg-slate-200">
+                <div class="flex-1 min-w-0">
+                    <div class="flex justify-between items-baseline mb-1">
+                        <h4 class="font-bold text-slate-900 dark:text-white truncate">${profile.full_name}</h4>
+                    </div>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 truncate">${lastMsg}</p>
+                </div>
+            </div>`;
+        }).join('');
+
+    } catch (err) {
+        console.error("Erreur liste chat:", err);
+    }
+} // <--- L'accolade qui manquait était ici !
+
+// 3. Ouvrir la salle de discussion
+async function openChatRoom(chatId, targetUserId) {
+    currentChatId = chatId;
+    currentTargetUserId = targetUserId;
+    lastMessageCount = 0; // Reset pour forcer le premier affichage
+
+    switchPage('chat'); 
+
+    const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('full_name, avatar_url')
+        .eq('id', targetUserId)
+        .maybeSingle();
+    
+    if (profile) {
+        document.getElementById('chat-header-name').innerText = profile.full_name;
+        document.getElementById('chat-header-avatar').src = profile.avatar_url || `https://ui-avatars.com/api/?name=${profile.full_name}`;
+    }
+
+    loadChatMessages(chatId);
+
+    if (chatInterval) clearInterval(chatInterval);
+    chatInterval = setInterval(() => loadChatMessages(chatId), 3000);
+}
+
+// 4. Charger les messages
+async function loadChatMessages(chatId) {
+    const container = document.getElementById('chat-messages-container');
+    if (!container) return;
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return;
+
+    const { data: messages, error } = await supabaseClient
+        .from('messages')
+        .select('*')
+        .eq('chat_id', chatId)
+        .order('created_at', { ascending: true });
+
+    if (error || !messages) return;
+
+    // OPTIMISATION : On ne redessine que s'il y a de nouveaux messages
+    if (messages.length === lastMessageCount) return;
+    lastMessageCount = messages.length;
+
+    container.innerHTML = ''; 
+
+    messages.forEach(msg => {
+        const isMe = msg.sender_id === user.id;
+        const row = document.createElement('div');
+        row.className = `flex w-full mb-4 ${isMe ? 'justify-end' : 'justify-start'}`;
+        
+        const bubbleClass = isMe 
+            ? 'bg-blue-600 text-white rounded-2xl rounded-tr-sm shadow-sm' 
+            : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-2xl rounded-tl-sm border border-slate-100 dark:border-slate-700 shadow-sm';
+
+        row.innerHTML = `
+            <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[80%]">
+                <div class="${bubbleClass} px-4 py-2 text-sm break-words">
+                    ${msg.content}
+                </div>
+                <span class="text-[10px] text-slate-400 mt-1 mx-1">${new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+            </div>
+        `;
+        container.appendChild(row);
+    });
+
+    container.scrollTop = container.scrollHeight;
+}
+
+// 5. Envoyer un message
+async function sendChatMessage(e) {
+    if(e) e.preventDefault();
+    const input = document.getElementById('chat-input');
+    const content = input.value.trim();
+    
+    if (!content || !currentChatId) return;
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return;
+
+    input.value = ''; // On vide tout de suite pour l'effet de vitesse
+
+    const { error } = await supabaseClient
+        .from('messages')
+        .insert([{
+            chat_id: currentChatId,
+            sender_id: user.id,
+            content: content
+        }]);
+
+    if (error) {
+        showToast("Erreur d'envoi", "error");
+        console.error(error);
+    } else {
+        loadChatMessages(currentChatId);
+    }
+}
+
+// Nettoyage lors du changement de page
+const originalSwitchPage = window.switchPage;
+window.switchPage = function(pageId) {
+    if (pageId !== 'chat' && chatInterval) {
+        clearInterval(chatInterval);
+        chatInterval = null;
+    }
+    if (typeof originalSwitchPage === 'function') {
+        originalSwitchPage(pageId);
+    }
+};
 </script>
 </body>
 </html>
