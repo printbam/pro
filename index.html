@@ -845,37 +845,48 @@ body.dark-mode .chat-header { color: #94a3b8; }
     <div class="bg-white min-h-screen max-w-lg mx-auto shadow-sm relative z-20 pb-20">
         
         <!-- HEADER : Avatar + Nom + Stats -->
-        <div class="p-5 flex items-start gap-5 border-b border-gray-100">
-            <!-- Avatar (Rond, Bordure fine) -->
-            <div class="relative">
-                <div class="w-20 h-20 md:w-24 md:h-24 rounded-full border border-gray-200 p-1 bg-white">
-                    <img id="social-avatar" src="" alt="Profile" class="w-full h-full object-cover rounded-full hidden">
-                    <div id="social-avatar-placeholder" class="w-full h-full bg-gray-100 rounded-full flex items-center justify-center text-gray-300">
-                        <i class="fas fa-user text-2xl"></i>
-                    </div>
-                </div>
-                <!-- Badge Certifié (Petit cercle bleu en bas à droite) -->
-                <div id="social-badge" class="absolute bottom-1 right-1 w-6 h-6 bg-blue-500 rounded-full border-2 border-white flex items-center justify-center hidden">
-                    <i class="fas fa-check text-white text-[10px]"></i>
-                </div>
-            </div>
-
-            <!-- Infos Principales (Nom + Stats) -->
-            <div class="flex-1 pt-1">
-                <h1 id="social-fullname" class="text-xl font-bold text-black leading-tight mb-1">Chargement...</h1>
-                
-                <!-- Stats (Suivis / Abonnés) -->
-                <div class="text-sm text-gray-600 font-medium mb-2">
-                    <span id="stat-following">0</span> abonnements • 
-                    <span id="stat-followers">0</span> abonnés
-                </div>
-                
-                <!-- Petit bouton Modifier (Discret) -->
-                <button onclick="toggleProfile()" class="px-3 py-1 bg-gray-100 text-xs font-bold text-gray-700 rounded hover:bg-gray-200 transition">
-                    Modifier le profil
-                </button>
+<div class="p-5 flex items-start gap-5 border-b border-gray-100">
+   <!-- BOUTON DÉCONNEXION (Haut Droit) -->
+    <!-- Il s'affiche en gris, devient rouge au survol -->
+    <button onclick="confirmSocialLogout()" class="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-all" title="Déconnexion">
+        <i class="fas fa-sign-out-alt text-lg"></i>
+    </button> 
+    <!-- 1. AVATAR (Sans le badge absolu dedans) -->
+    <div class="relative">
+        <div class="w-20 h-20 md:w-24 md:h-24 rounded-full border border-gray-200 p-1 bg-white">
+            <img id="social-avatar" src="" alt="Profile" class="w-full h-full object-cover rounded-full hidden">
+            <div id="social-avatar-placeholder" class="w-full h-full bg-gray-100 rounded-full flex items-center justify-center text-gray-300">
+                <i class="fas fa-user text-2xl"></i>
             </div>
         </div>
+    </div>
+
+    <!-- 2. INFOS PRINCIPALES -->
+    <div class="flex-1 pt-1">
+        
+        <!-- Conteneur Flex pour aligner le NOM et le BADGE -->
+        <div class="flex items-center gap-1 mb-1">
+            <h1 id="social-fullname" class="text-xl font-bold text-black leading-none">Connexion...</h1>
+            
+            <!-- LE BADGE EST MAINTENANT ICI (Style Facebook : Rond bleu + Check blanc) -->
+            <span id="social-badge-inline" class="hidden ml-1">
+    <!-- Couleur officielle Instagram : #0095F6 -->
+    <i class="fas fa-check-circle text-[#0095F6] text-lg"></i>
+</span>
+        </div>
+        
+        <!-- Stats -->
+        <div class="text-sm text-gray-600 font-medium mb-2">
+            <span id="stat-following">0</span> abonnements • 
+            <span id="stat-followers">0</span> abonnés
+        </div>
+        
+        <!-- Bouton Modifier -->
+        <button onclick="toggleProfile()" class="px-3 py-1 bg-gray-100 text-xs font-bold text-gray-700 rounded hover:bg-gray-200 transition">
+            Modifier le profil
+        </button>
+    </div>
+</div>
 
         <!-- SECTION INFOS (Liste grise comme sur la capture) -->
         <div class="bg-gray-50 px-5 py-4 space-y-3 border-b border-gray-200">
@@ -3756,17 +3767,19 @@ async function loadSocialProfile() {
             // Avatar
             const imgEl = document.getElementById('social-avatar');
             const placeholder = document.getElementById('social-avatar-placeholder');
-            const badge = document.getElementById('social-badge');
+                // --- GESTION DU BADGE (VERSION CORRIGÉE) ---
+    
+    // 1. On cible le NOUVEL ID que nous avons créé dans le HTML
+    const badgeInline = document.getElementById('social-badge-inline');
+    
+    // 2. On vérifie si l'utilisateur est certifié
+    if (profile.is_certified) {
+        badgeInline.classList.remove('hidden'); // On affiche le badge à côté du nom
+    } else {
+        badgeInline.classList.add('hidden');    // On le cache
+    }
 
-            if (profile.avatar_url) {
-                imgEl.src = profile.avatar_url;
-                imgEl.classList.remove('hidden');
-                placeholder.classList.add('hidden');
-            } else {
-                imgEl.classList.add('hidden');
-                placeholder.classList.remove('hidden');
-            }
-
+    // --- FIN GESTION DU BADGE ---
             // Badge Certifié
             if (profile.is_certified) {
                 badge.classList.remove('hidden');
@@ -3885,6 +3898,27 @@ async function handleNewPost(e) {
     } finally {
         btn.innerText = "Partager";
         btn.disabled = false;
+    }
+}
+
+        /* --- FONCTION DÉCONNEXION SOCIALE --- */
+function confirmSocialLogout() {
+    // 1. Demander confirmation
+    if (confirm("Voulez-vous vraiment vous déconnecter ?")) {
+        
+        // 2. Appeler Supabase pour déconnecter
+        supabaseClient.auth.signOut().then(({ error }) => {
+            if (error) {
+                console.error("Erreur déconnexion:", error.message);
+                showToast("Erreur lors de la déconnexion", "error");
+            } else {
+                // 3. Rediriger vers la page de login
+                showToast("À bientôt !", "success");
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1000);
+            }
+        });
     }
 }
 </script>
