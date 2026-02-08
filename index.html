@@ -792,7 +792,7 @@ body.dark-mode .chat-header { color: #94a3b8; }
         <!-- HEADER DU FEED -->
         <div class="flex items-center justify-between mb-6">
             <h1 class="text-0xl font-black text-slate-900 dark:text-white tracking-tight">
-                Fil d'actualité
+                Explorez
             </h1>
             <button onclick="openNewPostModal()" class="bg-indigo-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg hover:bg-indigo-700 transition flex items-center gap-2">
                 <i class="fas fa-plus"></i> Publier
@@ -851,7 +851,7 @@ body.dark-mode .chat-header { color: #94a3b8; }
         
         <!-- Stats -->
         <div class="text-sm text-gray-600 font-medium mb-2">
-            <span id="stat-following">0</span> abonnements • 
+            <span id="stat-following">0</span> suivis • 
             <span id="stat-followers">0</span> abonnés
         </div>
         
@@ -859,6 +859,10 @@ body.dark-mode .chat-header { color: #94a3b8; }
         <button onclick="toggleProfile()" class="px-3 py-1 bg-gray-100 text-xs font-bold text-gray-700 rounded hover:bg-gray-200 transition">
             Modifier le profil
         </button>
+        <!-- NOUVEAU CONTENEUR POUR LE BOUTON FOLLOW (Caché par défaut) -->
+        <div id="profile-follow-container" class="hidden">
+            <!-- Le bouton sera injecté ici par JS -->
+        </div>
     </div>
 </div>
 
@@ -1933,13 +1937,25 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             <i class="fab fa-facebook-messenger text-lg text-slate-400 group-hover:text-indigo-600"></i>
             <span class="text-[9px] font-medium text-slate-400">Messages</span>
         </a>
-        <!-- Nouveau code (à mettre à la place) -->
-        <a href="javascript:void(0)" onclick="toggleProfile()" class="flex flex-1 flex-col items-center gap-1 group">
-            <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
-                <i class="fas fa-user text-xs text-indigo-600"></i>
-            </div>
-            <span class="text-[9px] font-medium text-indigo-600">Profil</span>
-        </a>
+        <!-- LIEN PROFIL MODIFIÉ -->
+<a href="javascript:void(0)" onclick="switchPage('profile-social')" class="flex flex-1 flex-col items-center gap-1 group relative">
+    
+    <!-- Conteneur de l'avatar (Rond) -->
+    <div class="w-10 h-10 rounded-full bg-indigo-100 border-2 border-indigo-600 overflow-hidden flex items-center justify-center relative shadow-md group-hover:scale-110 transition-transform">
+        
+        <!-- Image de l'utilisateur (Cachée par défaut) -->
+        <img id="dock-avatar-img" src="" alt="Profil" class="w-full h-full object-cover hidden">
+        
+        <!-- Icône par défaut (Visible si pas de photo) -->
+        <i id="dock-avatar-icon" class="fas fa-user text-indigo-600 text-sm"></i>
+    </div>
+
+    <!-- Texte -->
+    <span class="text-[9px] font-bold text-indigo-600">Profil</span>
+    
+    <!-- Petit badge rouge si non lu (Optionnel, décochez pour l'enlever) -->
+    <!-- <div class="absolute top-0 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-slate-50"></div> -->
+</a>
     </div>
 
     <!-- SETTINGS, SUPPORT, ORDERS OVERLAYS -->
@@ -3537,7 +3553,24 @@ function getAvatarHtml(userEmail, avatarUrl, isMe = false) {
     `;
 }
 
+/* --- METTRE À JOUR L'AVATAR DU DOCK --- */
+function updateDockAvatar(avatarUrl) {
+    const img = document.getElementById('dock-avatar-img');
+    const icon = document.getElementById('dock-avatar-icon');
+    
+    if (!img || !icon) return;
 
+    if (avatarUrl && avatarUrl.trim() !== '') {
+        // Si on a une photo : on l'affiche et on cache l'icône
+        img.src = avatarUrl;
+        img.classList.remove('hidden');
+        icon.classList.add('hidden');
+    } else {
+        // Si pas de photo : on cache l'image et on affiche l'icône
+        img.classList.add('hidden');
+        icon.classList.remove('hidden');
+    }
+}
         /* --- GESTION DE L'OUVERTURE DU CHAT (MODIFIÉ) --- */
 /* --- GESTION DE L'OUVERTURE DU CHAT (CORRIGÉ POUR LE DOCK) --- */
 let chatInterval = null;
@@ -3736,105 +3769,163 @@ async function toggleUserBadge(userId, currentStatus) {
 
 /* --- MISE À JOUR DU JS POUR LE NOUVEAU DESIGN --- */
 
-// 1. Charger le Profil (Version Flat)
-async function loadSocialProfile() {
+/* --- CHARGEMENT PROFIL (VERSION CORRIGÉE FINALE) --- */
+async function loadSocialProfile(targetUserId = null) {
     try {
-        const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-        if (authError || !user) return;
+        const { data: { user: currentUser }, error: authError } = await supabaseClient.auth.getUser();
+        if (authError || !currentUser) return;
 
+        let profileId = targetUserId;
+        let isMyProfile = false;
+
+        if (!profileId) {
+            profileId = currentUser.id;
+            isMyProfile = true;
+        } else {
+            isMyProfile = (profileId === currentUser.id);
+        }
+
+        // Requête sécurisée avec maybeSingle
         const { data: profile, error } = await supabaseClient
             .from('profiles')
             .select('*')
-            .eq('id', user.id)
-            .single();
+            .eq('id', profileId)
+            .maybeSingle();
 
         if (error) throw error;
 
-        if (profile) {
-            // Nom
-            document.getElementById('social-fullname').textContent = profile.full_name || 'Utilisateur';
-
-            // Username (Avec @)
-            const username = profile.username ? `@${profile.username}` : '@utilisateur';
-            document.getElementById('social-username').textContent = username;
-
-            // Stats (Format compact 23K, 850K)
-            const formatNumber = (num) => {
-                if (!num) return '0';
-                return num >= 1000 ? (num / 1000).toFixed(0) + 'K' : num;
-            };
-            document.getElementById('stat-following').textContent = formatNumber(profile.following_count);
-            document.getElementById('stat-followers').textContent = formatNumber(profile.followers_count);
-
-            // Phone
-            const phoneEl = document.getElementById('social-phone');
-            if (profile.phone) {
-                phoneEl.textContent = profile.phone; // Supabase stocke +243...
-                phoneEl.parentElement.style.display = 'flex';
-            } else {
-                phoneEl.parentElement.style.display = 'none';
+        if (!profile) {
+            // Gestion profil introuvable
+            const container = document.querySelector('#profile-social-view .max-w-2xl');
+            if (container) {
+                container.innerHTML = `
+                    <div class="text-center py-20">
+                        <h2 class="text-xl font-bold text-slate-900">Profil introuvable</h2>
+                        <button onclick="switchPage('home')" class="mt-4 text-indigo-600 underline">Retour</button>
+                    </div>
+                `;
             }
+            return;
+        }
 
-            // Date de naissance et Âge (Format : 10 juil., 2001 (24 ans))
-            const dobEl = document.getElementById('social-dob');
-            if (profile.birth_date) {
-                const date = new Date(profile.birth_date);
-                const age = new Date().getFullYear() - date.getFullYear();
-                const options = { day: 'numeric', month: 'short', year: 'numeric' };
-                const dateStr = date.toLocaleDateString('fr-FR', options);
-                
-                // Petit ajustement: Si l'anniversaire n'est pas passé cette année, on retire 1 an
-                const hasHadBirthday = new Date() > new Date(new Date().getFullYear(), date.getMonth(), date.getDate());
-                const finalAge = hasHadBirthday ? age : age - 1;
+        // --- MISE À JOUR DU DOM ---
+        const updateText = (id, text) => {
+            const el = document.getElementById(id);
+            if(el) el.textContent = text;
+        };
 
-                dobEl.textContent = `${dateStr} (${finalAge} ans)`;
-                dobEl.parentElement.style.display = 'flex';
-            } else {
-                dobEl.parentElement.style.display = 'none';
-            }
+        updateText('social-fullname', profile.full_name || 'Utilisateur');
+        const username = profile.username ? `@${profile.username}` : '@utilisateur';
+        updateText('social-username', username);
 
-            // Avatar
-            const imgEl = document.getElementById('social-avatar');
-            const placeholder = document.getElementById('social-avatar-placeholder');
-                // --- GESTION DU BADGE (VERSION CORRIGÉE) ---
-    
-    // 1. On cible le NOUVEL ID que nous avons créé dans le HTML
-    const badgeInline = document.getElementById('social-badge-inline');
-    
-    // 2. On vérifie si l'utilisateur est certifié
-    if (profile.is_certified) {
-        badgeInline.classList.remove('hidden'); // On affiche le badge à côté du nom
-    } else {
-        badgeInline.classList.add('hidden');    // On le cache
-    }
+        // Stats (Calcul dynamique)
+        const formatNumber = (num) => num ? (num >= 1000 ? (num / 1000).toFixed(0) + 'K' : num) : '0';
+        
+        // Récupération des vrais chiffres
+        const { count: followersCount } = await supabaseClient.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', profileId);
+        const { count: followingCount } = await supabaseClient.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', profileId);
+        
+        updateText('stat-following', formatNumber(followingCount || 0));
+        updateText('stat-followers', formatNumber(followersCount || 0));
 
-    // --- FIN GESTION DU BADGE ---
-            // Badge Certifié
-            if (profile.is_certified) {
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
+        // --- GESTION CONDITIONNELLE : MON PROFIL vs PROFIL D'AUTRUI ---
+
+        // 1. GESTION DU DOCK (Seulement si c'est MOI)
+        if (isMyProfile) {
+            updateDockAvatar(profile.avatar_url);
+        }
+
+        // 2. GESTION DES BOUTONS D'ACTION (Modifier / Follow)
+        const editBtn = document.querySelector('button[onclick="toggleProfile()"]');
+        const logoutBtn = document.querySelector('button[onclick="confirmSocialLogout()"]');
+        const followContainer = document.getElementById('profile-follow-container');
+
+        if (isMyProfile) {
+            // C'est MOI
+            if(editBtn) editBtn.style.display = 'inline-block';
+            if(logoutBtn) logoutBtn.style.display = 'flex';
+            if(followContainer) followContainer.style.display = 'none';
+        } else {
+            // C'est QUELQU'UN D'AUTRE
+            if(editBtn) editBtn.style.display = 'none';
+            if(logoutBtn) logoutBtn.style.display = 'none';
+            
+            // Afficher et initialiser le bouton Follow
+            if(followContainer) {
+                followContainer.style.display = 'block';
+                // On initialise le bouton
+                initFollowButtonOnProfile(profileId, currentUser.id);
             }
         }
 
-        // Charger les photos (Grid)
-        loadSocialPosts(user.id);
+        // --- AFFICHAGE AVATAR PRINCIPAL (Page) ---
+        const imgEl = document.getElementById('social-avatar');
+        const placeholder = document.getElementById('social-avatar-placeholder');
+        
+        if (imgEl && placeholder) {
+            if (profile.avatar_url) {
+                imgEl.src = profile.avatar_url;
+                imgEl.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+            } else {
+                imgEl.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+            }
+        }
+
+        // Badge
+        const badgeInline = document.getElementById('social-badge-inline');
+        if(badgeInline) {
+            if (profile.is_certified) badgeInline.classList.remove('hidden');
+            else badgeInline.classList.add('hidden');
+        }
+
+        loadSocialPosts(profileId);
 
     } catch (err) {
-        console.error("Erreur:", err);
+        console.error("Erreur profil social:", err);
     }
 }
 
-// 2. Gestion des Onglets (Style Noir/Gris)
-function switchSocialTab(type) {
-    // Reset styles
+// Fonction pour initialiser le bouton Follow sur la page Profil
+async function initFollowButtonOnProfile(targetUserId, myId) {
+    const container = document.getElementById('profile-follow-container');
+    if(!container) return;
+
+    container.style.display = 'block';
+    
+    // Dans initFollowButtonOnProfile
+const { data: followCheck } = await supabaseClient
+    .from('follows')
+    .select('*')
+    .eq('follower_id', myId)
+    .eq('following_id', targetUserId)
+    .maybeSingle(); // <--- Utilisez .maybeSingle() pour éviter l'erreur si on ne suit pas encore
+    
+    const isFollowing = !!followCheck;
+
+    // Créer le bouton
+    container.innerHTML = `
+        <button onclick="toggleFollow('${targetUserId}', this)" class="${isFollowing ? 'following' : ''}">
+            ${isFollowing ? 'Abonné' : 'S\'abonner'}
+        </button>
+    `;
+    
+    // Appliquer le style initial
+    const btn = container.querySelector('button');
+    updateFollowButton(btn, isFollowing);
+}
+        
+// --- GESTION DES ONGLETS (CORRIGÉE) ---
+async function switchSocialTab(type) { // Ajout de "async"
+    
+    // Gestion du style des onglets
     const tabs = document.querySelectorAll('.social-tab-btn');
     tabs.forEach(t => {
         t.classList.remove('text-black', 'border-black');
         t.classList.add('text-gray-400', 'border-transparent');
     });
-
-    // Active style
+    
     const activeTab = event.currentTarget;
     activeTab.classList.remove('text-gray-400', 'border-transparent');
     activeTab.classList.add('text-black', 'border-black');
@@ -3842,9 +3933,14 @@ function switchSocialTab(type) {
     if (type === 'archives') {
         document.getElementById('social-posts-grid').innerHTML = '<div class="col-span-3 py-10 text-center text-gray-400 text-xs">Aucune publication archivée</div>';
     } else {
-        // Recharger posts
-        const { data: { user } } = supabaseClient.auth.getUser();
-        if(user) loadSocialPosts(user.id);
+        // ICI C'ÉTAIT L'ERREUR : Il manquait "await"
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        
+        if(user) {
+            loadSocialPosts(user.id);
+        } else {
+            console.warn("Utilisateur non connecté pour charger les posts");
+        }
     }
 }
 
@@ -3952,183 +4048,117 @@ function confirmSocialLogout() {
 }
         /* --- LOGIQUE DU FEED GLOBAL --- */
 
-// 1. Charger le Feed (Tous les utilisateurs)
+/* --- LOGIQUE DU FEED GLOBAL (COMPLET : COMPTES + FOLLOW) --- */
+
 async function loadGlobalFeed() {
-
     const container = document.getElementById('global-feed-container');
-
     if (!container) return;
 
-
-
     try {
-
+        // 1. Récupérer l'ID de l'utilisateur connecté (Indispensable pour le bouton Follow)
         const { data: { user } } = await supabaseClient.auth.getUser();
+        const myId = user ? user.id : null;
 
-
-
-        // REQUÊTE OPTIMISÉE
-
+        // 2. Requête pour récupérer posts, profils, likes (compte) et commentaires (compte)
         const { data: posts, error } = await supabaseClient
-
             .from('posts')
-
             .select(`
-
                 *,
-
                 profiles ( full_name, username, avatar_url, is_certified ),
-
-                post_likes!left ( user_id ), 
-
-                likes_count: post_likes ( count ),
-
-                comments_count: post_comments ( count )
-
+                post_likes(count),
+                post_comments(count)
             `)
-
             .order('created_at', { ascending: false })
-
             .limit(20);
-
-
 
         if (error) throw error;
 
+        if (!posts || posts.length === 0) {
+            container.innerHTML = `<div class="text-center py-20 text-slate-400"><p>Aucune publication.</p></div>`;
+            return;
+        }
 
-
+        // 3. Génération du HTML
         container.innerHTML = posts.map(post => {
-
             const profile = post.profiles || {};
-
-            
-
-            // Correction Placeholder & Nom
-
+            const avatarUrl = profile.avatar_url || 'https://ui-avatars.com/api/?name=User&background=random&size=50';
             const userName = profile.full_name || 'Anonyme';
+            const isCertified = profile.is_certified;
+            const timeAgo = getTimeAgo(new Date(post.created_at));
 
-            const avatarUrl = profile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=random`;
+            // Récupération des comptes
+            const likeCount = post.post_likes && post.post_likes[0] ? post.post_likes[0].count : 0;
+            const commentCount = post.post_comments && post.post_comments[0] ? post.post_comments[0].count : 0;
 
-            
-
-            // Extraction des compteurs (Supabase renvoie [{count: X}])
-
-            const likeCount = post.likes_count?.[0]?.count || 0;
-
-            const commentCount = post.comments_count?.[0]?.count || 0;
-
-
-
-            // VRAIE VÉRIFICATION DU LIKE :
-
-            // On regarde si l'ID de l'utilisateur actuel est présent dans le tableau post_likes
-
-            const hasLiked = user && post.post_likes?.some(l => l.user_id === user.id);
-
-            const heartClass = hasLiked ? 'fas fa-heart text-red-500' : 'far fa-heart';
-
-
-
+            // ---------------------------------------------------------
+            // --- C'EST ICI QUE SE TROUVE LE HEADER AVEC LE BOUTON ---
+            // ---------------------------------------------------------
             return `
+            <!-- HEADER POST MODIFIÉ -->
+<div class="p-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-700">
+    
+    <!-- PARTIE GAUCHE : AVATAR + NOM (CLIQUABLE) -->
+    <div class="flex items-center gap-3 cursor-pointer hover:opacity-80" onclick="viewUserProfile('${post.user_id}')">
+        <img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border border-slate-200">
+        <div>
+            <div class="flex items-center gap-1">
+                <span class="font-bold text-sm text-slate-900 dark:text-white hover:underline">${userName}</span>
+                ${isCertified ? '<i class="fas fa-check-circle text-blue-500 text-xs"></i>' : ''}
+            </div>
+            <div class="text-xs text-slate-500">${timeAgo}</div>
+        </div>
+    </div>
 
-            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden mb-6">
+    <!-- BOUTON S'ABONNER -->
+    ${post.user_id !== myId ? `
+        <button onclick="event.stopPropagation(); toggleFollow('${post.user_id}', this)" class="text-xs font-bold px-4 py-1.5 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition shadow">
+            S'abonner
+        </button>
+    ` : ''}
+</div>
+                <!-- FIN HEADER -->
 
-                <div class="p-4 flex items-center gap-3 border-b border-slate-100 dark:border-slate-700">
-
-                    <img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border border-slate-200">
-
-                    <div class="flex-1">
-
-                        <div class="flex items-center gap-1">
-
-                            <span class="font-bold text-sm text-slate-900 dark:text-white">${userName}</span>
-
-                            ${profile.is_certified ? '<i class="fas fa-check-circle text-blue-500 text-xs"></i>' : ''}
-
-                        </div>
-
-                        <div class="text-xs text-slate-500">${getTimeAgo(new Date(post.created_at))}</div>
-
-                    </div>
-
-                </div>
-
-
-
+                <!-- Image -->
                 ${post.image_url ? `<img src="${post.image_url}" class="w-full max-h-[500px] object-contain mx-auto bg-black">` : ''}
-
                 
+                <!-- Légende -->
+                ${post.caption ? `<div class="p-4"><p class="text-sm"><span class="font-bold mr-1">${userName}</span>${post.caption}</p></div>` : ''}
 
-                ${post.caption ? `
-
-                <div class="p-4">
-
-                    <p class="text-sm"><span class="font-bold mr-1">${userName}</span>${post.caption}</p>
-
-                </div>` : ''}
-
-
-
+                <!-- Actions avec Compteurs -->
                 <div class="px-4 py-3 flex gap-6 text-slate-600 dark:text-slate-400 text-xl border-t border-slate-100 dark:border-slate-700 items-center">
-
-                    <button onclick="toggleLike('${post.id}', this)" class="hover:text-red-500 transition flex items-center gap-2 group">
-
-                        <i class="${heartClass}" id="icon-like-${post.id}"></i>
-
-                        <span id="count-like-${post.id}" class="text-sm font-bold">${likeCount}</span>
-
-                    </button>
-
                     
-
-                    <button onclick="toggleCommentSection('${post.id}')" class="hover:text-blue-500 transition flex items-center gap-2 group">
-
-                        <i class="far fa-comment"></i>
-
-                        <span id="count-comment-${post.id}" class="text-sm font-bold">${commentCount}</span>
-
+                    <button onclick="toggleLike('${post.id}', this)" class="hover:text-red-500 transition flex items-center gap-1 group">
+                        <i class="far fa-heart group-hover:scale-110 transition-transform" id="icon-like-${post.id}"></i>
+                        <span id="count-like-${post.id}" class="text-sm font-bold text-slate-800 dark:text-slate-200">${formatNumber(likeCount)}</span>
                     </button>
-
                     
-
+                    <button onclick="toggleCommentSection('${post.id}')" class="hover:text-blue-500 transition flex items-center gap-1 group">
+                        <i class="far fa-comment group-hover:scale-110 transition-transform"></i>
+                        <span id="count-comment-${post.id}" class="text-sm font-bold text-slate-800 dark:text-slate-200">${formatNumber(commentCount)}</span>
+                    </button>
+                    
                     <button onclick="sharePost('${post.id}')" class="hover:text-green-500 transition ml-auto">
-
                         <i class="far fa-share-square"></i>
-
                     </button>
-
                 </div>
 
-
-
+                <!-- Zone Commentaires -->
                 <div id="comments-${post.id}" class="hidden bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-slate-100 dark:border-slate-700">
-
                     <div id="comment-list-${post.id}" class="space-y-3 mb-3 max-h-60 overflow-y-auto"></div>
-
                     <form onsubmit="submitComment(event, '${post.id}')" class="flex gap-2">
-
                         <input type="text" name="content" placeholder="Écrire un commentaire..." required 
-
-                               class="flex-1 text-sm px-3 py-2 rounded-lg border dark:bg-slate-800 focus:ring-1 focus:ring-indigo-500">
-
+                               class="flex-1 text-sm px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500">
                         <button type="submit" class="text-indigo-600 font-bold text-sm px-2">Envoyer</button>
-
                     </form>
-
                 </div>
 
-            </div>`;
-
+            </div>
+            `;
         }).join('');
 
-
-
     } catch (err) {
-
         console.error("Erreur Feed:", err);
-
     }
-
 }
 
         /* --- ACTIONS : LIKE, COMMENT, SHARE --- */
@@ -4261,6 +4291,85 @@ function getTimeAgo(date) {
 function formatNumber(num) {
     if (!num) return '0';
     return num >= 1000 ? (num / 1000).toFixed(1) + 'K' : num;
+}
+       /* --- SYSTÈME D'ABONNEMENT (CORRIGÉ POUR ERREUR 409) --- */
+
+/* --- SYSTÈME D'ABONNEMENT (VERSION FINALE) --- */
+
+async function toggleFollow(targetUserId, btnElement) {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return showToast("Connectez-vous", "error");
+    if (user.id === targetUserId) return;
+
+    // On vérifie l'état actuel grâce à la classe CSS 'following'
+    const isFollowing = btnElement.classList.contains('following');
+
+    try {
+        if (isFollowing) {
+            // --- ACTION : SE DÉSABONNER ---
+            const { error } = await supabaseClient
+                .from('follows')
+                .delete()
+                .eq('follower_id', user.id)
+                .eq('following_id', targetUserId);
+            
+            if (!error) {
+                updateFollowButton(btnElement, false); // Repasse en "S'abonner"
+                showToast("Désabonné", "success");
+            }
+
+        } else {
+            // --- ACTION : S'ABONNER ---
+            const { error } = await supabaseClient
+                .from('follows')
+                .insert([{ follower_id: user.id, following_id: targetUserId }]);
+
+            if (error) {
+                // Si erreur "Déjà abonné", on synchronise l'affichage
+                if (error.code === '23505' || error.status === 409) {
+                    updateFollowButton(btnElement, true); // Force l'état "Abonné"
+                } else {
+                    throw error;
+                }
+            } else {
+                updateFollowButton(btnElement, true); // Passe en "Abonné"
+                showToast("Abonné !", "success");
+            }
+        }
+        
+        // Rafraîchir les chiffres du profil
+        loadSocialProfile(); 
+
+    } catch (err) {
+        console.error("Erreur:", err);
+        showToast("Erreur", "error");
+    }
+}
+
+// Fonction de mise à jour visuelle
+function updateFollowButton(btn, isFollowing) {
+    if (isFollowing) {
+        // ÉTAT : ABONNÉ (Gris)
+        btn.innerText = "Abonné";
+        // On ajoute la classe 'following' pour que le bouton sache qu'il est actif
+        btn.classList.add('following');
+        btn.className = "text-xs font-bold px-4 py-1.5 rounded-full border border-gray-300 text-gray-600 bg-gray-100 transition following";
+    } else {
+        // ÉTAT : S'ABONNER (Bleu)
+        btn.innerText = "S'abonner";
+        // On retire la classe
+        btn.classList.remove('following');
+        btn.className = "text-xs font-bold px-4 py-1.5 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition shadow";
+    }
+}
+        /* --- NAVIGATION VERS UN AUTRE PROFIL --- */
+function viewUserProfile(userId) {
+    // 1. On change de vue
+    switchPage('profile-social');
+    
+    // 2. On charge les données de CET utilisateur spécifique
+    // On passe l'ID en paramètre à la fonction
+    loadSocialProfile(userId);
 }
 </script>
 </body>
