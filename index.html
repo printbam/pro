@@ -4048,18 +4048,32 @@ function confirmSocialLogout() {
 }
         /* --- LOGIQUE DU FEED GLOBAL --- */
 
-/* --- LOGIQUE DU FEED GLOBAL (COMPLET : COMPTES + FOLLOW) --- */
+/* --- LOGIQUE DU FEED GLOBAL (OPTIMISÉ & ROBUSTE) --- */
 
 async function loadGlobalFeed() {
     const container = document.getElementById('global-feed-container');
     if (!container) return;
 
     try {
-        // 1. Récupérer l'ID de l'utilisateur connecté (Indispensable pour le bouton Follow)
+        // 1. Récupérer l'utilisateur connecté
         const { data: { user } } = await supabaseClient.auth.getUser();
         const myId = user ? user.id : null;
 
-        // 2. Requête pour récupérer posts, profils, likes (compte) et commentaires (compte)
+        // 2. OPTIMISATION : Charger la liste des ID que je suis UNE SEULE FOIS
+        // Cela évite de faire une requête pour chaque post et évite l'erreur 409 au premier clic
+        let myFollowingSet = new Set();
+        if (myId) {
+            const { data: followingData } = await supabaseClient
+                .from('follows')
+                .select('following_id')
+                .eq('follower_id', myId);
+            
+            if (followingData) {
+                myFollowingSet = new Set(followingData.map(f => f.following_id));
+            }
+        }
+
+        // 3. Récupérer les posts avec les jointures (Profil + Comptes Likes/Coms)
         const { data: posts, error } = await supabaseClient
             .from('posts')
             .select(`
@@ -4074,75 +4088,119 @@ async function loadGlobalFeed() {
         if (error) throw error;
 
         if (!posts || posts.length === 0) {
-            container.innerHTML = `<div class="text-center py-20 text-slate-400"><p>Aucune publication.</p></div>`;
+            container.innerHTML = `
+                <div class="text-center py-20 text-slate-400">
+                    <i class="fas fa-newspaper text-4xl mb-3 opacity-50"></i>
+                    <p>Aucune publication pour le moment.</p>
+                    <p class="text-xs mt-2">Soyez le premier à publier !</p>
+                </div>`;
             return;
         }
 
-        // 3. Génération du HTML
+        // 4. Génération du HTML
         container.innerHTML = posts.map(post => {
+            // Sécurité : Si l'auteur du post est null, on saute
+            if (!post.user_id) return '';
+
             const profile = post.profiles || {};
-            const avatarUrl = profile.avatar_url || 'https://ui-avatars.com/api/?name=User&background=random&size=50';
-            const userName = profile.full_name || 'Anonyme';
-            const isCertified = profile.is_certified;
+            
+            // Fallbacks visuels
+            const avatarUrl = profile.avatar_url || 'https://via.placeholder.com/50'; 
+            const userName = profile.full_name || 'Utilisateur';
+            const userUsername = profile.username ? `@${profile.username}` : '';
+            const isCertified = profile.is_certified || false;
             const timeAgo = getTimeAgo(new Date(post.created_at));
 
-            // Récupération des comptes
-            const likeCount = post.post_likes && post.post_likes[0] ? post.post_likes[0].count : 0;
-            const commentCount = post.post_comments && post.post_comments[0] ? post.post_comments[0].count : 0;
+            // Récupération des comptes (sécurisés avec ?.)
+            const likeCount = post.post_likes?.[0]?.count || 0;
+            const commentCount = post.post_comments?.[0]?.count || 0;
 
-            // ---------------------------------------------------------
-            // --- C'EST ICI QUE SE TROUVE LE HEADER AVEC LE BOUTON ---
-            // ---------------------------------------------------------
-            return `
-            <!-- HEADER POST MODIFIÉ -->
-<div class="p-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-700">
-    
-    <!-- PARTIE GAUCHE : AVATAR + NOM (CLIQUABLE) -->
-    <div class="flex items-center gap-3 cursor-pointer hover:opacity-80" onclick="viewUserProfile('${post.user_id}')">
-        <img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border border-slate-200">
-        <div>
-            <div class="flex items-center gap-1">
-                <span class="font-bold text-sm text-slate-900 dark:text-white hover:underline">${userName}</span>
-                ${isCertified ? '<i class="fas fa-check-circle text-blue-500 text-xs"></i>' : ''}
-            </div>
-            <div class="text-xs text-slate-500">${timeAgo}</div>
-        </div>
-    </div>
+            // Logique du bouton Follow
+            let followButtonHTML = '';
+            const isMyPost = (post.user_id === myId);
 
-    <!-- BOUTON S'ABONNER -->
-    ${post.user_id !== myId ? `
-        <button onclick="event.stopPropagation(); toggleFollow('${post.user_id}', this)" class="text-xs font-bold px-4 py-1.5 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition shadow">
-            S'abonner
-        </button>
-    ` : ''}
-</div>
-                <!-- FIN HEADER -->
-
-                <!-- Image -->
-                ${post.image_url ? `<img src="${post.image_url}" class="w-full max-h-[500px] object-contain mx-auto bg-black">` : ''}
+            // Si ce n'est PAS mon post, on affiche le bouton
+            if (!isMyPost) {
+                const isFollowing = myFollowingSet.has(post.user_id);
                 
-                <!-- Légende -->
-                ${post.caption ? `<div class="p-4"><p class="text-sm"><span class="font-bold mr-1">${userName}</span>${post.caption}</p></div>` : ''}
+                // Si je suis déjà abonné
+                if (isFollowing) {
+                    followButtonHTML = `
+                        <button onclick="event.stopPropagation(); toggleFollow('${post.user_id}', this)" 
+                                class="text-xs font-bold px-4 py-1.5 rounded-full border border-gray-300 text-gray-600 bg-gray-100 transition shadow-sm following">
+                            Abonné
+                        </button>`;
+                } else {
+                    // Si je ne suis pas abonné
+                    followButtonHTML = `
+                        <button onclick="event.stopPropagation(); toggleFollow('${post.user_id}', this)" 
+                                class="text-xs font-bold px-4 py-1.5 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition shadow-md">
+                            S'abonner
+                        </button>`;
+                }
+            }
 
-                <!-- Actions avec Compteurs -->
+            return `
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden mb-6">
+                
+                <!-- HEADER CLIQUABLE -->
+                <div class="p-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-700">
+                    <!-- Partie Gauche : Cliquez pour voir le profil -->
+                    <div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition" 
+                         onclick="viewUserProfile('${post.user_id}')">
+                        <img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border border-slate-200">
+                        <div>
+                            <div class="flex items-center gap-1">
+                                <span class="font-bold text-sm text-slate-900 dark:text-white hover:underline">${userName}</span>
+                                ${isCertified ? '<i class="fas fa-check-circle text-blue-500 text-xs"></i>' : ''}
+                            </div>
+                            <div class="text-xs text-slate-500">${timeAgo}</div>
+                        </div>
+                    </div>
+
+                    <!-- Bouton Follow (ou rien si c'est moi) -->
+                    ${followButtonHTML}
+                </div>
+
+                <!-- IMAGE -->
+                ${post.image_url ? `
+                    <div class="bg-black w-full flex items-center justify-center">
+                        <img src="${post.image_url}" class="w-full max-h-[500px] object-contain mx-auto" loading="lazy">
+                    </div>
+                ` : ''}
+                
+                <!-- LÉGENDE -->
+                ${post.caption ? `
+                <div class="p-4">
+                    <p class="text-sm text-slate-800 dark:text-slate-200">
+                        <span class="font-bold mr-1 text-indigo-600">${userName}</span>
+                        ${post.caption}
+                    </p>
+                </div>
+                ` : ''}
+
+                <!-- ACTIONS -->
                 <div class="px-4 py-3 flex gap-6 text-slate-600 dark:text-slate-400 text-xl border-t border-slate-100 dark:border-slate-700 items-center">
                     
+                    <!-- LIKE -->
                     <button onclick="toggleLike('${post.id}', this)" class="hover:text-red-500 transition flex items-center gap-1 group">
                         <i class="far fa-heart group-hover:scale-110 transition-transform" id="icon-like-${post.id}"></i>
                         <span id="count-like-${post.id}" class="text-sm font-bold text-slate-800 dark:text-slate-200">${formatNumber(likeCount)}</span>
                     </button>
                     
+                    <!-- COMMENT -->
                     <button onclick="toggleCommentSection('${post.id}')" class="hover:text-blue-500 transition flex items-center gap-1 group">
                         <i class="far fa-comment group-hover:scale-110 transition-transform"></i>
                         <span id="count-comment-${post.id}" class="text-sm font-bold text-slate-800 dark:text-slate-200">${formatNumber(commentCount)}</span>
                     </button>
                     
+                    <!-- SHARE -->
                     <button onclick="sharePost('${post.id}')" class="hover:text-green-500 transition ml-auto">
                         <i class="far fa-share-square"></i>
                     </button>
                 </div>
 
-                <!-- Zone Commentaires -->
+                <!-- ZONE COMMENTAIRES -->
                 <div id="comments-${post.id}" class="hidden bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-slate-100 dark:border-slate-700">
                     <div id="comment-list-${post.id}" class="space-y-3 mb-3 max-h-60 overflow-y-auto"></div>
                     <form onsubmit="submitComment(event, '${post.id}')" class="flex gap-2">
@@ -4158,6 +4216,7 @@ async function loadGlobalFeed() {
 
     } catch (err) {
         console.error("Erreur Feed:", err);
+        container.innerHTML = '<p class="text-center text-red-500 py-10">Erreur de chargement du feed.</p>';
     }
 }
 
