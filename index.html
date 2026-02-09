@@ -822,220 +822,8 @@ body.dark-mode .chat-header { color: #94a3b8; }
 
         <!-- SPACER FOR HEADER -->
         <div class="h-20 md:h-24"></div>
-
-<!-- PAGE : PROFIL SOCIAL (DESIGN FLAT STYLE CAPTURE) -->
-<div id="profile-social-view" class="page-view">
-    <!-- Container principal fond blanc pour cacher le fond de l'app -->
-    <div class="bg-white min-h-screen max-w-lg mx-auto shadow-sm relative z-20 pb-20">
         
-        <!-- HEADER : Avatar + Nom + Stats -->
-<div class="p-5 flex items-start gap-5 border-b border-gray-100">
-   <!-- BOUTON DÉCONNEXION (Haut Droit) -->
-    <!-- Il s'affiche en gris, devient rouge au survol -->
-    <button onclick="confirmSocialLogout()" class="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-all" title="Déconnexion">
-        <i class="fas fa-sign-out-alt text-lg"></i>
-    </button> 
-    <!-- 1. AVATAR (Sans le badge absolu dedans) -->
-    <div class="relative">
-        <div class="w-20 h-20 md:w-24 md:h-24 rounded-full border border-gray-200 p-1 bg-white">
-            <img id="social-avatar" src="" alt="Profile" class="w-full h-full object-cover rounded-full hidden">
-            <div id="social-avatar-placeholder" class="w-full h-full bg-gray-100 rounded-full flex items-center justify-center text-gray-300">
-                <i class="fas fa-user text-2xl"></i>
-            </div>
-        </div>
-    </div>
-
-    <!-- 2. INFOS PRINCIPALES -->
-    <div class="flex-1 pt-1">
-        
-        <!-- Conteneur Flex pour aligner le NOM et le BADGE -->
-        <div class="flex items-center gap-1 mb-1">
-            <h1 id="social-fullname" class="text-xl font-bold text-black leading-none">Connexion...</h1>
-            
-            <!-- LE BADGE EST MAINTENANT ICI (Style Facebook : Rond bleu + Check blanc) -->
-            <span id="social-badge-inline" class="hidden ml-1">
-    <!-- Couleur officielle Instagram : #0095F6 -->
-    <i class="fas fa-check-circle text-[#0095F6] text-lg"></i>
-</span>
-        </div>
-        
-        <!-- Stats -->
-        <div class="text-sm text-gray-600 font-medium mb-2">
-            <span id="stat-following">0</span> suivis • 
-            <span id="stat-followers">0</span> abonnés
-        </div>
-        
-        <!-- Bouton Modifier -->
-        <button onclick="toggleProfile()" class="px-3 py-1 bg-gray-100 text-xs font-bold text-gray-700 rounded hover:bg-gray-200 transition">
-            Modifier le profil
-        </button>
-        <!-- NOUVEAU CONTENEUR POUR LE BOUTON FOLLOW (Caché par défaut) -->
-        <div id="profile-follow-container" class="hidden">
-            <!-- Le bouton sera injecté ici par JS -->
-        </div>
-    </div>
-</div>
-
-        <!-- SECTION INFOS (Liste grise comme sur la capture) -->
-        <div class="bg-gray-50 px-5 py-4 space-y-3 border-b border-gray-200">
-            <!-- Téléphone -->
-            <div class="flex items-center gap-3">
-                <i class="fas fa-phone text-gray-400 w-4 text-center"></i>
-                <span id="social-phone" class="text-sm text-gray-700 font-medium">...</span>
-            </div>
-            <!-- Username -->
-            <div class="flex items-center gap-3">
-                <i class="fas fa-at text-gray-400 w-4 text-center"></i>
-                <span id="social-username" class="text-sm text-gray-700 font-medium">...</span>
-            </div>
-            <!-- Date de naissance -->
-            <div class="flex items-center gap-3">
-                <i class="fas fa-birthday-cake text-gray-400 w-4 text-center"></i>
-                <span id="social-dob" class="text-sm text-gray-700 font-medium">...</span>
-            </div>
-        </div>
-
-        <!-- ONGLETS (Publications / Archivées) -->
-        <div class="flex border-b border-gray-200">
-            <button onclick="switchSocialTab('publications')" class="social-tab-btn flex-1 py-4 text-sm font-bold text-black border-b-2 border-black transition-colors">
-                Publications
-            </button>
-            <button onclick="switchSocialTab('archives')" class="social-tab-btn flex-1 py-4 text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-gray-600 transition-colors">
-                Publications archivées
-            </button>
-        </div>
-
-        <!-- GRILLE DES PHOTOS (3 Colonnes, écart minime) -->
-        <div id="social-posts-grid" class="grid grid-cols-3 gap-1 bg-gray-100">
-            <!-- Les photos seront injectées ici par JS -->
-            <div class="col-span-3 flex flex-col items-center justify-center py-20 text-gray-400">
-                <i class="fas fa-camera text-3xl mb-2"></i>
-                <p class="text-xs">Aucune publication</p>
-            </div>
-        </div>
-
-        <!-- BOUTON AJOUTER FLOTTANT (En bas à droite ou fixe en bas) -->
-        <!-- La capture montre un bouton en bas. Je le place fixe en bas à droite pour l'effet moderne -->
-        <button onclick="openNewPostModal()" class="fixed bottom-6 right-6 md:absolute md:bottom-6 md:right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition-all z-50">
-            <i class="fas fa-plus text-xl"></i>
-        </button>
-
-    </div>
-</div>
-
-<!-- MODALE AJOUT PHOTO (Simple et blanche) -->
-<div id="new-post-modal" class="fixed inset-0 z-[9500] hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl">
-        <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-            <h3 class="font-bold text-black">Nouvelle publication</h3>
-            <button onclick="closeNewPostModal()" class="text-blue-500 font-bold text-sm">Annuler</button>
-        </div>
-        <div class="p-4">
-            <form id="new-post-form" onsubmit="handleNewPost(event)" class="space-y-4">
-                <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:bg-gray-50 transition cursor-pointer" onclick="document.getElementById('post-file-input').click()">
-                    <input type="file" id="post-file-input" accept="image/*" required class="hidden">
-                    <i class="fas fa-images text-3xl text-gray-400 mb-2"></i>
-                    <p class="text-xs text-gray-500 font-medium">Appuyez pour choisir une photo</p>
-                </div>
-                <textarea id="post-caption" rows="3" placeholder="Écrivez une légende..." class="w-full text-sm p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 resize-none"></textarea>
-                <button type="submit" class="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition">Partager</button>
-            </form>
-        </div>
-    </div>
-</div>
-
-
-            <!-- VUE 1 : LISTE DES MESSAGES (Style Photo 1) -->
-<div id="messages-view" class="page-view">
-    <section class="max-w-2xl mx-auto h-screen flex flex-col bg-white dark:bg-slate-900">
-        
-        <!-- Header -->
-        <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-white dark:bg-slate-900 sticky top-0 z-10">
-            <h2 class="text-xl font-bold text-slate-900 dark:text-white">Discussions</h2>
-            <button class="text-indigo-600"><i class="far fa-edit text-lg"></i></button>
-        </div>
-
-        <!-- Liste des conversations -->
-        <div id="chat-list-container" class="flex-1 overflow-y-auto">
-            <!-- Les éléments seront injectés ici par JS -->
-            <div class="flex flex-col items-center justify-center h-full text-slate-400">
-                <i class="fas fa-comments text-4xl mb-3 opacity-20"></i>
-                <p>Aucune discussion pour le moment.</p>
-            </div>
-        </div>
-
-        <!-- Barre de recherche (Optionnelle) -->
-        <div class="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-            <div class="relative">
-                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                <input type="text" placeholder="Rechercher une discussion..." class="w-full pl-10 pr-4 py-2 rounded-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:text-white">
-            </div>
-        </div>
-    </section>
-</div>
-
-<!-- VUE 2 : ESPACE DE DISCUSSION (Style Photo 2) -->
-<div id="chat-view" class="page-view">
-    <section class="max-w-2xl mx-auto h-screen flex flex-col bg-white dark:bg-slate-900 relative">
-        
-        <!-- Header Discussion -->
-        <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3 bg-white dark:bg-slate-900 sticky top-0 z-20 shadow-sm">
-            <button onclick="switchPage('messages')" class="text-slate-500 hover:text-slate-900 dark:hover:text-white transition">
-                <i class="fas fa-arrow-left text-lg"></i>
-            </button>
-            <div class="flex items-center gap-3 flex-1">
-                <div class="relative">
-                    <img id="chat-header-avatar" src="" class="w-10 h-10 rounded-full object-cover border border-slate-200">
-                    <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white dark:border-slate-900"></div>
-                </div>
-                <div>
-                    <h3 id="chat-header-name" class="text-sm font-bold text-slate-900 dark:text-white leading-tight">...</h3>
-                    <p class="text-[10px] text-green-500 font-medium">En ligne</p>
-                </div>
-            </div>
-            <button class="text-slate-400 hover:text-indigo-600"><i class="fas fa-info-circle"></i></button>
-        </div>
-
-        <!-- Zone des Messages -->
-        <div id="chat-messages-container" class="flex-1 overflow-y-auto p-4 bg-slate-50 dark:bg-slate-950 scroll-smooth">
-            <!-- Les bulles seront injectées ici -->
-            <div class="flex justify-center my-4">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-200 dark:bg-slate-800 px-3 py-1 rounded-full">Aujourd'hui</span>
-            </div>
-        </div>
-
-        <!-- Zone de saisie -->
-        <div class="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700">
-            <form id="chat-form" onsubmit="sendChatMessage(event)" class="flex items-center gap-2">
-                <button type="button" class="text-slate-400 hover:text-indigo-600 p-2"><i class="fas fa-plus-circle text-xl"></i></button>
-                <div class="flex-1 relative">
-                    <input type="text" id="chat-input" placeholder="Écrire un message..." autocomplete="off"
-                           class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white transition">
-                    <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><i class="far fa-smile"></i></button>
-                </div>
-                <button type="submit" class="bg-indigo-600 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg hover:bg-indigo-700 transition transform active:scale-95">
-                    <i class="fas fa-paper-plane text-sm translate-x-[-1px] translate-y-[1px]"></i>
-                </button>
-            </form>
-        </div>
-    </section>
-</div>
-    <!-- VUE : CENTRE DE NOTIFICATIONS -->
-<div id="notifications-view" class="page-view">
-    <section class="max-w-2xl mx-auto h-screen flex flex-col bg-white dark:bg-slate-900">
-        
-        <!-- Header -->
-        <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center sticky top-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur z-10">
-            <h2 class="text-xl font-bold text-slate-900 dark:text-white">Notifications</h2>
-            <button onclick="markAllNotificationsRead()" class="text-xs font-bold text-indigo-600 hover:underline">Tout marquer comme lu</button>
-        </div>
-
-        <!-- Liste des notifications -->
-        <div id="notifications-list-container" class="flex-1 overflow-y-auto">
-            <!-- Injecté par JS -->
-        </div>
-    </section>
-</div>
+        <div id="main-content">
         <!-- PAGE 2: MARKETPLACE -->
         <div id="marketplace-view" class="page-view">
             <section class="max-w-7xl mx-auto px-6 py-10">
@@ -1659,6 +1447,28 @@ body.dark-mode .chat-header { color: #94a3b8; }
             .file-item { grid-template-columns: 40px 1fr 30px; }
             .file-item div:nth-child(3) { display: none; } /* Hide status on mobile */
         }
+
+        /* SCROLLBAR PRO POUR LE CHAT */
+#chat-messages-container::-webkit-scrollbar {
+    width: 6px;
+}
+#chat-messages-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+#chat-messages-container::-webkit-scrollbar-thumb {
+    background-color: rgba(148, 163, 184, 0.3); /* Slate-400 transparent */
+    border-radius: 10px;
+}
+#chat-messages-container::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(148, 163, 184, 0.6);
+}
+
+/* ANIMATION SOUPLE POUR L'INPUT */
+.input-grow:focus-within {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+    transform: translateY(-2px);
+    transition: all 0.3s ease;
+}
     </style>
     <!-- HERO -->
     <div class="hero">
@@ -1818,218 +1628,9 @@ body.dark-mode .chat-header { color: #94a3b8; }
             </div>
         </div>
     </section>
-
-    <!-- JAVASCRIPT DU CONVERTISSEUR -->
-    <script>
-                /* --- CONFIGURATION SUPABASE --- */
-const SUPABASE_URL = 'https://lqqtvumwdixlhamwmqii.supabase.co'; 
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxcXR2dW13ZGl4bGhhbXdtcWlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyOTQ1NjMsImV4cCI6MjA4NTg3MDU2M30.QKTBQbZ78iRVyM1o-hhtAPkWP23h_vXAMA3zrfuzipY'; // Votre clé
-
-// On récupère la fonction createClient de la librairie globale
-// const { createClient } = supabase;
-
-// On crée notre instance client avec un nom différent pour éviter le conflit
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        
-        // On encapsule pour éviter les conflits avec le reste du site
-        (function() {
-            let files = [];
-            const colors = {
-                word: '#2563eb', excel: '#16a34a', ppt: '#f97316', pdf: '#ef4444', img: '#9333ea'
-            };
-
-            const dom = {
-                tabs: document.querySelectorAll('#convert-view .tab-btn'),
-                grids: document.querySelectorAll('#convert-view .grid-tools'),
-                upload: document.getElementById('uploadView'),
-                list: document.getElementById('listView'),
-                action: document.getElementById('actionBar'),
-                success: document.getElementById('successView'),
-                fileInput: document.getElementById('fileInput'),
-                supportLabel: document.getElementById('supportLabel'),
-                count: document.getElementById('fileCount'),
-                dlBtn: document.getElementById('dlBtn')
-            };
-
-            let config = { accept: '.doc,.docx', target: 'PDF' };
-
-            // Drag & Drop
-            ['dragenter','dragover'].forEach(e => dom.upload.addEventListener(e, () => dom.upload.classList.add('dragover')));
-            ['dragleave','drop'].forEach(e => dom.upload.addEventListener(e, () => dom.upload.classList.remove('dragover')));
-            dom.upload.addEventListener('drop', e => handleFiles(e.dataTransfer.files));
-            dom.upload.addEventListener('click', () => dom.fileInput.click());
-            dom.fileInput.addEventListener('change', e => handleFiles(e.target.files));
-
-            window.switchCat = function(cat) {
-                dom.tabs.forEach(t => t.classList.remove('active'));
-                event.target.classList.add('active');
-                dom.grids.forEach(g => g.classList.remove('active'));
-                const targetGrid = document.getElementById(`grid-${cat}`);
-                if(targetGrid) targetGrid.classList.add('active');
-            }
-
-                    // --- AJOUTEZ CETTE FONCTION ---
-        function resetApp() {
-            files = []; // 1. Vider la liste des fichiers en mémoire
-            dom.list.innerHTML = ''; // 2. Vider l'affichage HTML de la liste
-            dom.upload.classList.remove('hidden'); // 3. Réafficher la zone de glisser-déposer
-            dom.list.style.display = 'none'; // 4. Cacher la liste des fichiers
-            dom.action.classList.add('hidden'); // 5. Cacher la barre d'action (bouton convertir)
-            dom.action.style.display = 'none'; // 6. Forcer le style inline à none (sécurité)
-            dom.success.style.display = 'none'; // 7. Cacher l'écran de succès
-            dom.fileInput.value = ''; // 8. Réinitialiser l'input file
-        }
-        // -----------------------------
-
-            window.setTool = function(tool, accept, type) {
-                config.accept = accept;
-                config.target = type; 
-                
-                if(dom.supportLabel) dom.supportLabel.textContent = accept;
-                const cards = document.querySelectorAll('#convert-view .tool-card');
-                cards.forEach(c => c.classList.remove('selected'));
-                if(event && event.currentTarget) event.currentTarget.classList.add('selected');
-                resetApp();
-            }
-
-            function handleFiles(list) {
-                Array.from(list).forEach(f => files.push(f));
-                renderList();
-                dom.upload.classList.add('hidden');
-                dom.list.style.display = 'block';
-                dom.action.classList.remove('hidden');
-                dom.action.style.display = 'flex';
-            }
-
-            function renderList() {
-                dom.list.innerHTML = '';
-                dom.count.textContent = files.length;
-                files.forEach((f, i) => {
-                    const ext = f.name.split('.').pop();
-                    let c = colors.word;
-                    if(['xls','xlsx'].includes(ext)) c = colors.excel;
-                    if(['ppt','pptx'].includes(ext)) c = colors.ppt;
-                    if(['pdf'].includes(ext)) c = colors.pdf;
-                    if(['jpg','png','heic'].includes(ext)) c = colors.img;
-
-                    const div = document.createElement('div');
-                    div.className = 'file-item';
-                    div.innerHTML = `
-                        <div style="width:32px; height:32px; background:${c}; border-radius:6px; color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.7rem;">${ext.toUpperCase()}</div>
-                        <div>
-                            <div style="font-weight:500; font-size:0.95rem;">${f.name}</div>
-                            <div class="progress-container"><div class="progress-bar" id="bar-${i}"></div></div>
-                        </div>
-                        <div style="text-align:right; font-size:0.8rem; font-weight:600; color:var(--text-tertiary);" id="status-${i}">Prêt</div>
-                        <div style="text-align:right; cursor:pointer; color:#cbd5e1;" onclick="removeFile(${i})">×</div>
-                    `;
-                    dom.list.appendChild(div);
-                });
-            }
-
-            window.removeFile = function(i) {
-                files.splice(i, 1);
-                renderList();
-                if(!files.length) resetApp();
-            };
-
-                   window.startProcess = async () => {
-    // 1. Masquer le bouton de la vue action du convertisseur (Je cible le bouton par son ID #actionBar car btn-login était trop spécifique à l'accueil)
-    const actionBtn = document.getElementById('actionBar');
-    if(actionBtn) actionBtn.classList.add('hidden'); // Le bouton action de la vue convertisseur s'appelle 'hidden' dans votre code
-
-    // 2. Préparer les données
-    const formData = new FormData();
-    
-    // On envoie le premier fichier de la liste
-    // const files = []; // Assurez que 'files' est bien défini globalement
-    if(files.length === 0) return alert("Aucun fichier sélectionné");
-    
-    formData.append("file", files[0]); 
-
-    // On envoie le type de conversion sélectionné (basé sur la config actuelle)
-    const selectedTool = document.querySelector('.tool-card.selected');
-    let conversionType = 'word-pdf';
-    
-    if(selectedTool) {
-        // Détecter le type par le contenu du bouton (Texte)
-        if(selectedTool.innerText.includes('Image')) conversionType = 'img-pdf';
-        // Ajoutez d'autres conditions ici selon vos onglets...
-    }
-    
-    formData.append("type", conversionType);
-
-    // UI Feedback : En cours
-    const st = document.getElementById(`status-0`);
-    const bar = document.getElementById(`bar-0`);
-    if(st) {
-        st.textContent = 'Envoi au serveur...';
-        if(bar) {
-            bar.style.width = '50%';
-            bar.style.backgroundColor = '#3b82f6'; // Bleu
-        }
-    }
-
-    try {
-        // APPELER LA FONCTION SUPABASE (Assurez que cette fonction existe bien dans votre HTML)
-        const { data, error } = await supabaseClient.functions.invoke('convert-doc', {
-            body: { name: 'test' },
-            // Assurez-vous que supabase est bien initialisé avec votre URL et KEY
-        });
-
-        if (error) throw error;
-
-        // GESTION DU SUCCÈS
-        const result = data; 
-        
-        // Finir la barre de chargement
-        if(bar) {
-            bar.style.width = '100%';
-            bar.style.backgroundColor = '#3b82f6'; 
-            if(st) {
-                st.textContent = '✓';
-                st.style.color = '#16a34a'; // Vert
-            }
-        }
-
-        // Simuler une petite attente pour l'effet visuel
-        setTimeout(() => {
-            finish(result.url); // On passe l'URL réelle à la fonction finish()
-        }, 800);
-
-    } catch (err) {
-        console.error("Erreur lors de la conversion : " + err.message);
-        alert("Erreur lors de la conversion : " + err.message);
-        // Reset en cas d'erreur
-        if(st) {
-            st.textContent = 'Erreur';
-            st.style.color = '#ef4444'; // Rouge
-        }
-        if(bar) bar.style.width = '0%';
-        if(actionBtn) actionBtn.classList.remove('hidden'); // Remontrer le bouton
-    }
-}; // Assurez que cette fonction est bien fermée avec un };
-
-
-// Vérifiez que vous avez bien fermé la fonction startProcess avec ces deux } comme montré ci-dessus.
-
-                        function finish(downloadUrl) {
-                dom.list.style.display = 'none';
-                dom.success.style.display = 'flex';
-                
-                if (downloadUrl && dom.dlBtn) {
-                    dom.dlBtn.href = downloadUrl;
-                    const cleanName = downloadUrl.split(/[?&]/).pop().split('.')[0];
-                    dom.dlBtn.download = cleanName || "document_converti.pdf"; 
-                } else {
-                    const blob = new Blob(['Erreur serveur'], {type:'text/plain'});
-                    dom.dlBtn.href = URL.createObjectURL(blob);
-                }
-            }
-        })(); // <--- CETTE ACOLADE EST CRUCIALE (Elle ferme le (function() { ... })
-    </script>
 </div>
-    
+    </div>
+        
     <!-- MOBILE DOCK -->
     <div class="mobile-dock md:hidden bg-white rounded-2xl px-2 py-2 flex items-center justify-between shadow-xl border border-slate-100">
         <a onclick="switchPage('home')" class="flex flex-1 flex-col items-center gap-1 group cursor-pointer"><i class="fas fa-house text-lg text-indigo-600"></i><span class="text-[9px] font-medium text-indigo-600">Explorer</span></a>
@@ -2062,7 +1663,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     <span class="text-[9px] font-bold text-indigo-600">Profil</span>
     
     <!-- Petit badge rouge si non lu (Optionnel, décochez pour l'enlever) -->
-    <!-- <div class="absolute top-0 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-slate-50"></div> -->
+    <div class="absolute top-0 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-slate-50"></div>
 </a>
     </div>
 
@@ -2079,9 +1680,147 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         </div>
     </div>
 
+        <!-- PAGE : PROFIL SOCIAL (DESIGN FLAT STYLE CAPTURE) -->
+<div id="profile-social-view" class="page-view">
+    <!-- Container principal fond blanc pour cacher le fond de l'app -->
+    <div class="bg-white min-h-screen max-w-lg mx-auto shadow-sm relative z-20 pb-20">
+        
+        <!-- HEADER : Avatar + Nom + Stats -->
+<div class="p-5 flex items-start gap-5 border-b border-gray-100">
+   <!-- BOUTON DÉCONNEXION (Haut Droit) -->
+    <!-- Il s'affiche en gris, devient rouge au survol -->
+    <button onclick="confirmSocialLogout()" class="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-all" title="Déconnexion">
+        <i class="fas fa-sign-out-alt text-lg"></i>
+    </button> 
+    <!-- 1. AVATAR (Sans le badge absolu dedans) -->
+    <div class="relative">
+        <div class="w-20 h-20 md:w-24 md:h-24 rounded-full border border-gray-200 p-1 bg-white">
+            <img id="social-avatar" src="" alt="Profile" class="w-full h-full object-cover rounded-full hidden">
+            <div id="social-avatar-placeholder" class="w-full h-full bg-gray-100 rounded-full flex items-center justify-center text-gray-300">
+                <i class="fas fa-user text-2xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. INFOS PRINCIPALES -->
+    <div class="flex-1 pt-1">
+        
+        <!-- Conteneur Flex pour aligner le NOM et le BADGE -->
+        <div class="flex items-center gap-1 mb-1">
+            <h1 id="social-fullname" class="text-xl font-bold text-black leading-none">Chargement...</h1>
+            
+            <!-- LE BADGE EST MAINTENANT ICI (Style Facebook : Rond bleu + Check blanc) -->
+            <span id="social-badge-inline" class="hidden ml-1">
+    <!-- Couleur officielle Instagram : #0095F6 -->
+    <i class="fas fa-check-circle text-[#0095F6] text-lg"></i>
+</span>
+        </div>
+        
+        <!-- Stats -->
+        <div class="text-sm text-gray-600 font-medium mb-2">
+            <span id="stat-following">0</span> suivis • 
+            <span id="stat-followers">0</span> abonnés
+        </div>
+        
+        <!-- Bouton Modifier -->
+        <button onclick="toggleProfile()" class="px-3 py-1 bg-gray-100 text-xs font-bold text-gray-700 rounded hover:bg-gray-200 transition">
+            Modifier le profil
+        </button>
+        <!-- NOUVEAU CONTENEUR POUR LE BOUTON FOLLOW (Caché par défaut) -->
+        <div id="profile-follow-container" class="hidden">
+            <!-- Le bouton sera injecté ici par JS -->
+        </div>
+    </div>
+</div>
+
+        <!-- SECTION INFOS (Liste grise comme sur la capture) -->
+        <div class="bg-gray-50 px-5 py-4 space-y-3 border-b border-gray-200">
+            <!-- Téléphone -->
+            <div class="flex items-center gap-3">
+                <i class="fas fa-phone text-gray-400 w-4 text-center"></i>
+                <span id="social-phone" class="text-sm text-gray-700 font-medium">...</span>
+            </div>
+            <!-- Username -->
+            <div class="flex items-center gap-3">
+                <i class="fas fa-at text-gray-400 w-4 text-center"></i>
+                <span id="social-username" class="text-sm text-gray-700 font-medium">...</span>
+            </div>
+            <!-- Date de naissance -->
+            <div class="flex items-center gap-3">
+                <i class="fas fa-birthday-cake text-gray-400 w-4 text-center"></i>
+                <span id="social-dob" class="text-sm text-gray-700 font-medium">...</span>
+            </div>
+        </div>
+
+        <!-- ONGLETS (Publications / Archivées) -->
+        <div class="flex border-b border-gray-200">
+            <button onclick="switchSocialTab('publications')" class="social-tab-btn flex-1 py-4 text-sm font-bold text-black border-b-2 border-black transition-colors">
+                Publications
+            </button>
+            <button onclick="switchSocialTab('archives')" class="social-tab-btn flex-1 py-4 text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-gray-600 transition-colors">
+                Publications archivées
+            </button>
+        </div>
+
+        <!-- GRILLE DES PHOTOS (3 Colonnes, écart minime) -->
+        <div id="social-posts-grid" class="grid grid-cols-3 gap-1 bg-gray-100">
+            <!-- Les photos seront injectées ici par JS -->
+            <div class="col-span-3 flex flex-col items-center justify-center py-20 text-gray-400">
+                <i class="fas fa-camera text-3xl mb-2"></i>
+                <p class="text-xs">Aucune publication</p>
+            </div>
+        </div>
+
+        <!-- BOUTON AJOUTER FLOTTANT (En bas à droite ou fixe en bas) -->
+        <!-- La capture montre un bouton en bas. Je le place fixe en bas à droite pour l'effet moderne -->
+        <button onclick="openNewPostModal()" class="fixed bottom-6 right-6 md:absolute md:bottom-6 md:right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition-all z-50">
+            <i class="fas fa-plus text-xl"></i>
+        </button>
+
+    </div>
+</div>
+
+<!-- MODALE AJOUT PHOTO (Simple et blanche) -->
+<div id="new-post-modal" class="fixed inset-0 z-[9500] hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl">
+        <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+            <h3 class="font-bold text-black">Nouvelle publication</h3>
+            <button onclick="closeNewPostModal()" class="text-blue-500 font-bold text-sm">Annuler</button>
+        </div>
+        <div class="p-4">
+            <form id="new-post-form" onsubmit="handleNewPost(event)" class="space-y-4">
+                <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:bg-gray-50 transition cursor-pointer" onclick="document.getElementById('post-file-input').click()">
+                    <input type="file" id="post-file-input" accept="image/*" required class="hidden">
+                    <i class="fas fa-images text-3xl text-gray-400 mb-2"></i>
+                    <p class="text-xs text-gray-500 font-medium">Choisissez une photo</p>
+                </div>
+                <textarea id="post-caption" rows="3" placeholder="Écrivez une légende..." class="w-full text-sm p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 resize-none"></textarea>
+                <button type="submit" class="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition">publier</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+    <!-- VUE : CENTRE DE NOTIFICATIONS -->
+<div id="notifications-view" class="page-view">
+    <section class="max-w-2xl mx-auto h-screen flex flex-col bg-white dark:bg-slate-900">
+        
+        <!-- Header -->
+        <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center sticky top-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur z-10">
+            <h2 class="text-xl font-bold text-slate-900 dark:text-white">Notifications</h2>
+            <button onclick="markAllNotificationsRead()" class="text-xs font-bold text-indigo-600 hover:underline">Tout marquer comme lu</button>
+        </div>
+
+        <!-- Liste des notifications -->
+        <div id="notifications-list-container" class="flex-1 overflow-y-auto">
+            <!-- Injecté par JS -->
+        </div>
+    </section>
+</div>
+        
     <!-- VUE 1 : LISTE DES MESSAGES (Style Photo 1) -->
 <div id="messages-view" class="page-view">
-    <section class="max-w-2xl mx-auto h-screen flex flex-col bg-white dark:bg-slate-900">
+    <section class="fixed inset-0 z-50 max-w-2xl mx-auto h-screen flex flex-col bg-white dark:bg-slate-900 translate-y-12">
         
         <!-- Header -->
         <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-white dark:bg-slate-900 sticky top-0 z-10">
@@ -2099,55 +1838,68 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         </div>
 
         <!-- Barre de recherche (Optionnelle) -->
-        <div class="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+        <div class="px-4 -translate-y-14 bg-transparent">
             <div class="relative">
-                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                <input type="text" placeholder="Rechercher une discussion..." class="w-full pl-10 pr-4 py-2 rounded-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:text-white">
-            </div>
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10"></i>
+            
+            <input type="text" 
+                   placeholder="Rechercher une discussion..." 
+                   class="w-full pl-10 pr-4 py-2 rounded-full 
+                          bg-white/70 dark:bg-slate-800/60 
+                          backdrop-blur-md 
+                          border border-white/20 dark:border-slate-700/50
+                          text-sm shadow-xl 
+                          focus:outline-none focus:ring-2 focus:ring-indigo-500/50 
+                          dark:text-white transition-all">
         </div>
+</div>
     </section>
 </div>
-
-<!-- VUE 2 : ESPACE DE DISCUSSION (VERSION FORCÉE) -->
+<!-- ESPACE DES MESSAGES -->
 <div id="chat-view" class="page-view">
-    <!-- FIXED FORCE: Prend tout l'écran, passe au-dessus de TOUT (Z-INDEX ÉLEVÉ) -->
-    <section class="fixed inset-0 max-w-2xl mx-auto w-full bg-white dark:bg-slate-900 flex flex-col z-[10000] !important">
+    <section class="fixed inset-0 max-w-2xl mx-auto w-full bg-slate-50 dark:bg-slate-950 flex flex-col z-[10000]">
         
-        <!-- HAUT : HEADER -->
-        <div class="flex-shrink-0 p-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3 bg-white dark:bg-slate-900 shadow-sm">
-            <button onclick="switchPage('messages')" class="text-slate-500 hover:text-slate-900 dark:hover:text-white transition">
-                <i class="fas fa-arrow-left text-lg"></i>
-            </button>
-            <div class="flex items-center gap-3 flex-1">
-                <div class="relative">
-                    <img id="chat-header-avatar" src="" class="w-10 h-10 rounded-full object-cover border border-slate-200">
-                    <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white dark:border-slate-900"></div>
-                </div>
-                <div>
-                    <h3 id="chat-header-name" class="text-sm font-bold text-slate-900 dark:text-white leading-tight">...</h3>
-                    <p class="text-[10px] text-green-500 font-medium">En ligne</p>
-                </div>
-            </div>
-            <button class="text-slate-400 hover:text-indigo-600"><i class="fas fa-info-circle"></i></button>
-        </div>
+        <div class="flex-shrink-0 px-2 py-2 backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-b border-x border-slate-200/50 dark:border-slate-700/50 flex items-center gap-3 shadow-sm z-10 rounded-b-[7px]">
+    
+    <button onclick="switchPage('messages')" class="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white transition">
+        <i class="fas fa-arrow-left text-lg"></i>
+    </button>
 
-        <!-- MILIEU : MESSAGES -->
-        <div id="chat-messages-container" class="flex-1 overflow-y-auto p-4 bg-slate-50 dark:bg-slate-950 scroll-smooth">
+    <div class="flex items-center gap-3 flex-1">
+        <div class="relative">
+            <img id="chat-header-avatar" src="" class="w-10 h-10 rounded-full object-cover border border-slate-200/50">
+            <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white dark:border-slate-900"></div>
+        </div>
+        <div>
+            <h3 id="chat-header-name" class="text-sm font-bold text-slate-900 dark:text-white leading-tight">...</h3>
+            <p class="text-[10px] text-green-500 font-medium">En ligne</p>
+        </div>
+    </div>
+
+    <button class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-indigo-600">
+        <i class="fas fa-info-circle"></i>
+    </button>
+</div>
+
+        <div id="chat-messages-container" class="flex-1 overflow-y-auto p-4 bg-transparent scroll-smooth">
             <div class="flex justify-center my-4">
-                <span class="text-[10px] font-bold text-slate-400 uppercase bg-slate-200 dark:bg-slate-800 px-3 py-1 rounded-full">Aujourd'hui</span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase bg-slate-200/50 dark:bg-slate-800/50 backdrop-blur-sm px-3 py-1 rounded-full">Aujourd'hui</span>
             </div>
-        </div>
+            </div>
 
-        <!-- BAS : SAISIE -->
-        <div class="flex-shrink-0 p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700">
+        <div class="flex-shrink-0 p-4 bg-transparent mt-auto">
             <form id="chat-form" onsubmit="sendChatMessage(event)" class="flex items-center gap-2">
-                <button type="button" class="text-slate-400 hover:text-indigo-600 p-2"><i class="fas fa-plus-circle text-xl"></i></button>
+                <button type="button" class="text-slate-400 hover:text-indigo-600 p-2">
+                    <i class="fas fa-plus-circle text-xl"></i>
+                </button>
                 <div class="flex-1 relative">
                     <input type="text" id="chat-input" placeholder="Écrire un message..." autocomplete="off"
-                           class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white transition">
-                    <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><i class="far fa-smile"></i></button>
+                           class="w-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border border-slate-200/50 dark:border-slate-700/50 rounded-2xl px-5 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 dark:text-white transition">
+                    <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                        <i class="far fa-smile"></i>
+                    </button>
                 </div>
-                <button type="submit" class="bg-indigo-600 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg hover:bg-indigo-700 transition transform active:scale-95">
+                <button type="submit" class="bg-indigo-600 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 transition transform active:scale-95">
                     <i class="fas fa-paper-plane text-sm translate-x-[-1px] translate-y-[1px]"></i>
                 </button>
             </form>
@@ -2156,113 +1908,6 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 </div>
     <!-- deuxième donné en haut -->
 
-    <!-- MODAL DE SUIVI (TRACKING) - AVEC WHATSAPP ET DATE -->
-    <div id="track-modal" class="fixed inset-0 z-[8500] invisible transition-all duration-500">
-        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm opacity-0 transition-opacity duration-500" onclick="closeTrackModal()"></div>
-        <div class="absolute right-0 top-0 h-full w-full md:w-[400px] translate-x-full transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col shadow-2xl bg-white border-l border-slate-100 z-[8501]">
-            <div class="p-6 border-b border-slate-100 flex items-center justify-between">
-                <div>
-                    <h3 class="text-lg font-bold text-slate-900">Suivi #<span id="track-id"></span></h3>
-                    <p id="track-date" class="text-xs text-slate-400 mt-1"></p>
-                </div>
-                <button onclick="closeTrackModal()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="p-8">
-                <div class="timeline">
-                    <div class="timeline-item active"><div class="timeline-date">Aujourd'hui, 10:00</div><div class="timeline-content">Commande reçue et confirmée</div></div>
-                    <div class="timeline-item active"><div class="timeline-date">Aujourd'hui, 10:15</div><div class="timeline-content">En cours d'impression</div></div>
-                    <div class="timeline-item"><div class="timeline-date" id="est-date-label">Prévu</div><div class="timeline-content" id="est-date-text">En préparation pour livraison</div></div>
-                    <div class="timeline-item"><div class="timeline-date">Livraison</div><div class="timeline-content">Livraison au client</div></div>
-                </div>
-                
-                <!-- BADGE DATE ESTIMÉE -->
-                <div class="mt-6 p-4 bg-emerald-50 border border-emerald-100 rounded-xl flex items-start gap-3">
-                    <div class="mt-1 text-emerald-600"><i class="fas fa-truck-fast"></i></div>
-                    <div>
-                        <p class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">Estimation de Réception</p>
-                        <p id="estimated-delivery-date" class="text-sm font-bold text-emerald-900">Calcul en cours...</p>
-                        <p class="text-[10px] text-emerald-600 mt-1">Sous réserve de disponibilité du coursier.</p>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- ACTIONS FOOTER -->
-            <div class="p-6 bg-slate-50 mt-auto border-t border-slate-100 space-y-3">
-                <!-- ACTION WHATSAPP -->
-                <button onclick="shareOrderOnWhatsApp()" class="w-full py-3 bg-[#25D366] text-white rounded-xl font-bold text-sm hover:bg-[#20bd5a] transition-colors flex items-center justify-center gap-2 shadow-md shadow-green-200">
-                    <i class="fab fa-whatsapp text-lg"></i> Contacter le Support (WhatsApp)
-                </button>
-                
-                <!-- ACTION FACTURE -->
-                <button onclick="openInvoice()" class="w-full py-3 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-indigo-600 transition-colors flex items-center justify-center gap-2">
-                    <i class="fas fa-file-invoice"></i> Télécharger Facture
-                </button>
-                
-                <button onclick="closeTrackModal()" class="w-full py-2 text-xs font-bold text-slate-500 hover:text-slate-900">Fermer</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- PROFESSIONAL INVOICE MODAL -->
-    <div id="invoice-modal">
-        <div class="invoice-paper">
-            <button onclick="closeInvoice()" class="absolute top-4 right-4 no-print p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition"><i class="fas fa-times text-slate-500"></i></button>
-            <div class="invoice-header">
-                <div>
-                    <h1 class="text-3xl font-black text-slate-900 tracking-tight">Print<span class="text-indigo-600">bam</span></h1>
-                    <p class="text-sm text-slate-500">Infrastructure Cloud Pro</p>
-                    <p class="text-xs text-slate-400 mt-1">Croix Rouge, Kinshasa</p>
-                </div>
-                <div class="text-right">
-                    <h2 class="text-xl font-bold text-indigo-600">FACTURE</h2>
-                    <p class="text-sm font-bold text-slate-900 mt-1">#<span id="inv-id"></span></p>
-                    <p class="text-xs text-slate-500" id="inv-date"></p>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-8 mb-8">
-                <div>
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Facturé à</h3>
-                    <p class="font-bold text-slate-900" id="inv-client">Client Visiteur</p>
-                    <p class="text-sm text-slate-500" id="inv-contact">--</p>
-                </div>
-                <div class="text-right">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Statut</h3>
-                    <span class="inline-block px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">PAYÉ</span>
-                </div>
-            </div>
-
-            <table class="invoice-table">
-                <thead>
-                    <tr>
-                        <th width="50%">Description</th>
-                        <th class="text-center">Qté</th>
-                        <th class="text-right">Prix Unitaire</th>
-                        <th class="text-right">Total</th>
-                    </tr>
-                </thead>
-                <tbody id="inv-items">
-                    <!-- JS Generated -->
-                </tbody>
-            </table>
-
-            <div class="invoice-total">
-                Total: <span id="inv-total">0 FC</span>
-            </div>
-
-            <div class="mt-12 pt-8 border-t-2 border-dashed border-slate-200 text-center">
-                <p class="text-xs text-slate-400 mb-2">Merci de votre confiance. Garantie de qualité 100%.</p>
-                <div class="flex justify-center gap-2 mt-2">
-                    <div class="w-8 h-8 bg-slate-100 rounded flex items-center justify-center text-slate-400"><i class="fab fa-whatsapp"></i></div>
-                    <div class="w-8 h-8 bg-slate-100 rounded flex items-center justify-center text-slate-400"><i class="fas fa-globe"></i></div>
-                </div>
-            </div>
-            
-            <div class="mt-8 text-center no-print">
-                <button onclick="window.print()" class="px-6 py-2 bg-slate-900 text-white text-xs font-bold uppercase rounded hover:bg-indigo-600 transition">Imprimer / PDF</button>
-            </div>
-        </div>
-    </div>
     <!-- MODALE AJOUT ARTICLE -->
     <div id="article-modal" class="fixed inset-0 z-[9500] hidden">
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeArticleModal()"></div>
@@ -2324,7 +1969,16 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         </div>
         <div id="uploadModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 hidden"><div class="absolute inset-0 bg-black/90 backdrop-blur-xl"></div><div class="relative glass p-10 text-center max-w-sm w-full border-indigo-500/30"><i class="fas fa-cloud-arrow-up text-4xl text-indigo-600 animate-bounce mb-6"></i><h2 class="text-xl font-black text-slate-900 mb-6" data-i18n="term_uploading">Envoi sécurisé...</h2><div class="w-full bg-white/5 h-2 rounded-full overflow-hidden mb-2"><div id="progressBar" class="progress-bar-fill h-full w-0"></div></div><div id="progressPercent" class="text-[10px] font-black text-indigo-600 uppercase">0%</div></div></div>
         <div id="successModal" class="fixed inset-0 z-[110] flex items-center justify-center p-4 hidden"><div class="absolute inset-0 bg-black/80 backdrop-blur-2xl"></div><div class="relative glass p-10 text-center max-w-sm w-full border-emerald-500/30"><div class="w-20 h-20 bg-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-3xl"><i class="fas fa-check"></i></div><h2 class="text-2xl font-black text-slate-900 tracking-tighter" data-i18n="term_confirmed">Confirmé !</h2><p class="text-slate-500 text-sm mt-2" data-i18n="term_redirect">Redirection vers l'accueil...</p></div></div>
+        
         <script>
+            const SUPABASE_URL = 'https://lqqtvumwdixlhamwmqii.supabase.co'; 
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxcXR2dW13ZGl4bGhhbXdtcWlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyOTQ1NjMsImV4cCI6MjA4NTg3MDU2M30.QKTBQbZ78iRVyM1o-hhtAPkWP23h_vXAMA3zrfuzipY'; // Votre clé
+
+// On récupère la fonction createClient de la librairie globale
+// const { createClient } = supabase;
+
+// On crée notre instance client avec un nom différent pour éviter le conflit
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             if (typeof pdfjsLib !== 'undefined') { pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; }
             if (typeof emailjs !== 'undefined') { emailjs.init("thg5rkoV_YE3VuWnU"); }
             let currentStep = 1; let options = { reliure: false, plastique: false };
