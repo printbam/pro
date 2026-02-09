@@ -648,6 +648,25 @@ body.dark-mode .chat-header { color: #94a3b8; }
 .mobile-dock.dock-hidden {
     display: none !important; 
 }
+        /* --- ÉTAT DE CHARGEMENT GLOBAL --- */
+/* Quand la classe .app-loading est présente, on cache tout sauf le loader */
+
+.app-loading #main-content,
+.app-loading .nav-desktop-container,
+.app-loading #mobile-header,
+.app-loading .mobile-dock,
+.app-loading .bg-grid,
+.app-loading .bg-glow,
+.app-loading .page-view {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+/* S'assurer que le Loader est bien au-dessus de tout */
+#loader {
+    z-index: 99999 !important; 
+}
     </style>
 </head>
 <body>
@@ -2341,44 +2360,68 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         document.addEventListener('DOMContentLoaded', async () => {
     
-        // --- DÉBUT DU GARDE-FOU D'AUTHENTIFICATION ---
-        // On vérifie la session AVANT de charger le reste du site
-        const { data: { session }, error } = await supabaseClient.auth.getSession();
-    
-        if (!session || error) {
-            console.log("Votre session a expiré. Veuillez vous reconnecter.");
-            // On NE retire PAS le loader, l'utilisateur verra l'écran de chargement
-            // pendant la redirection.
-            window.location.replace('login.html'); 
-            return; // On arrête l'exécution du script ici
-        }
+    // --- 1. GARDE-FOU D'AUTHENTIFICATION ---
+    const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
 
-        // Ajoutez cette ligne pour charger les articles dynamiques
-         loadMarketplaceArticles();
-        // --- FIN DU GARDE-FOU ---
+    if (!session || sessionError) {
+        console.log("Votre session a expiré. Veuillez vous reconnecter.");
+        window.location.replace('login.html'); 
+        return; // Arrêt immédiat
+    }
+
+    // --- 2. CONFIGURATION INITIALE (UI) ---
+    const savedLang = localStorage.getItem('printbam-lang') || 'fr';
+    const langSelect = document.getElementById('language-select');
+    if (langSelect) langSelect.value = savedLang;
     
-        // Si on arrive ici, c'est que l'utilisateur est connecté.
-        // Le reste de votre code initial continue ici :
-        
-        const savedLang = localStorage.getItem('printbam-lang') || 'fr';
-        const langSelect = document.getElementById('language-select');
-        if(langSelect) langSelect.value = savedLang;
-        updateLanguage(savedLang);
-        setTheme(localStorage.getItem('printbam-theme') || 'light', false);
-        
-        // Lancer la vérification au chargement
-updateMessageBadge();
-        
-        // On retire le loader SEULEMENT si on est connecté
-        setTimeout(() => { 
+    updateLanguage(savedLang);
+    setTheme(localStorage.getItem('printbam-theme') || 'light', false);
+    
+    // Lancer les petites tâches en arrière-plan
+    updateMessageBadge();
+    loadMarketplaceArticles();
+
+    // --- 3. FONCTION D'INITIALISATION DES DONNÉES ---
+    async function initialiserApplication() {
+        try {
+            // Chargement parallèle des données pour plus de rapidité
+            // On utilise Promise.all pour ne pas attendre l'un après l'autre inutilement
+            await Promise.all([
+                loadGlobalFeed(),
+                loadSocialProfile(),
+                loadNotifications(),
+                loadChatList()
+            ]);
+
+            console.log("Toutes les données critiques sont chargées.");
+
+        } catch (error) {
+            console.error("Erreur lors de l'initialisation :", error);
+        } finally {
+            // --- 4. LOGIQUE DE RETRAIT DU LOADER ---
+            document.body.classList.remove('app-loading');
+
             const loader = document.getElementById('loader'); 
-            if(loader) {
-                loader.style.opacity = '0'; 
-                loader.style.visibility = 'hidden'; 
+            if (loader) {
+                setTimeout(() => { 
+                    loader.style.opacity = '0'; 
+                    setTimeout(() => {
+                        loader.style.display = 'none';
+                        loader.style.visibility = 'hidden';
+                    }, 500); 
+                }, 100);
             }
-        }, 800); 
+        }
+    }
+
+    // --- 5. LANCEMENT FINAL ---
+    await initialiserApplication();
+    
+    // Initialisation des effets visuels après chargement des données
+    if (typeof initScrollReveal === 'function') {
         initScrollReveal();
-    });
+    }
+});
 
         function changeLanguage(lang) {
             localStorage.setItem('printbam-lang', lang);
