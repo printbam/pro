@@ -815,26 +815,41 @@ body.dark-mode .chat-header { color: #94a3b8; }
     <br>
     <!-- MAIN CONTENT WRAPPER -->
    <!-- PAGE 1: ACCUEIL (FEED GLOBAL) -->
-<div id="home-view" class="page-view active">
+<div id="home-view" class="page-view">
     <section class="max-w-2xl mx-auto px-4 pt-6 pb-20">
         
-        <!-- HEADER DU FEED -->
-        <div class="flex items-center justify-between mb-6">
-            <h1 class="text-0xl font-black text-slate-900 dark:text-white tracking-tight">
-                Explorez
-            </h1>
-            <button onclick="openNewPostModal()" class="bg-indigo-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg hover:bg-indigo-700 transition flex items-center gap-2">
-                <i class="fas fa-plus"></i> Publier
-            </button>
-        </div>
+        <!-- NOUVEAU WRAPPER STICKY -->
+        <div class="sticky top-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md z-10 py-4 -mx-4 px-4 border-b border-slate-100 dark:border-slate-800 transition-all">
+            
+            <!-- HEADER DU FEED -->
+            <div class="flex items-center justify-between mb-4">
+                <h1 class="text-0xl font-black text-slate-900 dark:text-white tracking-tight">
+                    Explorez
+                </h1>
+                <button onclick="openNewPostModal()" class="bg-indigo-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg hover:bg-indigo-700 transition flex items-center gap-2">
+                    <i class="fas fa-plus"></i> Publier
+                </button>
+            </div>
+
+            <!-- BOUTONS DE TRI -->
+            <div class="flex gap-2 border-b border-slate-100 dark:border-slate-700 pb-1 overflow-x-auto no-scrollbar">
+                <button onclick="sortFeed('recent')" id="btn-sort-recent" class="text-sm font-bold pb-2 px-2 border-b-2 border-indigo-600 text-indigo-600 transition-colors whitespace-nowrap">
+                    Récent
+                </button>
+                <button onclick="sortFeed('popular')" id="btn-sort-popular" class="text-sm font-bold pb-2 px-2 border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-colors whitespace-nowrap">
+                    <i class="fas fa-fire text-orange-500 mr-1"></i> Tendances
+                </button>
+                <button onclick="filterFeed('shorts')" id="btn-filter-shorts" class="text-sm font-bold pb-2 px-2 border-b-2 border-transparent text-slate-400 hover:text-pink-600 transition-colors whitespace-nowrap flex items-center gap-1">
+                    <i class="fas fa-play text-pink-500"></i> Shorts
+                </button>
+            </div>
+        
+        </div> 
+        <!-- FIN DU WRAPPER STICKY -->
 
         <!-- CONTENEUR DES POSTS -->
-        <!-- Les posts s'afficheront ici -->
         <div id="global-feed-container" class="space-y-6">
-            <!-- Loader initial -->
-            <div class="flex justify-center py-10">
-                <i class="fas fa-circle-notch fa-spin text-indigo-500 text-2xl"></i>
-            </div>
+             <!-- ... les posts ... -->
         </div>
     </section>
 </div>
@@ -2421,6 +2436,35 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     if (typeof initScrollReveal === 'function') {
         initScrollReveal();
     }
+            const messagesView = document.getElementById('messages-view');
+
+        if (messagesView) {
+            let touchStartX = 0;
+            let touchEndX = 0;
+            const seuil = 120; // Distance minimale en pixels pour déclencher l'action
+
+            messagesView.addEventListener('touchstart', function(event) {
+                // On enregistre la position où le doigt touche l'écran
+                touchStartX = event.changedTouches[0].screenX;
+            }, false);
+
+            messagesView.addEventListener('touchend', function(event) {
+                // On enregistre la position où le doigt quitte l'écran
+                touchEndX = event.changedTouches[0].screenX;
+                handleSwipe();
+            }, false);
+
+            function handleSwipe() {
+                // Calcul de la distance
+                const diff = touchStartX - touchEndX;
+
+                // Si la différence est positive, c'est un glissement vers la GAUCHE
+                if (diff > seuil) {
+                    // On déclenche le retour à l'accueil
+                    switchPage('home');
+                }
+            }
+        }
 });
 
         function changeLanguage(lang) {
@@ -3600,11 +3644,50 @@ function confirmSocialLogout() {
         });
     }
 }
-        /* --- LOGIQUE DU FEED GLOBAL --- */
+
+        /* --- ALGORITHME DE TRI DES POSTS --- */
+
+// Fonction pour calculer le score d'un post
+function calculatePostScore(likes, comments, createdAt) {
+    // 1. Score d'engagement (1 Like = 10pts, 1 Comment = 5pts)
+    const engagementScore = (likes * 10) + (comments * 5);
+    
+    // 2. Calcul du temps écoulé (en heures)
+    const now = new Date();
+    const postDate = new Date(createdAt);
+    const diffTime = Math.abs(now - postDate);
+    const diffHours = diffTime / (1000 * 60 * 60);
+
+    // 3. Formule de désintégration temporelle (Gravity)
+    // Plus diffHours est grand, plus le dénominateur est grand, donc le score baisse.
+    const gravity = 1.8;
+    const timeDecay = Math.pow(diffHours + 2, gravity);
+
+    // 4. Score final
+    return engagementScore / timeDecay;
+}
+
+// Fonction de tri principal
+async function sortFeed(type) {
+    // Mise à jour visuelle des boutons
+    const btnRecent = document.getElementById('btn-sort-recent');
+    const btnPopular = document.getElementById('btn-sort-popular');
+
+    if (type === 'recent') {
+        btnRecent.className = "text-sm font-bold pb-2 border-b-2 border-indigo-600 text-indigo-600 transition-colors";
+        btnPopular.className = "text-sm font-bold pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-colors";
+    } else {
+        btnRecent.className = "text-sm font-bold pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-colors";
+        btnPopular.className = "text-sm font-bold pb-2 border-b-2 border-indigo-600 text-indigo-600 transition-colors";
+    }
+
+    // On recharge le feed en passant le type de tri
+    loadGlobalFeed(type);
+}
+        
 
 /* --- LOGIQUE DU FEED GLOBAL (OPTIMISÉ & ROBUSTE) --- */
-
-async function loadGlobalFeed() {
+async function loadGlobalFeed(sortBy = 'recent') {
     const container = document.getElementById('global-feed-container');
     if (!container) return;
 
@@ -3613,8 +3696,7 @@ async function loadGlobalFeed() {
         const { data: { user } } = await supabaseClient.auth.getUser();
         const myId = user ? user.id : null;
 
-        // 2. OPTIMISATION : Charger la liste des ID que je suis UNE SEULE FOIS
-        // Cela évite de faire une requête pour chaque post et évite l'erreur 409 au premier clic
+        // 2. Charger les ID des abonnements (Optimisation)
         let myFollowingSet = new Set();
         if (myId) {
             const { data: followingData } = await supabaseClient
@@ -3627,7 +3709,8 @@ async function loadGlobalFeed() {
             }
         }
 
-        // 3. Récupérer les posts avec les jointures (Profil + Comptes Likes/Coms)
+        // 3. Récupérer les posts
+        // IMPORTANT : On récupère plus de posts (ex: 50) pour pouvoir les reranker
         const { data: posts, error } = await supabaseClient
             .from('posts')
             .select(`
@@ -3637,7 +3720,7 @@ async function loadGlobalFeed() {
                 post_comments(count)
             `)
             .order('created_at', { ascending: false })
-            .limit(20);
+            .limit(50); // On en prend 50 pour avoir du choix dans l'algorithme
 
         if (error) throw error;
 
@@ -3646,38 +3729,47 @@ async function loadGlobalFeed() {
                 <div class="text-center py-20 text-slate-400">
                     <i class="fas fa-newspaper text-4xl mb-3 opacity-50"></i>
                     <p>Aucune publication pour le moment.</p>
-                    <p class="text-xs mt-2">Soyez le premier à publier !</p>
                 </div>`;
             return;
         }
 
-        // 4. Génération du HTML
-        container.innerHTML = posts.map(post => {
-            // Sécurité : Si l'auteur du post est null, on saute
+        // 4. LA LOGIQUE DE L'ALGORITHME (LE TRI)
+        if (sortBy === 'popular') {
+            // On ajoute un score calculé à chaque post
+            posts.forEach(post => {
+                const likeCount = post.post_likes?.[0]?.count || 0;
+                const commentCount = post.post_comments?.[0]?.count || 0;
+                post.calculatedScore = calculatePostScore(likeCount, commentCount, post.created_at);
+            });
+
+            // On trie le tableau selon le score calculé (Du plus grand au plus petit)
+            posts.sort((a, b) => b.calculatedScore - a.calculatedScore);
+        }
+
+        // On ne garde que les 20 meilleurs posts (pour la performance visuelle)
+        const finalPosts = posts.slice(0, 20);
+
+        // 5. Génération du HTML (Inchangé, sauf la source des données qui est `finalPosts`)
+        container.innerHTML = finalPosts.map(post => {
             if (!post.user_id) return '';
 
             const profile = post.profiles || {};
-            
-            // Fallbacks visuels
             const avatarUrl = profile.avatar_url || 'https://api.dicebear.com/7.x/identicon/svg?seed=NomUtilisateur'; 
             const userName = profile.full_name || 'Utilisateur';
             const userUsername = profile.username ? `@${profile.username}` : '';
             const isCertified = profile.is_certified || false;
             const timeAgo = getTimeAgo(new Date(post.created_at));
 
-            // Récupération des comptes (sécurisés avec ?.)
             const likeCount = post.post_likes?.[0]?.count || 0;
             const commentCount = post.post_comments?.[0]?.count || 0;
 
-            // Logique du bouton Follow
+            // Logique du bouton Follow (Identique)
             let followButtonHTML = '';
             const isMyPost = (post.user_id === myId);
 
-            // Si ce n'est PAS mon post, on affiche le bouton
             if (!isMyPost) {
                 const isFollowing = myFollowingSet.has(post.user_id);
                 
-                // Si je suis déjà abonné
                 if (isFollowing) {
                     followButtonHTML = `
                         <button onclick="event.stopPropagation(); toggleFollow('${post.user_id}', this)" 
@@ -3685,7 +3777,6 @@ async function loadGlobalFeed() {
                             Abonné
                         </button>`;
                 } else {
-                    // Si je ne suis pas abonné
                     followButtonHTML = `
                         <button onclick="event.stopPropagation(); toggleFollow('${post.user_id}', this)" 
                                 class="text-xs font-bold px-4 py-1.5 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition shadow-md">
@@ -3694,12 +3785,16 @@ async function loadGlobalFeed() {
                 }
             }
 
+            // Si on est en mode "Popular", on peut afficher une petite badge "Trending" pour les posts très récents
+            const trendingBadge = (sortBy === 'popular' && post.calculatedScore > 10) 
+                ? '<span class="ml-2 text-[9px] font-bold bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded uppercase tracking-wider">Trending</span>' 
+                : '';
+
             return `
             <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden mb-6">
                 
                 <!-- HEADER CLIQUABLE -->
                 <div class="p-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-700">
-                    <!-- Partie Gauche : Cliquez pour voir le profil -->
                     <div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition" 
                          onclick="viewUserProfile('${post.user_id}')">
                         <img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border border-slate-200">
@@ -3708,11 +3803,12 @@ async function loadGlobalFeed() {
                                 <span class="font-bold text-sm text-slate-900 dark:text-white hover:underline">${userName}</span>
                                 ${isCertified ? '<i class="fas fa-check-circle text-blue-500 text-xs"></i>' : ''}
                             </div>
-                            <div class="text-xs text-slate-500">${timeAgo}</div>
+                            <div class="text-xs text-slate-500 flex items-center">
+                                <span>${timeAgo}</span>
+                                ${trendingBadge}
+                            </div>
                         </div>
                     </div>
-
-                    <!-- Bouton Follow (ou rien si c'est moi) -->
                     ${followButtonHTML}
                 </div>
 
@@ -3734,7 +3830,7 @@ async function loadGlobalFeed() {
                 ` : ''}
 
                 <!-- ACTIONS -->
-                <div class="px-4 py-3 flex gap-6 text-slate-600 dark:text-slate-400 text-xl border-t border-slate-100 dark:border-slate-700 items-center">
+                <div class="px-4 py-3 flex gap-6 text-slate-600 dark:text-slate-400 text-xl items-center border-t border-slate-100 dark:border-slate-700">
                     
                     <!-- LIKE -->
                     <button onclick="toggleLike('${post.id}', this)" class="hover:text-red-500 transition flex items-center gap-1 group">
