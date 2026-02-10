@@ -748,6 +748,15 @@ body.dark-mode .chat-header { color: #94a3b8; }
     width: 100px;
     border-radius: 16px;
 }
+        @keyframes heartPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.4); }
+    100% { transform: scale(1); }
+}
+
+.animate-heart-pop {
+    animation: heartPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
     </style>
 </head>
 <body>
@@ -2566,43 +2575,49 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     updateMessageBadge();
     loadMarketplaceArticles();
 
-    // --- 3. FONCTION D'INITIALISATION DES DONNÉES ---
     async function initialiserApplication() {
-        try {
-            // Chargement parallèle des données pour plus de rapidité
-            // On utilise Promise.all pour ne pas attendre l'un après l'autre inutilement
-            await Promise.all([
-                loadGlobalFeed(),
-                loadSocialProfile(),
-                loadNotifications(),
-                loadChatList()
-            ]);
+    try {
+        console.log("Démarrage progressif...");
 
-            console.log("Données chargées.");
+        // Petite fonction utilitaire pour attendre (delay)
+        const wait = ms => new Promise(res => setTimeout(res, ms));
 
-        } catch (error) {
-            // --- AJOUTEZ CETTE VÉRIFICATION ---
-        // Si l'erreur est "AbortError", on ne l'affiche pas (c'est juste une annulation de chargement).
-        // Si c'est une autre erreur (ex: erreur réseau réelle), on l'affiche.
-        if (err.name !== 'AbortError') {
-            console.error("Erreur critique au chargement :", err);
-        }
-        } finally {
-
-            const loader = document.getElementById('loader'); 
-            if (loader) {
-                setTimeout(() => { 
-                    loader.style.opacity = '0'; 
-                    setTimeout(() => {
-                        loader.style.display = 'none';
-                        loader.style.visibility = 'hidden';
-                    }, 500); 
-                }, 100);
+        // On lance les chargements avec un léger décalage entre chaque
+        // pour ne pas "étouffer" la connexion au démarrage.
+        const charger = async (nom, fonction, delai) => {
+            try {
+                await wait(delai);
+                await fonction();
+                console.log(`✅ ${nom} chargé`);
+            } catch (e) {
+                console.warn(`⚠️ Échec ${nom}:`, e.message);
             }
-            // --- 4. LOGIQUE DE RETRAIT DU LOADER ---
-            document.body.classList.remove('app-loading');
+        };
+
+        // Lancement séquentiel cadencé
+        await Promise.allSettled([
+            charger("Flux", loadGlobalFeed, 0),       // Immédiat
+            charger("Profil", loadSocialProfile, 150), // +150ms
+            charger("Notifs", loadNotifications, 300), // +300ms
+            charger("Messages", loadChatList, 450)     // +450ms
+        ]);
+
+    } catch (error) {
+        if (error.name !== 'AbortError') {
+            console.error("Erreur critique au démarrage :", error);
+        }
+    } finally {
+        // Retrait fluide du loader
+        const loader = document.getElementById('loader');
+        if (loader) {
+            loader.style.opacity = '0';
+            setTimeout(() => {
+                loader.style.display = 'none';
+                document.body.classList.remove('app-loading');
+            }, 500);
         }
     }
+}
 
         /* --- LOGIQUE DE SCROLL AUTO-HIDE --- */
 let lastScrollY = window.scrollY;
@@ -3980,12 +3995,15 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all') {
     const container = document.getElementById('global-feed-container');
     if (!container) return;
 
-    try {
-        // 1. Récupérer l'utilisateur connecté
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        const myId = user ? user.id : null;
+    // Afficher un loader discret avant de commencer
+    container.innerHTML = `<div class="flex justify-center py-12"><i class="fas fa-circle-notch animate-spin text-3xl text-indigo-600 opacity-20"></i></div>`;
 
-        // 2. Charger les ID des abonnements (Optimisation)
+    try {
+        // --- 1. CONTEXTE UTILISATEUR (SÉCURISÉ) ---
+        const { data: userData } = await supabaseClient.auth.getUser();
+        const myId = userData?.user?.id || null;
+
+        // --- 2. CHARGEMENT DES ABONNEMENTS ---
         let myFollowingSet = new Set();
         if (myId) {
             const { data: followingData } = await supabaseClient
@@ -3993,192 +4011,145 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all') {
                 .select('following_id')
                 .eq('follower_id', myId);
             
-            if (followingData) {
-                myFollowingSet = new Set(followingData.map(f => f.following_id));
-            }
+            if (followingData) myFollowingSet = new Set(followingData.map(f => f.following_id));
         }
 
-        // 3. Récupérer les posts (avec les comptes de likes/comments et les profils)
+        // --- 3. CHARGEMENT DES POSTS ---
         const { data: posts, error } = await supabaseClient
             .from('posts')
             .select(`
                 *,
-                profiles ( full_name, username, avatar_url, is_certified ),
+                profiles ( id, full_name, username, avatar_url, is_certified ),
                 post_likes(count),
                 post_comments(count)
             `)
             .order('created_at', { ascending: false })
-            .limit(50); // On en prend 50 pour avoir du choix dans l'algorithme
+            .limit(50); 
 
         if (error) throw error;
 
         if (!posts || posts.length === 0) {
-            container.innerHTML = `
-                <div class="text-center py-20 text-slate-400">
-                    <i class="fas fa-newspaper text-4xl mb-3 opacity-50"></i>
-                    <p>Aucune publication pour le moment.</p>
-                </div>`;
+            container.innerHTML = `<div class="text-center py-20 text-slate-400"><i class="fas fa-newspaper text-4xl mb-3 opacity-20"></i><p>Aucune publication pour le moment.</p></div>`;
             return;
         }
 
-        // 4. FILTRAGE : Si on ne veut que les shorts
-        let filteredPosts = posts;
-        if (filterType === 'shorts') {
-            filteredPosts = posts.filter(p => p.is_short === true);
+        // --- 4. OPTIMISATION DES LIKES ---
+        let myLikedPostIds = new Set();
+        if (myId && posts.length > 0) {
+            const postIds = posts.map(p => p.id);
+            const { data: myLikes } = await supabaseClient
+                .from('post_likes')
+                .select('post_id')
+                .eq('user_id', myId)
+                .in('post_id', postIds); // Correction de la syntaxe .in()
+
+            if (myLikes) myLikedPostIds = new Set(myLikes.map(l => l.post_id));
         }
 
-        // 5. LA LOGIQUE DE L'ALGORITHME (LE TRI)
-        if (sortBy === 'popular') {
-            // On ajoute un score calculé à chaque post
-            filteredPosts.forEach(post => {
-                const likeCount = post.post_likes?.[0]?.count || 0;
-                const commentCount = post.post_comments?.[0]?.count || 0;
-                // Utilisation de la fonction calculatePostScore (définie plus haut)
-                post.calculatedScore = calculatePostScore(likeCount, commentCount, post.created_at);
-            });
+        // --- 5. FILTRAGE & TRI ---
+        let processedPosts = filterType === 'shorts' ? posts.filter(p => p.is_short) : posts;
 
-            // On trie le tableau selon le score calculé (Du plus grand au plus petit)
-            filteredPosts.sort((a, b) => b.calculatedScore - a.calculatedScore);
+        if (sortBy === 'popular' && typeof calculatePostScore === 'function') {
+            processedPosts = processedPosts.map(post => ({
+                ...post,
+                calculatedScore: calculatePostScore(post.post_likes?.[0]?.count || 0, post.post_comments?.[0]?.count || 0, post.created_at)
+            })).sort((a, b) => b.calculatedScore - a.calculatedScore);
         }
 
-        // On ne garde que les 20 meilleurs posts (pour la performance visuelle)
-        const finalPosts = filteredPosts.slice(0, 20);
+        const finalPosts = processedPosts.slice(0, 20);
 
-        // 6. Génération du HTML
-        container.innerHTML = finalPosts.map(post => {
-            if (!post.user_id) return '';
+        // --- 6. GÉNÉRATION HTML ---
+container.innerHTML = finalPosts.map(post => {
+    const profile = post.profiles || {};
+    const avatarUrl = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username || 'user'}`; 
+    const userName = profile.full_name || 'Utilisateur';
+    const isCertified = profile.is_certified;
+    const timeAgo = typeof getTimeAgo === 'function' ? getTimeAgo(new Date(post.created_at)) : 'Récemment';
+    
+    const likeCount = post.post_likes?.[0]?.count || 0;
+    const commentCount = post.post_comments?.[0]?.count || 0;
+    const isLiked = myLikedPostIds.has(post.id);
+    const isMyPost = (post.user_id === myId);
 
-            const profile = post.profiles || {};
-            const avatarUrl = profile.avatar_url || 'https://api.dicebear.com/7.x/identicon/svg?seed=NomUtilisateur'; 
-            const userName = profile.full_name || 'Utilisateur';
-            const userUsername = profile.username ? `@${profile.username}` : '';
-            const isCertified = profile.is_certified || false;
-            const timeAgo = getTimeAgo(new Date(post.created_at));
+    // Bouton Suivre
+    let followBtn = '';
+    if (!isMyPost && myId) {
+        const isFollowing = myFollowingSet.has(post.user_id);
+        followBtn = `
+            <button onclick="toggleFollow('${post.user_id}', this)" 
+                    class="text-xs font-bold px-4 py-1.5 rounded-full transition-all ${isFollowing ? 'border border-slate-200 text-slate-500' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'}">
+                ${isFollowing ? 'Abonné' : 'Suivre'}
+            </button>`;
+    }
 
-            const likeCount = post.post_likes?.[0]?.count || 0;
-            const commentCount = post.post_comments?.[0]?.count || 0;
-
-            // Logique du bouton Follow
-            let followButtonHTML = '';
-            const isMyPost = (post.user_id === myId);
-
-            if (!isMyPost) {
-                const isFollowing = myFollowingSet.has(post.user_id);
-                
-                if (isFollowing) {
-                    followButtonHTML = `
-                        <button onclick="event.stopPropagation(); toggleFollow('${post.user_id}', this)" 
-                                class="text-xs font-bold px-4 py-1.5 rounded-full border border-gray-300 text-gray-600 bg-gray-100 transition shadow-sm following">
-                            Abonné
-                        </button>`;
-                } else {
-                    followButtonHTML = `
-                        <button onclick="event.stopPropagation(); toggleFollow('${post.user_id}', this)" 
-                                class="text-xs font-bold px-4 py-1.5 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition shadow-md">
-                            S'abonner
-                        </button>`;
-                }
-            }
-
-            // Si on est en mode "Popular", on peut afficher un petit badge "Trending"
-            const trendingBadge = (sortBy === 'popular' && post.calculatedScore > 10) 
-                ? '<span class="ml-2 text-[9px] font-bold bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded uppercase tracking-wider">Trending</span>' 
-                : '';
-
-            // --- LOGIQUE D'AFFICHAGE MEDIA (IMAGE OU SHORT VIDEO) ---
-            let mediaHtml = '';
-            
-            if (post.is_short && post.video_url) {
-                // AFFICHAGE SHORT (VIDÉO VERTICALE)
-                mediaHtml = `
-                    <div class="flex justify-center py-4 bg-slate-900">
-                        <div class="short-video-container">
-                            <video src="${post.video_url}" controls playsinline preload="metadata" class="w-full h-full"></video>
-                        </div>
-                    </div>
-                `;
-            } else if (post.image_url) {
-                // AFFICHAGE IMAGE NORMAL
-                mediaHtml = `
-                    <div class="bg-black w-full flex items-center justify-center">
-                        <img src="${post.image_url}" class="w-full max-h-[500px] object-contain mx-auto" loading="lazy">
-                    </div>
-                `;
-            }
-
-            return `
-            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden mb-6">
-                
-                <!-- HEADER CLIQUABLE -->
-                <div class="p-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-700">
-                    <div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition" 
-                         onclick="viewUserProfile('${post.user_id}')">
-                        <img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border border-slate-200">
-                        <div>
-                            <div class="flex items-center gap-1">
-                                <span class="font-bold text-sm text-slate-900 dark:text-white hover:underline">${userName}</span>
-                                ${isCertified ? '<i class="fas fa-check-circle text-blue-500 text-xs"></i>' : ''}
-                            </div>
-                            <div class="text-xs text-slate-500 flex items-center">
-                                <span>${timeAgo}</span>
-                                ${trendingBadge}
-                            </div>
-                        </div>
-                    </div>
-                    ${followButtonHTML}
+    // Média
+    let mediaHtml = '';
+    if (post.is_short && post.video_url) {
+        mediaHtml = `
+            <div class="relative bg-black flex justify-center overflow-hidden group">
+                <video src="${post.video_url}" class="max-h-[600px] w-auto cursor-pointer" loop muted playsinline onclick="this.paused ? this.play() : this.pause()"></video>
+                <div class="absolute bottom-4 right-4 bg-black/50 p-2 rounded-full text-white pointer-events-none opacity-0 group-hover:opacity-100 transition">
+                    <i class="fas fa-play text-xs"></i>
                 </div>
+            </div>`;
+    } else if (post.image_url) {
+        mediaHtml = `<img src="${post.image_url}" class="w-full h-auto object-cover border-y border-slate-50 dark:border-slate-800" loading="lazy">`;
+    }
 
-                <!-- MEDIA (ICI S'INJECTE LA VIDÉO OU L'IMAGE) -->
-                ${mediaHtml}
-                
-                <!-- LÉGENDE -->
-                ${post.caption ? `
-                <div class="p-4">
-                    <p class="text-sm text-slate-800 dark:text-slate-200">
-                        <span class="font-bold mr-1 text-indigo-600">${userName}</span>
-                        ${post.caption}
-                    </p>
+    return `
+    <article class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl overflow-hidden mb-6 transition-all hover:shadow-xl hover:shadow-indigo-500/5">
+        <div class="p-4 flex items-center justify-between">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="viewUserProfile('${post.user_id}')">
+                <img src="${avatarUrl}" class="w-11 h-11 rounded-full border-2 border-indigo-50 shadow-sm">
+                <div>
+                    <div class="flex items-center gap-1 font-bold text-sm text-slate-900 dark:text-white">${userName} ${isCertified ? '<i class="fas fa-check-circle text-blue-500 text-[10px]"></i>' : ''}</div>
+                    <div class="text-[11px] text-slate-400 font-medium">${timeAgo}</div>
                 </div>
-                ` : ''}
-
-                <!-- ACTIONS -->
-                <div class="px-4 py-3 flex gap-6 text-slate-600 dark:text-slate-400 text-xl items-center border-t border-slate-100 dark:border-slate-700">
-                    
-                    <!-- LIKE -->
-                    <button onclick="toggleLike('${post.id}', this)" class="hover:text-red-500 transition flex items-center gap-1 group">
-                        <i class="far fa-heart group-hover:scale-110 transition-transform" id="icon-like-${post.id}"></i>
-                        <span id="count-like-${post.id}" class="text-sm font-bold text-slate-800 dark:text-slate-200">${formatNumber(likeCount)}</span>
-                    </button>
-                    
-                    <!-- COMMENT -->
-                    <button onclick="toggleCommentSection('${post.id}')" class="hover:text-blue-500 transition flex items-center gap-1 group">
-                        <i class="far fa-comment group-hover:scale-110 transition-transform"></i>
-                        <span id="count-comment-${post.id}" class="text-sm font-bold text-slate-800 dark:text-slate-200">${formatNumber(commentCount)}</span>
-                    </button>
-                    
-                    <!-- SHARE -->
-                    <button onclick="sharePost('${post.id}')" class="hover:text-green-500 transition ml-auto">
-                        <i class="far fa-share-square"></i>
-                    </button>
-                </div>
-
-                <!-- ZONE COMMENTAIRES -->
-                <div id="comments-${post.id}" class="hidden bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-slate-100 dark:border-slate-700">
-                    <div id="comment-list-${post.id}" class="space-y-3 mb-3 max-h-60 overflow-y-auto"></div>
-                    <form onsubmit="submitComment(event, '${post.id}')" class="flex gap-2">
-                        <input type="text" name="content" placeholder="Écrire un commentaire..." required 
-                               class="flex-1 text-sm px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                        <button type="submit" class="text-indigo-600 font-bold text-sm px-2">Envoyer</button>
-                    </form>
-                </div>
-
             </div>
-            `;
-        }).join('');
+            ${followBtn}
+        </div>
 
-    } catch (err) {
-        console.error("Erreur Feed:", err);
-        container.innerHTML = '<p class="text-center text-red-500 py-10">Erreur de chargement du feed.</p>';
+        ${mediaHtml}
+        
+        <div class="p-4">
+            ${post.caption ? `<p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed mb-4"><span class="font-extrabold mr-2 text-slate-900 dark:text-white">${userName}</span>${post.caption}</p>` : ''}
+            
+            <div class="flex items-center gap-5">
+                <button onclick="toggleLike('${post.id}', this)" class="flex items-center gap-1.5 group">
+                    <i id="icon-like-${post.id}" class="${isLiked ? 'fas fa-heart text-red-500' : 'far fa-heart text-slate-400'} text-xl group-active:scale-125 transition-transform"></i>
+                    <span id="count-like-${post.id}" data-raw-count="${likeCount}" class="text-xs font-bold ${isLiked ? 'text-slate-900' : 'text-slate-500'}">
+                        ${formatNumber(likeCount)}
+                    </span>
+                </button>
+
+                <button onclick="toggleCommentSection('${post.id}')" class="flex items-center gap-1.5 group">
+                    <i class="far fa-comment text-slate-400 text-xl group-hover:text-indigo-500 transition-colors"></i>
+                    <span id="count-comment-${post.id}" class="text-xs font-bold text-slate-500">
+                        ${formatNumber(commentCount)}
+                    </span>
+                </button>
+
+                <button onclick="sharePost('${post.id}')" class="ml-auto text-slate-400 hover:text-indigo-600 transition-colors">
+                    <i class="far fa-paper-plane text-xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="comments-${post.id}" class="hidden p-4 border-t border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+            <div id="comment-list-${post.id}" class="space-y-3 mb-4 max-h-48 overflow-y-auto no-scrollbar"></div>
+            <form onsubmit="submitComment(event, '${post.id}')" class="relative">
+                <input type="text" name="content" placeholder="Ajouter un commentaire..." class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all">
+                <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 text-indigo-600 font-bold text-xs px-2">Publier</button>
+            </form>
+        </div>
+    </article>`;
+}).join('');
+
+    } catch (error) {
+        if (error.name !== 'AbortError') {
+            console.error("Erreur Feed:", error);
+            container.innerHTML = `<div class="p-8 text-center bg-red-50 text-red-600 rounded-2xl"><i class="fas fa-exclamation-triangle mb-2 text-xl"></i><p class="text-sm font-bold">Impossible de charger le flux.</p></div>`;
+        }
     }
 }
 
@@ -4186,65 +4157,75 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all') {
 
 // 1. Gérer le Like
 // 1. LIKE : Optimisé et robuste
+// 1. Gérer le Like
+// Variable pour empêcher le spamming de clics
+const likeLocks = new Set();
+
 async function toggleLike(postId, btnElement) {
+    // Si une requête est déjà en cours pour ce post, on ignore le clic
+    if (likeLocks.has(postId)) return;
+
     const icon = document.getElementById(`icon-like-${postId}`);
     const countSpan = document.getElementById(`count-like-${postId}`);
-    
-    // 1. Vérification connexion
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) {
-        alert("Vous devez être connecté pour liker.");
-        return;
-    }
-
-    const isLiked = icon.classList.contains('fas');
-    let rawText = countSpan.innerText.toUpperCase().replace(',', '.');
-    let currentCount = rawText.includes('K') ? parseFloat(rawText) * 1000 : parseInt(rawText);
+    if (!icon || !countSpan) return;
 
     try {
-        if (isLiked) {
-            // --- LOGIQUE UNLIKE ---
-            icon.classList.replace('fas', 'far');
-            icon.classList.remove('text-red-500');
-            countSpan.innerText = formatNumber(Math.max(0, currentCount - 1));
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) {
+            showToast("Connectez-vous pour liker", "warning");
+            return;
+        }
 
+        likeLocks.add(postId); // On verrouille
+
+        // 1. État actuel
+        const isCurrentlyLiked = icon.classList.contains('fas');
+        
+        // 2. Extraction du nombre actuel (on nettoie tout sauf les chiffres)
+        // Note: Pour être précis à 100%, il vaudrait mieux stocker le nombre pur 
+        // dans un attribut data-count="${likeCount}" sur le span.
+        let currentCount = parseInt(countSpan.getAttribute('data-raw-count') || countSpan.innerText.replace(/\D/g,'')) || 0;
+
+        // 3. UI Optimiste : Mise à jour visuelle immédiate
+        if (isCurrentlyLiked) {
+            icon.classList.replace('fas', 'far');
+            icon.classList.remove('text-red-500', 'animate-heart-pop');
+            currentCount = Math.max(0, currentCount - 1);
+        } else {
+            icon.classList.replace('far', 'fas');
+            icon.classList.add('text-red-500', 'animate-heart-pop'); // Petite animation CSS
+            currentCount += 1;
+        }
+        
+        countSpan.innerText = formatNumber(currentCount);
+        countSpan.setAttribute('data-raw-count', currentCount);
+
+        // 4. Action Base de données
+        if (isCurrentlyLiked) {
             const { error } = await supabaseClient
                 .from('post_likes')
                 .delete()
-                .eq('post_id', postId)
-                .eq('user_id', user.id);
-            
+                .match({ post_id: postId, user_id: user.id });
             if (error) throw error;
-
         } else {
-            // --- LOGIQUE LIKE ---
-            icon.classList.replace('far', 'fas');
-            icon.classList.add('text-red-500');
-            countSpan.innerText = formatNumber(currentCount + 1);
-
-            // A. Enregistrer le Like d'abord
-            const { error: likeError } = await supabaseClient
+            const { error } = await supabaseClient
                 .from('post_likes')
                 .insert([{ post_id: postId, user_id: user.id }]);
-            
-            if (likeError) throw likeError;
-
-            // B. Récupérer l'auteur du post pour notifier (APRÈS le succès du like)
-            const { data: postData, error: postError } = await supabaseClient
-                .from('posts')
-                .select('user_id')
-                .eq('id', postId)
-                .single();
-
-            // C. Envoyer la notification si ce n'est pas notre propre post
-            if (!postError && postData?.user_id && postData.user_id !== user.id) {
-                sendNotification(postData.user_id, 'like', postId);
-            }
+            if (error) throw error;
         }
+
     } catch (err) {
         console.error("Erreur Like:", err);
-        // On remet à jour pour synchroniser l'UI avec la réalité de la DB
-        if (typeof loadGlobalFeed === 'function') loadGlobalFeed(); 
+        // Rollback : On remet l'état précédent si ça échoue
+        const icon = document.getElementById(`icon-like-${postId}`);
+        if (icon) {
+            icon.classList.toggle('fas');
+            icon.classList.toggle('far');
+            icon.classList.toggle('text-red-500');
+        }
+        showToast("Échec de la mise à jour du like", "danger");
+    } finally {
+        likeLocks.delete(postId); // On déverrouille quoi qu'il arrive
     }
 }
 
@@ -5119,8 +5100,8 @@ async function markAllNotificationsRead() {
     
     if (seconds < 60) return "En ligne";
     if (seconds < 3600) return `En ligne il y a ${Math.floor(seconds / 60)} min`;
-    if (seconds < 86400) return `En ligne Vu il y a ${Math.floor(seconds / 3600)} h`;
-    if (seconds < 604800) return `En ligne Vu il y a ${Math.floor(seconds / 86400)} j`;
+    if (seconds < 86400) return `En ligne il y a ${Math.floor(seconds / 3600)} h`;
+    if (seconds < 604800) return `En ligne il y a ${Math.floor(seconds / 86400)} j`;
     
     return new Date(date).toLocaleDateString(); // Affiche la date si + de 7 jours
 }
