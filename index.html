@@ -4381,7 +4381,7 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
         ${mediaHtml}
         
         <!-- 4. BOUTONS D'ACTION -->
-        <div class="px-4 pb-4 pt-1">
+        <div class="px-4 pb-3 pt-3">
             <div class="flex items-center gap-5">
                 <button onclick="toggleLike('${post.id}', this)" class="flex items-center gap-1.5 group">
                     <i id="icon-like-${post.id}" class="${isLiked ? 'fas fa-heart text-red-500' : 'far fa-heart text-slate-400'} text-xl group-active:scale-125 transition-transform"></i>
@@ -4391,14 +4391,14 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
                 </button>
 
                 <button onclick="toggleCommentSection('${post.id}')" class="flex items-center gap-1.5 group">
-                    <i class="far fa-comment text-slate-400 text-xl group-hover:text-indigo-500 transition-colors"></i>
+                    <i class="fas fa-comment-dots text-slate-400 text-xl group-hover:text-indigo-500 transition-colors"></i>
                     <span id="count-comment-${post.id}" class="text-xs font-bold text-slate-500">
                         ${formatNumber(commentCount)}
                     </span>
                 </button>
 
                 <button onclick="sharePost('${post.id}')" class="ml-auto text-slate-400 hover:text-indigo-600 transition-colors">
-                    <i class="far fa-paper-plane text-xl"></i>
+                    <i class="fas fa-arrows-rotate text-xl"></i>
                 </button>
             </div>
         </div>
