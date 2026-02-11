@@ -757,6 +757,67 @@ body.dark-mode .chat-header { color: #94a3b8; }
 .animate-heart-pop {
     animation: heartPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
+        /* Bouton suivre type LinkedIn/Facebook */
+.btn-follow-pro {
+    @apply text-xs font-bold px-5 py-2 rounded-full transition-all duration-300
+    bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white border border-indigo-100;
+}
+
+.btn-follow-pro.following {
+    @apply bg-slate-100 text-slate-500 border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-100;
+}
+
+/* Scrollbar discrète pour les commentaires */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-slate-200 dark:bg-slate-700 rounded-full;
+}
+
+/* Animation de like */
+.fa-heart.text-red-500 {
+    animation: heartPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes heartPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.4); }
+    100% { transform: scale(1.1); }
+}
+
+        /* --- OPTIMISATION SCROLL (GPU) --- */
+
+/* 1. Force le navigateur à créer une couche composite pour le flux principal */
+#global-feed-container {
+    /* Isolation : évite que le reste de la page soit redessiné quand le feed bouge */
+    contain: layout style paint; 
+    /* Prépare l'élément pour l'animation GPU */
+    transform: translateZ(0); 
+}
+
+/* 2. Optimisation des cartes (Glassmorphism gourmand en ressources) */
+.glass {
+    /* Dit au navigateur : "Attention, cet élément va bouger ou changer, prépare-le" */
+    will-change: transform; 
+    /* Force la création d'une couche GPU */
+    backface-visibility: hidden; 
+    transform: translateZ(0);
+}
+
+/* 3. Optimisation des éléments Sticky (Header et Dock) */
+.feed-sticky-header, .mobile-dock {
+    /* Empêche le scintillement lors du scroll sur mobile */
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    will-change: transform;
+}
+
+/* 4. Images : Empêche le saut de mise en page au chargement */
+img {
+    /* Laisse de l'espace pour l'image avant qu'elle ne charge */
+    aspect-ratio: attr(width) / attr(height); 
+}
     </style>
 </head>
 <body>
@@ -941,6 +1002,13 @@ body.dark-mode .chat-header { color: #94a3b8; }
         <div id="global-feed-container" class="space-y-6">
              <!-- ... les posts ... -->
         </div>
+        <!-- AJOUTEZ CE BLOC ICI (Le sentinelle de chargement) -->
+<div id="feed-loader" class="hidden py-8 flex justify-center">
+    <div class="flex items-center gap-2 text-slate-400 text-sm font-bold">
+        <i class="fas fa-circle-notch fa-spin text-indigo-500"></i>
+        Chargement...
+    </div>
+</div>
     </section>
 </div>
 
@@ -2184,6 +2252,14 @@ body.dark-mode .chat-header { color: #94a3b8; }
         <div id="successModal" class="fixed inset-0 z-[110] flex items-center justify-center p-4 hidden"><div class="absolute inset-0 bg-black/80 backdrop-blur-2xl"></div><div class="relative glass p-10 text-center max-w-sm w-full border-emerald-500/30"><div class="w-20 h-20 bg-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-3xl"><i class="fas fa-check"></i></div><h2 class="text-2xl font-black text-slate-900 tracking-tighter" data-i18n="term_confirmed">Confirmé !</h2><p class="text-slate-500 text-sm mt-2" data-i18n="term_redirect">Redirection vers l'accueil...</p></div></div>
         
         <script>
+
+    // Variables pour la pagination infinie
+let feedOffset = 0;          // Où on en est dans la liste
+const FEED_BATCH_SIZE = 10;  // Combien de posts charger à la fois (ex: 10)
+let isLoadingFeed = false;   // Empêcher de charger deux fois en même temps
+let hasMorePosts = true;    // S'il reste des posts à charger
+let feedObserver = null;    // L'observateur
+            
             const SUPABASE_URL = 'https://lqqtvumwdixlhamwmqii.supabase.co'; 
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxcXR2dW13ZGl4bGhhbXdtcWlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyOTQ1NjMsImV4cCI6MjA4NTg3MDU2M30.QKTBQbZ78iRVyM1o-hhtAPkWP23h_vXAMA3zrfuzipY'; // Votre clé
 
@@ -2552,6 +2628,29 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             kg: { nav_navigation: "Zina", nav_home: "Mboka", nav_market: "Mpemba", nav_services: "Nsadila", nav_account: "Ntangu", nav_orders: "Bisalu", nav_settings: "Nkidila", nav_help: "Lusadisu", nav_login: "Vata", btn_start: "Yuka", term_config: "1. Config", term_send: "2. Tuma", term_pay: "3. Lipa", term_config_title: "Configuration", term_upload_placeholder: "Kokota tuma buku na awa", term_doc_detected: "Buku dijwidi", term_format: "Format", term_color: "Couleur", term_bw: "Noir & Blanc", term_color_hd: "Couleur HD", term_finish: "Kusala & Kinga", term_binding: "Reliure", term_laminate: "Lamina", term_pages: "Makon", term_copies: "Kadisadi", term_type: "Aina", term_recto: "Tshitshi", term_recto_verso: "Tshitshi / Mutundu", term_dest_title: "Muadi", term_ph_name: "Dina mobimba", term_ph_phone: "WhatsApp", term_ph_addr: "Adrese", term_payment: "Lipa", term_total: "Total Commande", term_currency: "FC", term_printing: "Kubaja", term_finishes: "Midi", term_back: "Kubajikula", term_continue: "Kosuka", term_confirm: "Kulipa", term_uploading: "Kutuma...", term_confirmed: "Bwakaji !", term_redirect: "Kujikula...", hero_title_part1: "Bukundu wa", hero_title_part2: "nkandu", hero_title_highlight: "wa nene.", hero_desc: "Tia zina a eletronique, biso twa ku kanga mpete wa nene na", btn_print_now: "Buka Mboka", btn_demo: "Vata", portfolio_title: "Nkidila wa Nene.", cta_title: "Yaka udi buka ?", btn_launch_order: "Yuka Bisalu", term_config_title: "Configuration", term_upload_placeholder: "Kokota tuma buku na awa", term_doc_detected: "Buku dijwidi", term_format: "Format", term_color: "Couleur", term_bw: "Noir & Blanc", term_color_hd: "Couleur HD", term_finish: "Kusala & Kinga", term_binding: "Reliure", term_laminate: "Lamina", term_pages: "Makon", term_copies: "Kadisadi", term_type: "Aina", term_recto: "Tshitshi", term_recto_verso: "Tshitshi / Mutundu", term_dest_title: "Muadi", term_ph_name: "Dina mobimba", term_ph_phone: "WhatsApp", term_ph_addr: "Adrese", term_payment: "Lipa", term_total: "Total Commande", term_currency: "FC", term_printing: "Kubaja", term_finishes: "Midi", term_back: "Kubajikula", term_continue: "Kosuka", term_confirm: "Kulipa", term_uploading: "Kutuma...", term_confirmed: "Bwakaji !", term_redirect: "Kujikula..." }
         };
 
+        // Initialisation de l'observateur au chargement de la page
+function setupInfiniteScroll() {
+    const loader = document.getElementById('feed-loader');
+    
+    // Si un observateur existe déjà, on le déconnecte
+    if (feedObserver) {
+        feedObserver.disconnect();
+    }
+
+    if (loader) {
+        // Création de l'observateur
+        feedObserver = new IntersectionObserver((entries) => {
+            // Si le loader est visible dans l'écran
+            if (entries[0].isIntersecting) {
+                loadMoreFeed();
+            }
+        }, {
+            rootMargin: '300px' // Déclenche 200px avant le vrai bas de page
+        });
+
+        feedObserver.observe(loader);
+    }
+}
         document.addEventListener('DOMContentLoaded', async () => {
     
     // --- 1. GARDE-FOU D'AUTHENTIFICATION ---
@@ -2560,7 +2659,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     if (!session || sessionError) {
         console.log("Votre session a expiré. Veuillez vous reconnecter.");
         window.location.replace('login.html'); 
-        return; // Arrêt immédiat
+        return; 
     }
 
     // --- 2. CONFIGURATION INITIALE (UI) ---
@@ -2570,117 +2669,145 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     
     updateLanguage(savedLang);
     setTheme(localStorage.getItem('printbam-theme') || 'light', false);
-    
-    // Lancer les petites tâches en arrière-plan
+
+    // --- 3. TÂCHES D'ARRIÈRE-PLAN (Non bloquantes) ---
+    // On les lance en parallèle pour ne pas attendre
     updateMessageBadge();
     loadMarketplaceArticles();
 
+    // --- 4. DÉFINITION DE LA FONCTION D'INITIALISATION ---
+    // On place la définition complète ICI pour être sûr qu'elle existe quand on l'appelle
     async function initialiserApplication() {
-    try {
-        console.log("Démarrage progressif...");
+        try {
+            console.log("Démarrage progressif...");
 
-        // Petite fonction utilitaire pour attendre (delay)
-        const wait = ms => new Promise(res => setTimeout(res, ms));
-
-        // On lance les chargements avec un léger décalage entre chaque
-        // pour ne pas "étouffer" la connexion au démarrage.
-        const charger = async (nom, fonction, delai) => {
-            try {
-                await wait(delai);
-                await fonction();
-                console.log(`✅ ${nom} chargé`);
-            } catch (e) {
-                console.warn(`⚠️ Échec ${nom}:`, e.message);
+            // On force la page d'accueil à être visible AVANT de charger le flux
+            const homeView = document.getElementById('home-view');
+            if (homeView) {
+                homeView.style.display = 'block'; 
+                setTimeout(() => homeView.classList.add('active'), 50);
             }
-        };
 
-        // Lancement séquentiel cadencé
-        await Promise.allSettled([
-            charger("Flux", loadGlobalFeed, 0),       // Immédiat
-            charger("Profil", loadSocialProfile, 150), // +150ms
-            charger("Notifs", loadNotifications, 300), // +300ms
-            charger("Messages", loadChatList, 450)     // +450ms
-        ]);
+            // Petite fonction utilitaire pour attendre
+            const wait = ms => new Promise(res => setTimeout(res, ms));
 
-    } catch (error) {
-        if (error.name !== 'AbortError') {
-            console.error("Erreur critique au démarrage :", error);
-        }
-    } finally {
-        // Retrait fluide du loader
-        const loader = document.getElementById('loader');
-        if (loader) {
-            loader.style.opacity = '0';
-            setTimeout(() => {
-                loader.style.display = 'none';
-                document.body.classList.remove('app-loading');
-            }, 500);
+            // On lance les chargements avec un léger décalage entre chaque
+            const charger = async (nom, fonction, delai) => {
+                try {
+                    await wait(delai);
+                    await fonction();
+                    console.log(`✅ ${nom} chargé`);
+                } catch (e) {
+                    console.warn(`⚠️ Échec ${nom}:`, e.message);
+                }
+            };
+
+            // Lancement séquentiel cadencé
+            await Promise.allSettled([
+                charger("Flux", loadGlobalFeed, 0),       // Immédiat
+                charger("Profil", loadSocialProfile, 150), // +150ms
+                charger("Notifs", loadNotifications, 300), // +300ms
+                charger("Messages", loadChatList, 450)     // +450ms
+            ]);
+
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                console.error("Erreur critique au démarrage :", error);
+            }
+        } finally {
+            // 1. ON REND LE CONTENU VISIBLE
+            document.body.classList.remove('app-loading');
+
+            // 2. ATTENTE DU RENDU GRAPHIQUE
+            await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+            // 3. DISPARITION DU LOADER
+            const loader = document.getElementById('loader');
+            if (loader) {
+                loader.style.opacity = '0';
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                }, 500);
+            }
         }
     }
-}
 
-        /* --- LOGIQUE DE SCROLL AUTO-HIDE --- */
-let lastScrollY = window.scrollY;
-
-window.addEventListener('scroll', () => {
-    const currentScrollY = window.scrollY;
-    const explorerBar = document.querySelector('.feed-sticky-header');
-    const dock = document.querySelector('.mobile-dock');
-
-    // On ignore si on est en haut de page (pour ne pas cacher au chargement)
-    if (currentScrollY <= 10) return;
-
-    // On vérifie la direction du scroll
-    if (currentScrollY > lastScrollY && currentScrollY > 50) {
-        // SCROLL VERS LE BAS : On cache tout
-        if (explorerBar) explorerBar.classList.add('nav-hidden');
-        if (dock) dock.classList.add('nav-hidden');
-    } else {
-        // SCROLL VERS LE HAUT : On réaffiche tout
-        if (explorerBar) explorerBar.classList.remove('nav-hidden');
-        if (dock) dock.classList.remove('nav-hidden');
-    }
-
-    // On met à jour la position précédente
-    lastScrollY = currentScrollY;
-});
-
-    // --- 5. LANCEMENT FINAL ---
+    // --- 5. LANCEMENT DE L'APPLICATION ---
+    // On attend que tout soit prêt
     await initialiserApplication();
+
+    // --- 6. ACTIVATION DU SCROLL INFINI ---
+    // On appelle cela une fois que le premier batch de posts est chargé
+    if (typeof setupInfiniteScroll === 'function') {
+        setupInfiniteScroll();
+    }
+    
+    // Initialisation des effets visuels
+    if (typeof initScrollReveal === 'function') {
+        initScrollReveal();
+    }
+
+   /* --- LOGIQUE DE SCROLL AUTO-HIDE --- */
+    let lastScrollY = window.scrollY;
+
+    window.addEventListener('scroll', () => {
+        const currentScrollY = window.scrollY;
+        const explorerBar = document.querySelector('.feed-sticky-header');
+        const dock = document.querySelector('.mobile-dock');
+
+        // On ignore si on est en haut de page (pour ne pas cacher au chargement)
+        if (currentScrollY <= 10) return;
+
+        // On vérifie la direction du scroll
+        if (currentScrollY > lastScrollY && currentScrollY > 50) {
+            // SCROLL VERS LE BAS : On cache tout
+            if (explorerBar) explorerBar.classList.add('nav-hidden');
+            if (dock) dock.classList.add('nav-hidden');
+        } else {
+            // SCROLL VERS LE HAUT : On réaffiche tout
+            if (explorerBar) explorerBar.classList.remove('nav-hidden');
+            if (dock) dock.classList.remove('nav-hidden');
+        }
+
+        // On met à jour la position précédente
+        lastScrollY = currentScrollY;
+    }, { passive: true });
     
     // Initialisation des effets visuels après chargement des données
     if (typeof initScrollReveal === 'function') {
         initScrollReveal();
     }
-            const messagesView = document.getElementById('messages-view');
 
-        if (messagesView) {
-            let touchStartX = 0;
-            let touchEndX = 0;
-            const seuil = 120; // Distance minimale en pixels pour déclencher l'action
+    // --- LOGIQUE DE SWIPE SUR MESSAGES (Désindenté) ---
+    const messagesView = document.getElementById('messages-view');
 
-            messagesView.addEventListener('touchstart', function(event) {
-                // On enregistre la position où le doigt touche l'écran
-                touchStartX = event.changedTouches[0].screenX;
-            }, false);
+    if (messagesView) {
+        let touchStartX = 0;
+        let touchEndX = 0;
+        const seuil = 120; // Distance minimale en pixels pour déclencher l'action
 
-            messagesView.addEventListener('touchend', function(event) {
-                // On enregistre la position où le doigt quitte l'écran
-                touchEndX = event.changedTouches[0].screenX;
-                handleSwipe();
-            }, false);
+        messagesView.addEventListener('touchstart', function(event) {
+            // On enregistre la position où le doigt touche l'écran
+            touchStartX = event.changedTouches[0].screenX;
+        }, false);
 
-            function handleSwipe() {
-                // Calcul de la distance
-                const diff = touchStartX - touchEndX;
+        messagesView.addEventListener('touchend', function(event) {
+            // On enregistre la position où le doigt quitte l'écran
+            touchEndX = event.changedTouches[0].screenX;
+            handleSwipe();
+        }, false);
 
-                // Si la différence est positive, c'est un glissement vers la GAUCHE
-                if (diff > seuil) {
-                    // On déclenche le retour à l'accueil
-                    switchPage('home');
-                }
+        function handleSwipe() {
+            // Calcul de la distance
+            const diff = touchStartX - touchEndX;
+
+            // Si la différence est positive, c'est un glissement vers la GAUCHE
+            if (diff > seuil) {
+                // On déclenche le retour à l'accueil
+                switchPage('home');
             }
         }
+    }
 });
 
         function changeLanguage(lang) {
@@ -3792,7 +3919,7 @@ async function loadSocialPosts(userId) {
         // Génération HTML pour la grille (carrés parfaits)
         grid.innerHTML = posts.map(post => `
             <div class="aspect-square bg-gray-200 relative group cursor-pointer overflow-hidden">
-                <img src="${post.image_url}" class="w-full h-full object-cover" loading="lazy">
+                <img src="${post.image_url}" decoding="async" class="w-full h-full object-cover" loading="lazy">
                 <!-- Overlay au survol (optionnel, style Instagram) -->
                 <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white text-xs font-bold">
                     <span class="flex items-center gap-1"><i class="fas fa-heart"></i> 0</span>
@@ -3940,7 +4067,7 @@ function confirmSocialLogout() {
                 showToast("Erreur lors de la déconnexion", "error");
             } else {
                 // 3. Rediriger vers la page de login
-                showToast("À bientôt !", "success");
+                showToast("Reçu !", "success");
                 setTimeout(() => {
                     window.location.href = 'login.html';
                 }, 1000);
@@ -3990,31 +4117,47 @@ async function sortFeed(type) {
 }
         
 
-/* --- LOGIQUE DU FEED GLOBAL (OPTIMISÉ & ROBUSTE) --- */
-async function loadGlobalFeed(sortBy = 'recent', filterType = 'all') {
+/**
+/**
+ * CHARGEMENT DU FLUX GLOBAL (VERSION ULTRA PRO)
+ */
+async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode = false) {
     const container = document.getElementById('global-feed-container');
+    const loader = document.getElementById('feed-loader');
     if (!container) return;
 
-    // Afficher un loader discret avant de commencer
-    container.innerHTML = `<div class="flex justify-center py-12"><i class="fas fa-circle-notch animate-spin text-3xl text-indigo-600 opacity-20"></i></div>`;
+    // Si ce n'est pas un mode "ajout" (c'est un reset/filtrage), on vide et on réinitialise
+    if (!appendMode) {
+        container.innerHTML = `<div class="flex justify-center py-12"><i class="fas fa-circle-notch animate-spin text-3xl text-indigo-600 opacity-20"></i></div>`;
+        feedOffset = 0;           // On repart de 0
+        hasMorePosts = true;      // On sait qu'il y a des posts
+        // On recharge l'observateur si nécessaire (voir étape 5)
+    } else {
+        // Si on charge la suite, on affiche le petit loader en bas
+        if (loader) loader.classList.remove('hidden');
+    }
+
+    // État de chargement
+    if (appendMode) isLoadingFeed = true;
 
     try {
-        // --- 1. CONTEXTE UTILISATEUR (SÉCURISÉ) ---
+        // --- 1. CONTEXTE UTILISATEUR ---
         const { data: userData } = await supabaseClient.auth.getUser();
         const myId = userData?.user?.id || null;
 
-        // --- 2. CHARGEMENT DES ABONNEMENTS ---
+        // --- 2. ABONNEMENTS ---
         let myFollowingSet = new Set();
         if (myId) {
             const { data: followingData } = await supabaseClient
                 .from('follows')
                 .select('following_id')
                 .eq('follower_id', myId);
-            
             if (followingData) myFollowingSet = new Set(followingData.map(f => f.following_id));
         }
 
-        // --- 3. CHARGEMENT DES POSTS ---
+        // --- 3. CHARGEMENT DES POSTS AVEC PAGINATION ---
+        // On utilise .range(from, to) au lieu de .limit()
+        // feedOffset est la variable globale que nous incrémenterons
         const { data: posts, error } = await supabaseClient
             .from('posts')
             .select(`
@@ -4024,16 +4167,21 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all') {
                 post_comments(count)
             `)
             .order('created_at', { ascending: false })
-            .limit(50); 
+            .range(feedOffset, feedOffset + FEED_BATCH_SIZE - 1); // Charge 10 posts à partir de l'offset
 
         if (error) throw error;
 
         if (!posts || posts.length === 0) {
-            container.innerHTML = `<div class="text-center py-20 text-slate-400"><i class="fas fa-newspaper text-4xl mb-3 opacity-20"></i><p>Aucune publication pour le moment.</p></div>`;
+            if (!appendMode) {
+                container.innerHTML = `<div class="text-center py-20 text-slate-400"><i class="fas fa-newspaper text-4xl mb-3 opacity-20"></i><p>Aucune publication pour le moment.</p></div>`;
+            } else {
+                hasMorePosts = false; // Plus de posts
+                if (loader) loader.classList.add('hidden'); // Cacher le loader
+            }
             return;
         }
 
-        // --- 4. OPTIMISATION DES LIKES ---
+        // --- 4. LIKES (Optimisation) ---
         let myLikedPostIds = new Set();
         if (myId && posts.length > 0) {
             const postIds = posts.map(p => p.id);
@@ -4041,8 +4189,7 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all') {
                 .from('post_likes')
                 .select('post_id')
                 .eq('user_id', myId)
-                .in('post_id', postIds); // Correction de la syntaxe .in()
-
+                .in('post_id', postIds);
             if (myLikes) myLikedPostIds = new Set(myLikes.map(l => l.post_id));
         }
 
@@ -4056,103 +4203,164 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all') {
             })).sort((a, b) => b.calculatedScore - a.calculatedScore);
         }
 
-        const finalPosts = processedPosts.slice(0, 20);
-
         // --- 6. GÉNÉRATION HTML ---
-container.innerHTML = finalPosts.map(post => {
-    const profile = post.profiles || {};
-    const avatarUrl = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username || 'user'}`; 
-    const userName = profile.full_name || 'Utilisateur';
-    const isCertified = profile.is_certified;
-    const timeAgo = typeof getTimeAgo === 'function' ? getTimeAgo(new Date(post.created_at)) : 'Récemment';
-    
-    const likeCount = post.post_likes?.[0]?.count || 0;
-    const commentCount = post.post_comments?.[0]?.count || 0;
-    const isLiked = myLikedPostIds.has(post.id);
-    const isMyPost = (post.user_id === myId);
-
-    // Bouton Suivre
-    let followBtn = '';
-    if (!isMyPost && myId) {
-        const isFollowing = myFollowingSet.has(post.user_id);
-        followBtn = `
-            <button onclick="toggleFollow('${post.user_id}', this)" 
-                    class="text-xs font-bold px-4 py-1.5 rounded-full transition-all ${isFollowing ? 'border border-slate-200 text-slate-500' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'}">
-                ${isFollowing ? 'Abonné' : 'Suivre'}
-            </button>`;
-    }
-
-    // Média
-    let mediaHtml = '';
-    if (post.is_short && post.video_url) {
-        mediaHtml = `
-            <div class="relative bg-black flex justify-center overflow-hidden group">
-                <video src="${post.video_url}" class="max-h-[600px] w-auto cursor-pointer" loop muted playsinline onclick="this.paused ? this.play() : this.pause()"></video>
-                <div class="absolute bottom-4 right-4 bg-black/50 p-2 rounded-full text-white pointer-events-none opacity-0 group-hover:opacity-100 transition">
-                    <i class="fas fa-play text-xs"></i>
-                </div>
-            </div>`;
-    } else if (post.image_url) {
-        mediaHtml = `<img src="${post.image_url}" class="w-full h-auto object-cover border-y border-slate-50 dark:border-slate-800" loading="lazy">`;
-    }
-
-    return `
-    <article class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl overflow-hidden mb-6 transition-all hover:shadow-xl hover:shadow-indigo-500/5">
-        <div class="p-4 flex items-center justify-between">
-            <div class="flex items-center gap-3 cursor-pointer" onclick="viewUserProfile('${post.user_id}')">
-                <img src="${avatarUrl}" class="w-11 h-11 rounded-full border-2 border-indigo-50 shadow-sm">
-                <div>
-                    <div class="flex items-center gap-1 font-bold text-sm text-slate-900 dark:text-white">${userName} ${isCertified ? '<i class="fas fa-check-circle text-blue-500 text-[10px]"></i>' : ''}</div>
-                    <div class="text-[11px] text-slate-400 font-medium">${timeAgo}</div>
-                </div>
-            </div>
-            ${followBtn}
-        </div>
-
-        ${mediaHtml}
-        
-        <div class="p-4">
-            ${post.caption ? `<p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed mb-4"><span class="font-extrabold mr-2 text-slate-900 dark:text-white">${userName}</span>${post.caption}</p>` : ''}
+        const htmlString = processedPosts.map(post => {
+            // ... (VOTRE CODE DE GÉNÉRATION HTML EXISTANT ICI - Identique à avant) ...
+            // Je copie le bloc de génération pour que vous ayez tout complet
+            const profile = post.profiles || {};
+            const avatarUrl = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username || 'user'}`; 
+            const userName = profile.full_name || 'Utilisateur';
+            const isCertified = profile.is_certified;
+            const timeAgo = typeof getTimeAgo === 'function' ? getTimeAgo(new Date(post.created_at)) : 'Récemment';
             
-            <div class="flex items-center gap-5">
-                <button onclick="toggleLike('${post.id}', this)" class="flex items-center gap-1.5 group">
-                    <i id="icon-like-${post.id}" class="${isLiked ? 'fas fa-heart text-red-500' : 'far fa-heart text-slate-400'} text-xl group-active:scale-125 transition-transform"></i>
-                    <span id="count-like-${post.id}" data-raw-count="${likeCount}" class="text-xs font-bold ${isLiked ? 'text-slate-900' : 'text-slate-500'}">
-                        ${formatNumber(likeCount)}
-                    </span>
-                </button>
+            const likeCount = post.post_likes?.[0]?.count || 0;
+            const commentCount = post.post_comments?.[0]?.count || 0;
+            const isLiked = myLikedPostIds.has(post.id);
+            const isMyPost = (post.user_id === myId);
 
-                <button onclick="toggleCommentSection('${post.id}')" class="flex items-center gap-1.5 group">
-                    <i class="far fa-comment text-slate-400 text-xl group-hover:text-indigo-500 transition-colors"></i>
-                    <span id="count-comment-${post.id}" class="text-xs font-bold text-slate-500">
-                        ${formatNumber(commentCount)}
-                    </span>
-                </button>
+            let followBtn = '';
+            if (!isMyPost && myId) {
+                const isFollowing = myFollowingSet.has(post.user_id);
+                followBtn = `
+                    <button onclick="toggleFollow('${post.user_id}', this)" 
+                            class="text-xs font-bold px-4 py-1.5 rounded-full transition-all ${isFollowing ? 'border border-slate-200 text-slate-500' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'}">
+                        ${isFollowing ? 'Abonné' : 'Suivre'}
+                    </button>`;
+            }
 
-                <button onclick="sharePost('${post.id}')" class="ml-auto text-slate-400 hover:text-indigo-600 transition-colors">
-                    <i class="far fa-paper-plane text-xl"></i>
-                </button>
-            </div>
-        </div>
+            let mediaHtml = '';
+            if (post.is_short && post.video_url) {
+                mediaHtml = `
+                    <div class="relative bg-black flex justify-center overflow-hidden group">
+                        <video src="${post.video_url}" class="max-h-[600px] w-auto cursor-pointer" loop muted playsinline onclick="this.paused ? this.play() : this.pause()"></video>
+                        <div class="absolute bottom-4 right-4 bg-black/50 p-2 rounded-full text-white pointer-events-none opacity-0 group-hover:opacity-100 transition">
+                            <i class="fas fa-play text-xs"></i>
+                        </div>
+                    </div>`;
+            } else if (post.image_url) {
+                mediaHtml = `<img src="${post.image_url}" class="w-full h-auto object-cover border-y border-slate-50 dark:border-slate-800" loading="lazy">`;
+            }
 
-        <div id="comments-${post.id}" class="hidden p-4 border-t border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
-            <div id="comment-list-${post.id}" class="space-y-3 mb-4 max-h-48 overflow-y-auto no-scrollbar"></div>
-            <form onsubmit="submitComment(event, '${post.id}')" class="relative">
-                <input type="text" name="content" placeholder="Ajouter un commentaire..." class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all">
-                <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 text-indigo-600 font-bold text-xs px-2">Publier</button>
-            </form>
-        </div>
-    </article>`;
-}).join('');
+            return `
+            <article class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl overflow-hidden mb-6 transition-all hover:shadow-xl hover:shadow-indigo-500/5">
+                <div class="p-4 flex items-center justify-between">
+                    <div class="flex items-center gap-3 cursor-pointer" onclick="viewUserProfile('${post.user_id}')">
+                        <img src="${avatarUrl}" decoding="async" class="w-11 h-11 rounded-full border-2 border-indigo-50 shadow-sm">
+                        <div>
+                            <div class="flex items-center gap-1 font-bold text-sm text-slate-900 dark:text-white">${userName} ${isCertified ? '<i class="fas fa-check-circle text-blue-500 text-[10px]"></i>' : ''}</div>
+                            <div class="text-[11px] text-slate-400 font-medium">${timeAgo}</div>
+                        </div>
+                    </div>
+                    ${followBtn}
+                </div>
+
+                ${mediaHtml}
+                
+                <div class="p-4">
+                    ${post.caption ? `<p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed mb-4"><span class="font-extrabold mr-2 text-slate-900 dark:text-white">${userName}</span>${post.caption}</p>` : ''}
+                    
+                    <div class="flex items-center gap-5">
+                        <button onclick="toggleLike('${post.id}', this)" class="flex items-center gap-1.5 group">
+                            <i id="icon-like-${post.id}" class="${isLiked ? 'fas fa-heart text-red-500' : 'far fa-heart text-slate-400'} text-xl group-active:scale-125 transition-transform"></i>
+                            <span id="count-like-${post.id}" data-raw-count="${likeCount}" class="text-xs font-bold ${isLiked ? 'text-slate-900' : 'text-slate-500'}">
+                                ${formatNumber(likeCount)}
+                            </span>
+                        </button>
+
+                        <button onclick="toggleCommentSection('${post.id}')" class="flex items-center gap-1.5 group">
+                            <i class="far fa-comment text-slate-400 text-xl group-hover:text-indigo-500 transition-colors"></i>
+                            <span id="count-comment-${post.id}" class="text-xs font-bold text-slate-500">
+                                ${formatNumber(commentCount)}
+                            </span>
+                        </button>
+
+                        <button onclick="sharePost('${post.id}')" class="ml-auto text-slate-400 hover:text-indigo-600 transition-colors">
+                            <i class="far fa-paper-plane text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="comments-${post.id}" class="hidden p-4 border-t border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+                    <div id="comment-list-${post.id}" class="space-y-3 mb-4 max-h-48 overflow-y-auto no-scrollbar"></div>
+                    <form onsubmit="submitComment(event, '${post.id}')" class="relative">
+                        <input type="text" name="content" placeholder="Ajouter un commentaire..." class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all">
+                        <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 text-indigo-600 font-bold text-xs px-2">Publier</button>
+                    </form>
+                </div>
+            </article>`;
+        }).join('');
+
+        // --- 7. INJECTION HTML ---
+        if (!appendMode) {
+            // Premier chargement : on remplace tout le conteneur
+            container.innerHTML = htmlString;
+        } else {
+            // Chargement infini : on AJOUTE à la fin (avant le loader)
+            container.insertAdjacentHTML('beforeend', htmlString);
+        }
+
+        // --- 8. MISE À JOUR OFFSET ---
+        feedOffset += posts.length;
+        
+        // Si on a reçu moins que la taille du batch, c'est qu'on a fini
+        if (posts.length < FEED_BATCH_SIZE) {
+            hasMorePosts = false;
+            if (loader) loader.classList.add('hidden');
+        }
 
     } catch (error) {
         if (error.name !== 'AbortError') {
             console.error("Erreur Feed:", error);
-            container.innerHTML = `<div class="p-8 text-center bg-red-50 text-red-600 rounded-2xl"><i class="fas fa-exclamation-triangle mb-2 text-xl"></i><p class="text-sm font-bold">Impossible de charger le flux.</p></div>`;
+            if (!appendMode) {
+                container.innerHTML = `<div class="p-8 text-center bg-red-50 text-red-600 rounded-2xl"><i class="fas fa-exclamation-triangle mb-2 text-xl"></i><p class="text-sm font-bold">Verifier votre connexion</p></div>`;
+            }
         }
+    } finally {
+        isLoadingFeed = false;
+        if (loader && !hasMorePosts) loader.classList.add('hidden');
+        else if (loader) loader.classList.remove('hidden');
     }
 }
 
+        // Fonction déclenchée par l'observateur quand on arrive en bas
+async function loadMoreFeed() {
+    if (isLoadingFeed || !hasMorePosts) return;
+    
+    // On réutilise les filtres actuels (ou 'recent' par défaut)
+    // On passe 'true' pour le mode append (ajout)
+    await loadGlobalFeed('recent', 'all', true);
+}
+        
+function initVideoObserver() {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            const video = entry.target;
+            if (entry.isIntersecting) {
+                if (!video.src && video.dataset.src) video.src = video.dataset.src;
+                video.play().catch(() => {});
+            } else {
+                video.pause();
+            }
+        });
+    }, { threshold: 0.6 });
+
+    document.querySelectorAll('.lazy-video').forEach(v => observer.observe(v));
+}
+
+function toggleCommentSection(postId) {
+    const commentSection = document.getElementById(`comments-${postId}`);
+    
+    if (commentSection) {
+        // On bascule la classe 'hidden' pour afficher ou cacher la section
+        commentSection.classList.toggle('hidden');
+        
+        // Petit bonus : si on ouvre la section, on scrolle doucement vers elle
+        if (!commentSection.classList.contains('hidden')) {
+            commentSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+}
+        
         /* --- ACTIONS : LIKE, COMMENT, SHARE --- */
 
 // 1. Gérer le Like
@@ -4279,6 +4487,9 @@ async function ajouterCommentaire(postId, content) {
 
 // 3. FONCTION FORMATNUMBER (Indispensable pour que le code ci-dessus fonctionne)
 function formatNumber(num) {
+    // Si la donnée est vide, null ou undefined, on affiche 0
+    if (num === undefined || num === null) return '0';
+    
     if (num >= 1000) {
         return (num / 1000).toFixed(1).replace('.0', '') + 'K';
     }
