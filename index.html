@@ -882,6 +882,10 @@ article {
     display: block;
     border-radius: 12px 12px 0 0; /* Coins arrondis en haut seulement */
 }
+        /* Force la position à 40px du haut */
+.feed-sticky-header {
+    top: 20px !important; 
+}
     </style>
 </head>
 <body>
@@ -1036,7 +1040,7 @@ article {
         
         <!-- NOUVEAU WRAPPER STICKY -->
         <!-- NOUVEAU WRAPPER STICKY MODIFIÉ -->
-<div class="sticky top-[75px] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md z-[4100] mb-1 py-4 -mx-4 px-4 border-b border-slate-200/60 dark:border-slate-700/50 transition-all">
+<div class="sticky top-[65px] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md z-[3000] mb-1 py-1 -mx-4 px-4 border-b border-slate-200/60 dark:border-slate-700/50 transition-all">
     
     <!-- HEADER DU FEED -->
     <div class="flex items-center justify-between mb-1"> <!-- mb-4 devient mb-1 -->
@@ -4494,70 +4498,75 @@ function toggleCommentSection(postId) {
 const likeLocks = new Set();
 
 async function toggleLike(postId, btnElement) {
-    // Si une requête est déjà en cours pour ce post, on ignore le clic
+    // Empêche le double-clic
     if (likeLocks.has(postId)) return;
 
     const icon = document.getElementById(`icon-like-${postId}`);
     const countSpan = document.getElementById(`count-like-${postId}`);
+    
     if (!icon || !countSpan) return;
 
     try {
+        // Vérification utilisateur
         const { data: { user } } = await supabaseClient.auth.getUser();
         if (!user) {
             showToast("Connectez-vous pour liker", "warning");
             return;
         }
 
-        likeLocks.add(postId); // On verrouille
+        // --- CALCUL INTELLIGENT DU NOMBRE ACTUEL ---
+        // 1. On essaie de lire l'attribut caché (le plus fiable)
+        let currentCount = parseInt(countSpan.getAttribute('data-raw-count'));
 
-        // 1. État actuel
+        // 2. SECURITE : Si l'attribut est absent (null), on lit le texte affiché à l'écran
+        if (isNaN(currentCount)) {
+            const textVisible = countSpan.innerText || "0";
+            // Si le texte contient "K" (ex: 1.2K), on convertit en chiffre
+            if (textVisible.includes('K')) {
+                currentCount = parseFloat(textVisible) * 1000;
+            } else {
+                // Sinon on prend le chiffre brut
+                currentCount = parseInt(textVisible.replace(/[^0-9]/g, '')) || 0;
+            }
+        }
+
+        // 3. Logique de changement d'état
         const isCurrentlyLiked = icon.classList.contains('fas');
         
-        // 2. Extraction du nombre actuel (on nettoie tout sauf les chiffres)
-        // Note: Pour être précis à 100%, il vaudrait mieux stocker le nombre pur 
-        // dans un attribut data-count="${likeCount}" sur le span.
-        let currentCount = parseInt(countSpan.getAttribute('data-raw-count') || countSpan.innerText.replace(/\D/g,'')) || 0;
-
-        // 3. UI Optimiste : Mise à jour visuelle immédiate
         if (isCurrentlyLiked) {
+            // ON RETIRE LE LIKE
             icon.classList.replace('fas', 'far');
             icon.classList.remove('text-red-500', 'animate-heart-pop');
             currentCount = Math.max(0, currentCount - 1);
         } else {
+            // ON MET UN LIKE
             icon.classList.replace('far', 'fas');
-            icon.classList.add('text-red-500', 'animate-heart-pop'); // Petite animation CSS
+            icon.classList.add('text-red-500', 'animate-heart-pop');
             currentCount += 1;
         }
         
+        // 4. Mise à jour visuelle IMMEDIATE
         countSpan.innerText = formatNumber(currentCount);
+        // On met à jour l'attribut caché pour la prochaine fois
         countSpan.setAttribute('data-raw-count', currentCount);
 
-        // 4. Action Base de données
+        // 5. Action en Base de Données
         if (isCurrentlyLiked) {
-            const { error } = await supabaseClient
+            await supabaseClient
                 .from('post_likes')
                 .delete()
                 .match({ post_id: postId, user_id: user.id });
-            if (error) throw error;
         } else {
-            const { error } = await supabaseClient
+            await supabaseClient
                 .from('post_likes')
                 .insert([{ post_id: postId, user_id: user.id }]);
-            if (error) throw error;
         }
 
     } catch (err) {
         console.error("Erreur Like:", err);
-        // Rollback : On remet l'état précédent si ça échoue
-        const icon = document.getElementById(`icon-like-${postId}`);
-        if (icon) {
-            icon.classList.toggle('fas');
-            icon.classList.toggle('far');
-            icon.classList.toggle('text-red-500');
-        }
-        showToast("Échec de la mise à jour du like", "danger");
+        // On ne fait rien de visuel, l'état optimiste reste
     } finally {
-        likeLocks.delete(postId); // On déverrouille quoi qu'il arrive
+        likeLocks.delete(postId);
     }
 }
 
