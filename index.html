@@ -886,6 +886,225 @@ article {
 .feed-sticky-header {
     top: 20px !important; 
 }
+
+        /* --- MENTIONS & TAGS --- */
+.mention-highlight {
+    color: #4f46e5; /* Indigo */
+    font-weight: 700;
+    cursor: pointer;
+    background: rgba(79, 70, 229, 0.05);
+    padding: 0 2px;
+    border-radius: 4px;
+}
+.hashtag-highlight {
+    color: #ec4899; /* Pink */
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* --- PREVIEW LIEN (Link Preview) --- */
+.link-preview-card {
+    margin: 0 1rem 1rem 0;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: row;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s;
+}
+.link-preview-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+.link-preview-image {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+.link-preview-content {
+    padding: 12px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.link-preview-title {
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.link-preview-desc {
+    font-size: 0.75rem;
+    color: #64748b;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.link-preview-domain {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    margin-top: auto;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+/* --- MODE ZEN (FULLSCREEN VIDEO) --- */
+#zen-mode-modal {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+#zen-mode-modal.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+.zen-video-container {
+    width: 100%;
+    max-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+.zen-video-container video {
+    max-width: 100%;
+    max-height: 80vh;
+    object-fit: contain;
+}
+.zen-controls-overlay {
+    position: absolute;
+    right: 20px;
+    bottom: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+}
+.zen-close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    z-index: 100;
+}
+      /* --- STYLE PRO (Minimaliste & Élégant) --- */
+
+/* 1. BOUTONS (Plus petits, plus fins) */
+.reaction-btn {
+    /* Taille réduite (Au lieu de 48px, on met 36px) */
+    width: 36px;
+    height: 36px;
+    
+    /* Taille de l'icône réduite (1.25rem = 20px) */
+    font-size: 1.25rem; 
+    
+    /* Fond très léger (Presque blanc, pas gris foncé) */
+    background-color: #f1f5f9; /* Très clair */
+    color: #64748b;
+    
+    /* Forme ronde standard */
+    border-radius: 50%;
+    
+    /* Centrage parfait */
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    
+    /* Animation fluide */
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid transparent; /* Prêt pour le gradient */
+}
+
+/* 2. Survol (Hover) */
+.reaction-btn:hover {
+    /* Légère agrandissement */
+    transform: scale(1.15); 
+    
+    /* Fond légèrement plus foncé pour le contraste */
+    background-color: #e2e8f0;
+    color: #0f172a;
+}
+
+/* 3. État ACTIF (Réaction sélectionnée) */
+.reaction-btn.active {
+    /* Taille active légèrement plus grande */
+    transform: scale(1.25);
+    
+    /* --- STYLE GRADIENT PRO (Instagram-like) --- */
+    /* Fond blanc + Ombre portée + Élégance */
+    background-color: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    
+    /* Dégradé de bordure (Bordure colorée) */
+    /* Rose/Pink pour le cœur par défaut, ou autre selon le type */
+    border-image: linear-gradient(to right, #f43f5e, #ec4899); 
+    /* Définit l'image de fond comme bordure */
+    -webkit-background-clip: border-box; 
+    -webkit-background-origin: border-box; 
+    
+    /* On force la couleur de l'icône (pour éviter qu'elle soit transparente) */
+    color: #64748b; /* Gris foncé par défaut */
+}
+.reaction-btn.active i {
+    /* Si vous voulez que l'icône prenne la couleur du dégradé (ex: Rose) */
+    /* -webkit-text-fill-color: transparent; */ 
+    /* background-image: ... (complexe, gardons simple pour l'instantanéité) */
+}
+
+/* 4. LE MENU POPUP (Plus propre) */
+.reactions-popup {
+    position: absolute;
+    bottom: 110%;
+    left: 0;
+    /* Fond blanc + Effet verre (Glassmorphism Pro) */
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    
+    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); /* Ombre douce */
+    border-radius: 16px; /* Coins moins arrondis pour le style Pro */
+    padding: 6px; /* Espace réduit */
+    gap: 6px; /* Espace entre boutons réduit */
+    
+    display: flex;
+    z-index: 50;
+    
+    animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    border: 1px solid rgba(226, 232, 240, 0.5);
+}
+
+/* Animation popIn (déjà défini mais gardé pour rappel) */
+@keyframes popIn {
+    from { opacity: 0; transform: scale(0.95) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
     </style>
 </head>
 <body>
@@ -1040,7 +1259,7 @@ article {
         
         <!-- NOUVEAU WRAPPER STICKY -->
         <!-- NOUVEAU WRAPPER STICKY MODIFIÉ -->
-<div class="sticky top-[65px] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md z-[3000] mb-1 py-1 -mx-4 px-4 border-b border-slate-200/60 dark:border-slate-700/50 transition-all">
+<div class="sticky top-[75px] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md z-[4500] mb-1 py-1 -mx-4 px-4 border-b border-slate-200/60 dark:border-slate-700/50 transition-all">
     
     <!-- HEADER DU FEED -->
     <div class="flex items-center justify-between mb-1"> <!-- mb-4 devient mb-1 -->
@@ -2339,9 +2558,62 @@ article {
         </div>
         <div id="uploadModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 hidden"><div class="absolute inset-0 bg-black/90 backdrop-blur-xl"></div><div class="relative glass p-10 text-center max-w-sm w-full border-indigo-500/30"><i class="fas fa-cloud-arrow-up text-4xl text-indigo-600 animate-bounce mb-6"></i><h2 class="text-xl font-black text-slate-900 mb-6" data-i18n="term_uploading">Envoi sécurisé...</h2><div class="w-full bg-white/5 h-2 rounded-full overflow-hidden mb-2"><div id="progressBar" class="progress-bar-fill h-full w-0"></div></div><div id="progressPercent" class="text-[10px] font-black text-indigo-600 uppercase">0%</div></div></div>
         <div id="successModal" class="fixed inset-0 z-[110] flex items-center justify-center p-4 hidden"><div class="absolute inset-0 bg-black/80 backdrop-blur-2xl"></div><div class="relative glass p-10 text-center max-w-sm w-full border-emerald-500/30"><div class="w-20 h-20 bg-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-3xl"><i class="fas fa-check"></i></div><h2 class="text-2xl font-black text-slate-900 tracking-tighter" data-i18n="term_confirmed">Confirmé !</h2><p class="text-slate-500 text-sm mt-2" data-i18n="term_redirect">Redirection vers l'accueil...</p></div></div>
-        
-        <script>
 
+        <!-- MODAL MODE ZEN -->
+<div id="zen-mode-modal">
+    <!-- Bouton Fermer -->
+    <button onclick="closeZenMode()" class="zen-close-btn">
+        <i class="fas fa-times text-xl"></i>
+    </button>
+
+    <!-- Conteneur Vidéo -->
+    <div class="zen-video-container">
+        <video id="zen-video-player" controls></video>
+    </div>
+
+    <!-- Contrôles superposés (Style TikTok) -->
+    <div class="zen-controls-overlay">
+        <div class="flex flex-col gap-4">
+            <button class="text-white text-2xl hover:text-indigo-400 transition"><i class="fas fa-heart"></i></button>
+            <button class="text-white text-2xl hover:text-indigo-400 transition"><i class="fas fa-comment-dots"></i></button>
+            <button class="text-white text-2xl hover:text-indigo-400 transition"><i class="fas fa-share"></i></button>
+        </div>
+        <div class="mt-4 bg-black/50 px-4 py-2 rounded-full text-white text-xs font-bold">
+            Mode Lecture Zen
+        </div>
+    </div>
+</div>
+        <script>
+// 1. LISTE DE MOTS INTERDITS (À compléter selon votre besoin)
+const BANNED_WORDS = [
+    // Insultes et mots grossiers (Français & Anglais basiques)
+    "con", "salope", "putain", "merde", "connard", "enculé", "fdp", "ntm",
+    "fuck", "shit", "bitch", "asshole", "damn", "bastard",
+    
+    // Haine et discrimination
+    "nègre", "nigger", "race", "raciste", "meutre", "tuer", "mort", 
+    "viol", "gore", "porn", "sexe", "xxx", "nu", "naked", "nude",
+    
+    // Arnaque / Spam
+    "gagner de l'argent", "cliquer ici", "gratuit", "free money", "bitcoin", "scam",
+    
+    // Caractères sensibles
+    "pédophile", "inceste"
+];
+
+// 2. FONCTION DE VALIDATION DU CONTENU
+function containsInappropriateContent(text) {
+    if (!text) return false;
+    
+    // On met tout en minuscule pour la comparaison
+    const lowerText = text.toLowerCase();
+    
+    // On vérifie si un mot banni est présent dans le texte
+    const foundBadWord = BANNED_WORDS.find(word => lowerText.includes(word));
+    
+    return !!foundBadWord; // Renvoie true si un mot est trouvé
+}
+            
     // Variables pour la pagination infinie
 let feedOffset = 0;          // Où on en est dans la liste
 const FEED_BATCH_SIZE = 10;  // Combien de posts charger à la fois (ex: 10)
@@ -4231,8 +4503,6 @@ function filterFeed(filterType) {
     }
 }
         
-
-/**
 /**
  * CHARGEMENT DU FLUX GLOBAL (VERSION ULTRA PRO)
  */
@@ -4241,26 +4511,20 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
     const loader = document.getElementById('feed-loader');
     if (!container) return;
 
-    // Si ce n'est pas un mode "ajout" (c'est un reset/filtrage), on vide et on réinitialise
     if (!appendMode) {
         container.innerHTML = `<div class="flex justify-center py-12"><i class="fas fa-circle-notch animate-spin text-3xl text-indigo-600 opacity-20"></i></div>`;
-        feedOffset = 0;           // On repart de 0
-        hasMorePosts = true;      // On sait qu'il y a des posts
-        // On recharge l'observateur si nécessaire (voir étape 5)
+        feedOffset = 0;
+        hasMorePosts = true;
     } else {
-        // Si on charge la suite, on affiche le petit loader en bas
         if (loader) loader.classList.remove('hidden');
     }
 
-    // État de chargement
     if (appendMode) isLoadingFeed = true;
 
     try {
-        // --- 1. CONTEXTE UTILISATEUR ---
         const { data: userData } = await supabaseClient.auth.getUser();
         const myId = userData?.user?.id || null;
 
-        // --- 2. ABONNEMENTS ---
         let myFollowingSet = new Set();
         if (myId) {
             const { data: followingData } = await supabaseClient
@@ -4270,9 +4534,6 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
             if (followingData) myFollowingSet = new Set(followingData.map(f => f.following_id));
         }
 
-        // --- 3. CHARGEMENT DES POSTS AVEC PAGINATION ---
-        // On utilise .range(from, to) au lieu de .limit()
-        // feedOffset est la variable globale que nous incrémenterons
         const { data: posts, error } = await supabaseClient
             .from('posts')
             .select(`
@@ -4282,7 +4543,7 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
                 post_comments(count)
             `)
             .order('created_at', { ascending: false })
-            .range(feedOffset, feedOffset + FEED_BATCH_SIZE - 1); // Charge 10 posts à partir de l'offset
+            .range(feedOffset, feedOffset + FEED_BATCH_SIZE - 1);
 
         if (error) throw error;
 
@@ -4290,25 +4551,40 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
             if (!appendMode) {
                 container.innerHTML = `<div class="text-center py-20 text-slate-400"><i class="fas fa-newspaper text-4xl mb-3 opacity-20"></i><p>Aucune publication pour le moment.</p></div>`;
             } else {
-                hasMorePosts = false; // Plus de posts
-                if (loader) loader.classList.add('hidden'); // Cacher le loader
+                hasMorePosts = false;
+                if (loader) loader.classList.add('hidden');
             }
             return;
         }
 
-        // --- 4. LIKES (Optimisation) ---
+                // --- NOUVEAU LOGIQUE : RÉCUPÉRATION DU TYPE DE RÉACTION ---
         let myLikedPostIds = new Set();
-        if (myId && posts.length > 0) {
-            const postIds = posts.map(p => p.id);
-            const { data: myLikes } = await supabaseClient
-                .from('post_likes')
-                .select('post_id')
-                .eq('user_id', myId)
-                .in('post_id', postIds);
-            if (myLikes) myLikedPostIds = new Set(myLikes.map(l => l.post_id));
-        }
+        
+        // 1. Récupérer les IDs des posts à afficher
+        const postIds = posts.map(p => p.id);
 
-        // --- 5. FILTRAGE & TRI ---
+        // 2. Charger les réactions DÉTAILLÉES (avec le type)
+        // On ne récupère QUE les réactions de l'utilisateur connecté pour les posts visibles
+        const { data: myLikes } = await supabaseClient
+            .from('post_likes')
+            .select('post_id, reaction_type') // <--- IMPORTANT : On demande le type ici ---
+            .eq('user_id', myId)
+            .in('post_id', postIds);
+
+        // 3. Remplir la liste d'IDs
+        if (myLikes) {
+            // On remplit l'ensemble Set avec les IDs
+            myLikedPostIds = new Set(myLikes.map(l => l.post_id));
+            
+            // NOUVEAU : On rempli la Map des réactions avec les types
+            if (typeof userReactions !== 'undefined') {
+                myLikes.forEach(like => {
+                    userReactions.set(like.post_id, like.reaction_type);
+                });
+            }
+        }
+        // --------------------------------------------------
+
         let processedPosts = filterType === 'shorts' ? posts.filter(p => p.is_short) : posts;
 
         if (sortBy === 'popular' && typeof calculatePostScore === 'function') {
@@ -4318,119 +4594,118 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
             })).sort((a, b) => b.calculatedScore - a.calculatedScore);
         }
 
-        // --- 6. GÉNÉRATION HTML ---
         const htmlString = processedPosts.map(post => {
-    const profile = post.profiles || {};
-    const avatarUrl = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username || 'user'}`; 
-    const userName = profile.full_name || 'Utilisateur';
-    const isCertified = profile.is_certified;
-    const timeAgo = typeof getTimeAgo === 'function' ? getTimeAgo(new Date(post.created_at)) : 'Récemment';
-    
-    const likeCount = post.post_likes?.[0]?.count || 0;
-    const commentCount = post.post_comments?.[0]?.count || 0;
-    const isLiked = myLikedPostIds.has(post.id);
-    const isMyPost = (post.user_id === myId);
+            const profile = post.profiles || {};
+            const avatarUrl = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username || 'user'}`; 
+            const userName = profile.full_name || 'Utilisateur';
+            const isCertified = profile.is_certified;
+            const timeAgo = typeof getTimeAgo === 'function' ? getTimeAgo(new Date(post.created_at)) : 'Récemment';
+            
+            const likeCount = post.post_likes?.[0]?.count || 0;
+            const commentCount = post.post_comments?.[0]?.count || 0;
+            const isLiked = myLikedPostIds.has(post.id);
+            const isMyPost = (post.user_id === myId);
 
-    let followBtn = '';
-    if (!isMyPost && myId) {
-        const isFollowing = myFollowingSet.has(post.user_id);
-        followBtn = `
-            <button onclick="toggleFollow('${post.user_id}', this)" 
-                    class="text-xs font-bold px-4 py-1.5 rounded-full transition-all ${isFollowing ? 'border border-slate-200 text-slate-500' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'}">
-                ${isFollowing ? 'Abonné' : 'Suivre'}
-            </button>`;
-    }
+            let formattedCaption = "";
+            if (post.caption) {
+                formattedCaption = typeof formatTextWithHighlights === 'function' ? formatTextWithHighlights(post.caption) : post.caption;
+            }
 
-    let mediaHtml = '';
-    if (post.is_short && post.video_url) {
-        mediaHtml = `
-            <div class="relative bg-black flex justify-center overflow-hidden group rounded-2xl mb-4">
-                <video src="${post.video_url}" class="w-full max-h-[600px] object-contain" loop muted playsinline onclick="this.paused ? this.play() : this.pause()"></video>
-                <div class="absolute bottom-4 right-4 bg-black/50 p-2 rounded-full text-white pointer-events-none opacity-0 group-hover:opacity-100 transition">
-                    <i class="fas fa-play text-xs"></i>
-                </div>
-            </div>`;
-    } else if (post.image_url) {
-        mediaHtml = `<img src="${post.image_url}" class="w-full h-auto object-cover rounded-2xl" loading="lazy" alt="Post">`;
-    }
+            let followBtn = '';
+            if (!isMyPost && myId) {
+                const isFollowing = myFollowingSet.has(post.user_id);
+                followBtn = `
+                    <button onclick="toggleFollow('${post.user_id}', this)" 
+                            class="text-xs font-bold px-4 py-1.5 rounded-full transition-all ${isFollowing ? 'border border-slate-200 text-slate-500' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'}">
+                        ${isFollowing ? 'Abonné' : 'Suivre'}
+                    </button>`;
+            }
 
-    return `
-    <article class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl overflow-hidden mb-6 transition-all hover:shadow-xl hover:shadow-indigo-500/5">
-        
-        <!-- 1. EN-TÊTE (Avatar + Nom) -->
-        <div class="p-4 flex items-center justify-between">
-            <div class="flex items-center gap-3 cursor-pointer" onclick="viewUserProfile('${post.user_id}')">
-                <img src="${avatarUrl}" class="w-11 h-11 rounded-full border-2 border-indigo-50 shadow-sm">
-                <div>
-                    <div class="flex items-center gap-1 font-bold text-sm text-slate-900 dark:text-white">
-                        ${userName} 
-                        ${isCertified ? '<i class="fas fa-check-circle text-blue-500 text-[10px]"></i>' : ''}
+            let mediaHtml = '';
+            if (post.is_short && post.video_url) {
+                mediaHtml = `
+                    <div class="relative bg-slate-900 flex justify-center overflow-hidden group rounded-2xl mb-4 shadow-lg border border-slate-200/10" 
+                         onclick="openZenMode('${post.video_url}')"
+                         onmouseenter="this.querySelector('video').play()"
+                         onmouseleave="this.querySelector('video').pause(); this.querySelector('video').currentTime = 0;">
+                        <div class="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-2 py-1 bg-black/50 backdrop-blur-md rounded-lg text-white text-[10px] font-bold tracking-wider uppercase">
+                            <i class="fas fa-bolt text-yellow-400"></i> Short
+                        </div>
+                        <video src="${post.video_url}" class="w-full aspect-[9/16] max-h-[650px] object-cover transition-transform duration-700 group-hover:scale-105" loop muted playsinline preload="metadata"></video>
+                        <div class="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <div class="w-16 h-16 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white shadow-2xl">
+                                <i class="fas fa-expand text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>`;
+            } else if (post.image_url) {
+                mediaHtml = `<img src="${post.image_url}" class="w-full h-auto object-cover rounded-2xl mb-4" loading="lazy" alt="Post">`;
+            }
+
+            return `
+            <article class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl overflow-hidden mb-6 transition-all hover:shadow-xl hover:shadow-indigo-500/5">
+                <div class="p-4 flex items-center justify-between">
+                    <div class="flex items-center gap-3 cursor-pointer" onclick="viewUserProfile('${post.user_id}')">
+                        <img src="${avatarUrl}" class="w-11 h-11 rounded-full border-2 border-indigo-50 shadow-sm">
+                        <div>
+                            <div class="flex items-center gap-1 font-bold text-sm text-slate-900 dark:text-white">
+                                ${userName} ${isCertified ? '<i class="fas fa-check-circle text-blue-500 text-[10px]"></i>' : ''}
+                            </div>
+                            <div class="text-[11px] text-slate-400 font-medium">${timeAgo}</div>
+                        </div>
                     </div>
-                    <div class="text-[11px] text-slate-400 font-medium">${timeAgo}</div>
+                    ${followBtn}
                 </div>
-            </div>
-            ${followBtn}
-        </div>
+                <div class="px-4 pb-2">
+                    ${formattedCaption ? `<p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed"><span class="font-extrabold mr-2 text-slate-900 dark:text-white">${userName}</span>${formattedCaption}</p>` : ''}
+                </div>
+                ${mediaHtml}
+                <div class="px-4 pb-3 pt-3">
+                    <div class="flex items-center gap-5">
+                        <div style="position: relative;">
+                            <button onclick="toggleReactionPopup('${post.id}', this)" class="flex items-center gap-1.5 group">
+                                <!-- LOGIQUE D'ICÔNE DYNAMIQUE -->
+<i id="icon-react-${post.id}" class="text-xl group-active:scale-125 transition-transform ${
+    // On regarde dans la Map si l'utilisateur a réagi et quel type il a choisi
+    userReactions.get(post.id) ? 
+        (REACTION_STYLES[userReactions.get(post.id)].icon) + ' ' + REACTION_STYLES[userReactions.get(post.id)].color
+    : 
+        'far fa-heart text-slate-400'
+}"></i>
+                                <span id="count-like-${post.id}" class="text-xs font-bold text-slate-500">${formatNumber(likeCount)}</span>
+                            </button>
+                            <div id="reactions-popup-${post.id}" class="reactions-popup" style="display:none"></div>
+                        </div>
+                        <button onclick="toggleCommentSection('${post.id}')" class="flex items-center gap-1.5 group">
+                            <i class="fas fa-comment-dots text-slate-400 text-xl group-hover:text-indigo-500 transition-colors"></i>
+                            <span id="count-comment-${post.id}" class="text-xs font-bold text-slate-500">${formatNumber(commentCount)}</span>
+                        </button>
+                        <button onclick="sharePost('${post.id}')" class="ml-auto text-slate-400 hover:text-indigo-600 transition-colors flex items-center gap-1">
+                            <i class="fas fa-arrows-rotate text-xl"></i> Partager
+                        </button>
+                        <button onclick="reportPost('${post.id}')" class="text-slate-400 hover:text-red-500 transition-colors" title="Signaler">
+                            <i class="fas fa-flag text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="comments-${post.id}" class="hidden p-4 border-t border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+                    <div id="comment-list-${post.id}" class="space-y-3 mb-4 max-h-48 overflow-y-auto no-scrollbar"></div>
+                    <form onsubmit="submitComment(event, '${post.id}')" class="relative">
+                        <input type="text" name="content" placeholder="Ajouter un commentaire..." class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 text-indigo-600 font-bold text-xs px-2">Publier</button>
+                    </form>
+                </div>
+            </article>`;
+        }).join('');
 
-        <!-- 2. TEXTE (Légende) - DÉPLACÉ ICI (Au-dessus de l'image) -->
-        <div class="px-4 pb-2">
-            ${post.caption ? `
-                <p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed line-clamp-3">
-                    <span class="font-extrabold mr-2 text-slate-900 dark:text-white">${userName}</span>${post.caption}
-                </p>
-            ` : ''}
-        </div>
-
-        <!-- 3. MÉDIA (Image/Vidéo) - DÉPLACÉ ICI (En dessous du texte) -->
-        ${mediaHtml}
-        
-        <!-- 4. BOUTONS D'ACTION -->
-        <div class="px-4 pb-3 pt-3">
-            <div class="flex items-center gap-5">
-                <button onclick="toggleLike('${post.id}', this)" class="flex items-center gap-1.5 group">
-                    <i id="icon-like-${post.id}" class="${isLiked ? 'fas fa-heart text-red-500' : 'far fa-heart text-slate-400'} text-xl group-active:scale-125 transition-transform"></i>
-                    <span id="count-like-${post.id}" data-raw-count="${likeCount}" class="text-xs font-bold ${isLiked ? 'text-slate-900' : 'text-slate-500'}">
-                        ${formatNumber(likeCount)}
-                    </span>
-                </button>
-
-                <button onclick="toggleCommentSection('${post.id}')" class="flex items-center gap-1.5 group">
-                    <i class="fas fa-comment-dots text-slate-400 text-xl group-hover:text-indigo-500 transition-colors"></i>
-                    <span id="count-comment-${post.id}" class="text-xs font-bold text-slate-500">
-                        ${formatNumber(commentCount)}
-                    </span>
-                </button>
-
-                <button onclick="sharePost('${post.id}')" class="ml-auto text-slate-400 hover:text-indigo-600 transition-colors">
-                    <i class="fas fa-arrows-rotate text-xl"></i>
-                </button>
-            </div>
-        </div>
-
-        <!-- Section Commentaires -->
-        <div id="comments-${post.id}" class="hidden p-4 border-t border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
-            <div id="comment-list-${post.id}" class="space-y-3 mb-4 max-h-48 overflow-y-auto no-scrollbar"></div>
-            <form onsubmit="submitComment(event, '${post.id}')" class="relative">
-                <input type="text" name="content" placeholder="Ajouter un commentaire..." class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all">
-                <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 text-indigo-600 font-bold text-xs px-2">Publier</button>
-            </form>
-        </div>
-    </article>`;
-}).join('');
-
-        // --- 7. INJECTION HTML ---
         if (!appendMode) {
-            // Premier chargement : on remplace tout le conteneur
             container.innerHTML = htmlString;
         } else {
-            // Chargement infini : on AJOUTE à la fin (avant le loader)
             container.insertAdjacentHTML('beforeend', htmlString);
         }
 
-        // --- 8. MISE À JOUR OFFSET ---
         feedOffset += posts.length;
         
-        // Si on a reçu moins que la taille du batch, c'est qu'on a fini
         if (posts.length < FEED_BATCH_SIZE) {
             hasMorePosts = false;
             if (loader) loader.classList.add('hidden');
@@ -4449,7 +4724,6 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
         else if (loader) loader.classList.remove('hidden');
     }
 }
-
         // Fonction déclenchée par l'observateur quand on arrive en bas
 async function loadMoreFeed() {
     if (isLoadingFeed || !hasMorePosts) return;
@@ -4578,7 +4852,15 @@ async function submitComment(e, postId) {
     const listElement = document.getElementById(`comment-list-${postId}`);
     const countSpan = document.getElementById(`count-comment-${postId}`);
 
-    if (!content) return;
+    // --- VÉRIFICATION CONTENU ---
+    if (containsInappropriateContent(content)) {
+        showToast("Commentaire refusé : Langage inapproprié.", "error");
+        if(input) {
+            input.classList.add('border-red-500', 'bg-red-50');
+            setTimeout(() => input.classList.remove('border-red-500', 'bg-red-50'), 2000);
+        }
+        return;
+    }
 
     const { data: { user } } = await supabaseClient.auth.getUser();
 
@@ -4853,14 +5135,20 @@ function getProfileSkeletonHTML() {
 }
         
         /* --- NAVIGATION VERS UN AUTRE PROFIL --- */
+// Fonction globale pour voir un profil
 function viewUserProfile(userId) {
-    // 1. On change de vue
+    // 1. On change de vue vers "profile-social"
     switchPage('profile-social');
     
-    // 2. RESET IMMÉDIAT (C'est ça qui efface votre profil avant qu'il ne s'affiche)
-    resetProfileUI();
-    
-    // 3. On charge les données de CET utilisateur
+    // 2. On force l'affichage de la vue (sécurité)
+    const view = document.getElementById('profile-social-view');
+    if (view) {
+        view.style.display = 'block';
+        setTimeout(() => view.classList.add('active'), 10);
+    }
+
+    // 3. On charge les données de CET utilisateur spécifique
+    // On passe l'ID en paramètre
     loadSocialProfile(userId);
 }
         /* --- SYSTÈME DE MESSAGERIE --- */
@@ -5342,6 +5630,17 @@ async function markAllNotificationsRead() {
     const captionEl = document.getElementById('post-caption');
     const typeEl = document.getElementById('current-post-type');
 
+             // --- NOUVELLE VÉRIFICATION (Point 1 : Sécurité Frontend) ---
+    if (containsInappropriateContent(content)) {
+        showToast("Votre publication contient des mots interdits ou inappropriés.", "error");
+        // Petit effet visuel d'erreur sur le champ texte
+        if(captionEl) {
+            captionEl.classList.add('ring-2', 'ring-red-500', 'bg-red-50');
+            setTimeout(() => captionEl.classList.remove('ring-2', 'ring-red-500', 'bg-red-50'), 2000);
+        }
+        return; // On arrête tout ici
+    }
+            
     // 2. Validation immédiate (Early Return)
     if (!currentPostFile) {
         showToast("Veuillez choisir un média avant de publier", "warning");
@@ -5405,9 +5704,14 @@ async function markAllNotificationsRead() {
             .insert([insertData]);
 
         if (insertError) {
-            // Tentative de suppression du fichier uploadé si l'insertion BDD échoue (nettoyage)
-            await supabaseClient.storage.from('posts').remove([fileName]);
-            throw new Error(`Base de données : ${insertError.message}`);
+            // Si l'erreur vient du serveur (Trigger SQL), on l'affiche
+            if (insertError.message && insertError.message.includes("contenu inapproprié")) {
+                 showToast("Publication refusée : Langage inapproprié détecté.", "danger");
+                 btn.innerHTML = btnText;
+                 btn.disabled = false;
+                 return;
+            }
+            throw insertError;
         }
 
         // 8. Succès : Feedback et nettoyage
@@ -5525,6 +5829,182 @@ function searchFeed(query) {
             article.style.display = 'none'; // On cache
         }
     });
+}
+        async function reportPost(postId) {
+    const reason = prompt("Pourquoi signalez-vous cette publication ? (Haine, Arnaque, Pornographie, Autre)");
+    if (!reason) return;
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return showToast("Connectez-vous pour signaler.", "error");
+
+    // Envoi dans une table 'reports' (à créer dans Supabase)
+    await supabaseClient.from('reports').insert([{
+        reporter_id: user.id,
+        post_id: postId,
+        reason: reason,
+        status: 'pending' // En attente de modération
+    }]);
+
+    showToast("Signalement envoyé aux modérateurs.", "success");
+}
+        /* --- 1. GESTION DES RÉACTIONS --- */
+// Types de réactions disponibles
+const REACTIONS = [
+    { type: 'like', icon: 'fa-heart', color: 'text-red-500' },
+    { type: 'support', icon: 'fa-hand-holding-heart', color: 'text-pink-500' },
+    { type: 'curious', icon: 'fa-eye', color: 'text-blue-500' },
+    { type: 'bravo', icon: 'fa-trophy', color: 'text-yellow-500' }
+];
+        // Ajoutez ceci juste après la définition de REACTIONS
+const userReactions = new Map(); // Stocke postId -> reaction_type (ex: 'support')
+// Variable pour savoir si le menu des réactions est ouvert
+let openReactionsPopupId = null;
+
+function toggleReactionPopup(postId, btnElement) {
+    // Si on clique sur un bouton du menu (dans le cas d'une sélection directe via le menu)
+    if (btnElement && btnElement.dataset.type) {
+        setReaction(postId, btnElement.dataset.type);
+        closeReactionPopup(postId);
+        return;
+    }
+
+    // Logique d'ouverture/fermeture standard...
+    const popup = document.getElementById(`reactions-popup-${postId}`);
+    
+    if (popup.style.display === 'flex') {
+        closeReactionPopup(postId);
+    } else {
+        document.querySelectorAll('.reactions-popup').forEach(el => el.style.display = 'none');
+        
+        // Génération HTML (Boutons Facebook Style)
+        popup.innerHTML = REACTIONS.map(r => `
+            <div class="reaction-btn" data-type="${r.type}" onclick="setReaction('${postId}', '${r.type}', this)">
+                <i class="fas ${r.icon}"></i>
+            </div>
+        `).join('');
+        
+        popup.style.display = 'flex';
+        openReactionsPopupId = postId;
+    }
+}
+
+function closeReactionPopup(postId) {
+    const popup = document.getElementById(`reactions-popup-${postId}`);
+    if (popup) popup.style.display = 'none';
+    openReactionsPopupId = null;
+}
+
+// Tableau de correspondance Réaction -> Style (Icône + Couleur)
+const REACTION_STYLES = {
+    like: { icon: 'fa-heart', color: 'text-red-500' },
+    support: { icon: 'fa-hand-holding-heart', color: 'text-pink-500' },
+    curious: { icon: 'fa-eye', color: 'text-blue-500' },
+    bravo: { icon: 'fa-trophy', color: 'text-yellow-500' }
+};
+
+// Fonction de mise à jour du style (Remplacez l'ancienne setReaction)
+async function setReaction(postId, reactionType, btnElement) {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return showToast("Connectez-vous pour réagir", "warning");
+
+    try {
+        // 1. On vérifie l'état actuel localement (pour le Toggle Off)
+        const currentStoredType = userReactions.get(postId);
+
+        if (currentStoredType === reactionType) {
+            // CAS : Même réaction -> On supprime (Toggle Off)
+            await supabaseClient
+                .from('post_likes')
+                .delete()
+                .eq('post_id', postId)
+                .eq('user_id', user.id);
+            
+            userReactions.delete(postId);
+            updateMainIcon(postId, null);
+            showToast("Réaction retirée", "default");
+        } 
+        else {
+            // CAS : Nouvelle réaction ou Changement -> Un seul appel UPSERT
+            // .upsert gère l'Insert et l'Update d'un coup grâce à la contrainte UNIQUE(post_id, user_id)
+            const { error } = await supabaseClient
+                .from('post_likes')
+                .upsert({
+                    post_id: postId,
+                    user_id: user.id,
+                    reaction_type: reactionType
+                }, { onConflict: 'post_id, user_id' });
+
+            if (error) throw error;
+            
+            userReactions.set(postId, reactionType);
+            updateMainIcon(postId, reactionType);
+            showToast(currentStoredType ? "Réaction changée" : "Réaction enregistrée", "success");
+        }
+    } catch (err) {
+        console.error("Erreur Réaction:", err);
+        showToast("Problème de connexion au serveur", "danger");
+    }
+}
+
+// Fonction helper pour mettre à jour l'icône principale
+function updateMainIcon(postId, reactionType) {
+    const icon = document.getElementById(`icon-react-${postId}`);
+    
+    if (!icon) return;
+    
+    // Si reactionType est null, on revient au style par défaut (Cœur vide ou Plein selon votre logique de likes)
+    // Ici, pour simplifier, on revient à "Cœur Vide" (far fa-heart)
+    if (!reactionType) {
+        // Note : Si vous voulez qu'il affiche un cœur PLEIN quand l'user a liké, il faudrait vérifier 'like' explicitement
+        icon.className = "far fa-heart text-slate-400 text-xl group-active:scale-125 transition-transform";
+    } else {
+        // Récupérer le style associé au type (Ex: Support -> Pink Heart)
+        const style = REACTION_STYLES[reactionType];
+        // On applique la nouvelle classe (Icon + Couleur)
+        icon.className = `fas ${style.icon} ${style.color} text-xl group-active:scale-125 transition-transform`;
+    }
+}
+/* --- 3. TAGS & MENTIONS (Highlighting) --- */
+function formatTextWithHighlights(text) {
+    if (!text) return '';
+
+    // 1. Protection XSS basique (Remplacer < et > par des entités HTML)
+    let safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+    // 2. Remplacer les Mentions (@user)
+    safeText = safeText.replace(/@(\w+)/g, '<span class="mention-highlight">@$1</span>');
+
+    // 3. Remplacer les Tags (#hashtag)
+    safeText = safeText.replace(/#(\w+)/g, '<span class="hashtag-highlight">#$1</span>');
+
+    return safeText;
+}
+
+/* --- 4. MODE ZEN (LECTURE VIDÉO) --- */
+function openZenMode(url) {
+    // Création d'un overlay plein écran
+    const modal = document.createElement('div');
+    modal.className = "fixed inset-0 z-[9999] bg-black flex items-center justify-center p-4 md:p-8 animate-in fade-in zoom-in duration-300";
+    modal.innerHTML = `
+        <button onclick="this.parentElement.remove()" class="absolute top-6 right-6 text-white text-3xl hover:rotate-90 transition-transform">
+            <i class="fas fa-times"></i>
+        </button>
+        <video src="${url}" class="h-full max-w-full rounded-xl shadow-2xl" controls autoplay loop></video>
+    `;
+    document.body.appendChild(modal);
+}
+
+function closeZenMode() {
+    const modal = document.getElementById('zen-mode-modal');
+    const video = document.getElementById('zen-video-player');
+    
+    if (video) {
+        video.pause();
+        video.src = '';
+    }
+    
+    modal.classList.remove('active');
+    document.body.style.overflow = 'auto'; // Réactive le scroll
 }
 </script>
 </body>
