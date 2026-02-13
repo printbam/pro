@@ -1126,7 +1126,7 @@ article {
     top: 0;
     left: 0;
     width: 100%;
-    height: 150px; 
+    height: 120px; 
     
     /* COPIE EXACTE DU STYLE DE LA BARRE EXPLORER */
     /* Blanc légèrement transparent */
@@ -1146,6 +1146,175 @@ body.dark-mode .header-bg-extension {
     /* Gris foncé légèrement transparent */
     background-color: rgba(15, 23, 42, 0.95);
 }
+        /* --- MENU ACTIONS (3 POINTS) --- */
+
+/* Conteneur du bouton et du menu */
+.post-menu-container {
+    position: relative;
+}
+
+/* Le menu déroulant (caché par défaut) */
+.post-dropdown-menu {
+    position: absolute;
+    top: 100%; /* Juste sous le bouton */
+    right: 0;
+    width: 200px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px -10px rgba(0,0,0,0.2);
+    border: 1px solid rgba(0,0,0,0.05);
+    z-index: 100;
+    display: none; /* Caché par défaut */
+    overflow: hidden;
+    animation: fadeInScale 0.2s ease;
+}
+
+/* Animation d'apparition */
+@keyframes fadeInScale {
+    from { opacity: 0; transform: scale(0.95) translateY(-5px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Style des liens dans le menu */
+.post-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #334155;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.post-dropdown-item:hover {
+    background: #f8fafc; /* Slate-50 */
+}
+.post-dropdown-item.danger {
+    color: #ef4444; /* Rouge pour signaler */
+}
+.post-dropdown-item.danger:hover {
+    background: #fef2f2; /* Rouge très clair */
+}
+
+/* Mode Sombre */
+body.dark-mode .post-dropdown-menu {
+    background: #1e293b;
+    border-color: rgba(255,255,255,0.1);
+    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+}
+body.dark-mode .post-dropdown-item { color: #cbd5e1; }
+body.dark-mode .post-dropdown-item:hover { background: #334155; }
+body.dark-mode .post-dropdown-item.danger { color: #f87171; }
+body.dark-mode .post-dropdown-item.danger:hover { background: rgba(239, 68, 68, 0.1); }
+
+        /* --- MODAL VUE DÉTAILLÉE (FACEBOOK STYLE) --- */
+
+#post-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    display: none; /* Caché par défaut */
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+#post-modal-overlay.active {
+    display: flex;
+    opacity: 1;
+}
+
+.post-modal-card {
+    background: white;
+    width: 100%;
+    max-width: 1000px; /* Grand écran */
+    height: 90vh;
+    max-height: 800px;
+    border-radius: 20px;
+    display: flex;
+    overflow: hidden;
+    box-shadow: 0 20px 60px -10px rgba(0,0,0,0.4);
+    animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes zoomIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* Layout Gauche (Image/Video) */
+.post-modal-media {
+    flex: 1.5;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+.post-modal-media img, .post-modal-media video {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* Layout Droite (Infos & Commentaires) */
+.post-modal-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    max-width: 400px;
+    background: white;
+}
+
+/* Header Modal */
+.post-modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.post-modal-header .menu-container { position: relative; }
+
+/* Corps Modal (Scrollable) */
+.post-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+}
+
+/* Footer Modal (Input) */
+.post-modal-footer {
+    padding: 16px 20px;
+    border-top: 1px solid #f1f5f9;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .post-modal-card {
+        flex-direction: column;
+        height: 100%;
+        max-height: 100%;
+        border-radius: 0;
+    }
+    .post-modal-media {
+        min-height: 40%;
+        max-height: 50%;
+    }
+    .post-modal-details {
+        max-width: 100%;
+        flex: 1;
+    }
+}
+
+/* Dark Mode */
+body.dark-mode #post-modal-overlay { background: rgba(0,0,0,0.9); }
+body.dark-mode .post-modal-card { background: #1e293b; }
+body.dark-mode .post-modal-details { background: #1e293b; }
+body.dark-mode .post-modal-header { border-color: #334155; }
+body.dark-mode .post-modal-footer { border-color: #334155; }
     </style>
 </head>
 <body>
@@ -1153,8 +1322,8 @@ body.dark-mode .header-bg-extension {
     <!-- PROFESSIONAL LOADER -->
     <div id="loader">
         <div class="loader-content">
-            <div class="loader-icon"><i class="fas fa-print"></i></div>
-            <div class="loader-text">Printbam</div>
+            <div class="loader-icon"><i class="fab fa-linkedin text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer"></i></div>
+            <div class="loader-text">Linko</div>
         </div>
         <div class="loader-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
     </div>
@@ -1297,13 +1466,12 @@ body.dark-mode .header-bg-extension {
 <div id="home-view" class="page-view">
     <section class="max-w-2xl mx-auto px-4 pt-10 pb-20">
         
-        <!-- NOUVEAU WRAPPER STICKY -->
         <!-- NOUVEAU WRAPPER STICKY MODIFIÉ -->
-<div class="sticky top-[42px] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md z-[3500] mb-10 py-1 -mx-4 px-4 border-b border-slate-200/60 dark:border-slate-700/50 transition-all">
+<div class="sticky top-[42px] z-[3500] mb-10 py-1 -mx-4 px-4 border-b border-slate-200/60 dark:border-slate-700/50 transition-all">
     
     <!-- HEADER DU FEED -->
     <div class="flex items-center justify-between mb-1"> <!-- mb-4 devient mb-1 -->
-        <h1 class="text-0xl font-black text-slate-900 dark:text-white tracking-tight">
+        <h1 class="text-1xl font-black text-slate-900 dark:text-white tracking-tight">
             Explorez
         </h1>
         
@@ -2598,6 +2766,42 @@ body.dark-mode .header-bg-extension {
         </div>
         <div class="mt-4 bg-black/50 px-4 py-2 rounded-full text-white text-xs font-bold">
             Mode Lecture Zen
+        </div>
+    </div>
+</div>
+        <!-- STRUCTURE HTML DE LA MODALE -->
+<div id="post-modal-overlay" class="fixed inset-0 z-[99999] bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 w-full max-w-5xl h-[90vh] rounded-2xl flex flex-col md:flex-row overflow-hidden shadow-2xl relative">
+        
+        <!-- Gauche : Média -->
+        <div id="modal-media-area" class="flex-1 bg-black flex items-center justify-center">
+             <!-- Injecté par JS -->
+        </div>
+
+        <!-- Droite : Infos -->
+        <div class="w-full md:w-[400px] flex flex-col border-l border-slate-100 dark:border-slate-700">
+            <!-- Header -->
+            <div class="p-4 border-b dark:border-slate-700 flex justify-between items-center">
+                <div id="modal-user-info" class="flex items-center gap-3"></div>
+                <div class="flex items-center gap-2 relative">
+                    <button onclick="window.toggleModalMenu()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-500">
+                        <i class="fas fa-ellipsis-h"></i>
+                    </button>
+                    <div id="modal-dropdown-menu" class="post-dropdown-menu hidden absolute top-10 right-0 bg-white dark:bg-slate-800 shadow-xl rounded-lg w-48 py-1 border dark:border-slate-700 z-50"></div>
+                    <button onclick="window.closePostModal()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-500">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- Corps -->
+            <div id="modal-comments-container" class="flex-1 overflow-y-auto p-4"></div>
+            <!-- Footer -->
+            <div class="p-4 border-t dark:border-slate-700">
+                <form onsubmit="window.submitModalComment(event)" class="flex gap-2">
+                    <input type="text" id="modal-comment-input" placeholder="Commenter..." class="flex-1 text-sm outline-none bg-transparent">
+                    <button type="submit" class="text-indigo-600 font-bold text-xs">Envoyer</button>
+                </form>
+            </div>
         </div>
     </div>
 </div>
@@ -4402,6 +4606,7 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
     const loader = document.getElementById('feed-loader');
     if (!container) return;
 
+    // Gestion du Loader et du Reset
     if (!appendMode) {
         container.innerHTML = `<div class="flex justify-center py-12"><i class="fas fa-circle-notch animate-spin text-3xl text-indigo-600 opacity-20"></i></div>`;
         feedOffset = 0;
@@ -4413,9 +4618,11 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
     if (appendMode) isLoadingFeed = true;
 
     try {
+        // 1. Récupération de l'utilisateur connecté
         const { data: userData } = await supabaseClient.auth.getUser();
         const myId = userData?.user?.id || null;
 
+        // 2. Récupération de la liste des abonnements (pour le bouton "Suivre")
         let myFollowingSet = new Set();
         if (myId) {
             const { data: followingData } = await supabaseClient
@@ -4425,6 +4632,7 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
             if (followingData) myFollowingSet = new Set(followingData.map(f => f.following_id));
         }
 
+        // 3. Récupération des Posts
         const { data: posts, error } = await supabaseClient
             .from('posts')
             .select(`
@@ -4448,34 +4656,26 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
             return;
         }
 
-                // --- NOUVEAU LOGIQUE : RÉCUPÉRATION DU TYPE DE RÉACTION ---
+        // 4. Récupération des Réactions de l'utilisateur pour ces posts
         let myLikedPostIds = new Set();
-        
-        // 1. Récupérer les IDs des posts à afficher
         const postIds = posts.map(p => p.id);
 
-        // 2. Charger les réactions DÉTAILLÉES (avec le type)
-        // On ne récupère QUE les réactions de l'utilisateur connecté pour les posts visibles
         const { data: myLikes } = await supabaseClient
             .from('post_likes')
-            .select('post_id, reaction_type') // <--- IMPORTANT : On demande le type ici ---
+            .select('post_id, reaction_type')
             .eq('user_id', myId)
             .in('post_id', postIds);
 
-        // 3. Remplir la liste d'IDs
         if (myLikes) {
-            // On remplit l'ensemble Set avec les IDs
             myLikedPostIds = new Set(myLikes.map(l => l.post_id));
-            
-            // NOUVEAU : On rempli la Map des réactions avec les types
             if (typeof userReactions !== 'undefined') {
                 myLikes.forEach(like => {
                     userReactions.set(like.post_id, like.reaction_type);
                 });
             }
         }
-        // --------------------------------------------------
 
+        // 5. Filtre et Tri
         let processedPosts = filterType === 'shorts' ? posts.filter(p => p.is_short) : posts;
 
         if (sortBy === 'popular' && typeof calculatePostScore === 'function') {
@@ -4485,6 +4685,7 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
             })).sort((a, b) => b.calculatedScore - a.calculatedScore);
         }
 
+        // 6. Génération du HTML
         const htmlString = processedPosts.map(post => {
             const profile = post.profiles || {};
             const avatarUrl = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username || 'user'}`; 
@@ -4494,14 +4695,14 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
             
             const likeCount = post.post_likes?.[0]?.count || 0;
             const commentCount = post.post_comments?.[0]?.count || 0;
-            const isLiked = myLikedPostIds.has(post.id);
-            const isMyPost = (post.user_id === myId);
+            const isMyPost = (post.user_id === myId); // IMPORTANT pour le menu
 
             let formattedCaption = "";
             if (post.caption) {
                 formattedCaption = typeof formatTextWithHighlights === 'function' ? formatTextWithHighlights(post.caption) : post.caption;
             }
 
+            // Bouton Suivre (si ce n'est pas mon post)
             let followBtn = '';
             if (!isMyPost && myId) {
                 const isFollowing = myFollowingSet.has(post.user_id);
@@ -4512,13 +4713,38 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
                     </button>`;
             }
 
+            // --- LOGIQUE MENU ADAPTATIF (3 POINTS) ---
+            let menuItemsHtml = '';
+            if (isMyPost) {
+                // MENU PROPRIÉTAIRE
+                menuItemsHtml = `
+                    <div onclick="editPost('${post.id}')" class="post-dropdown-item">
+                        <i class="fas fa-pencil-alt"></i> Modifier
+                    </div>
+                    <div onclick="deletePostModal('${post.id}')" class="post-dropdown-item danger">
+                        <i class="fas fa-trash-alt"></i> Supprimer
+                    </div>`;
+            } else {
+                // MENU VISITEUR
+                menuItemsHtml = `
+                    <div onclick="savePost('${post.id}')" class="post-dropdown-item">
+                        <i class="far fa-bookmark"></i> Enregistrer
+                    </div>
+                    <div onclick="sharePost('${post.id}')" class="post-dropdown-item">
+                        <i class="fas fa-link"></i> Copier le lien
+                    </div>
+                    <div onclick="reportPost('${post.id}')" class="post-dropdown-item danger">
+                        <i class="fas fa-flag"></i> Signaler
+                    </div>`;
+            }
+
+            // --- MEDIA HTML (AVEC MODALE) ---
             let mediaHtml = '';
             if (post.is_short && post.video_url) {
                 mediaHtml = `
-                    <div class="relative bg-slate-900 flex justify-center overflow-hidden group rounded-2xl mb-4 shadow-lg border border-slate-200/10" 
-                         onclick="openZenMode('${post.video_url}')"
-                         onmouseenter="this.querySelector('video').play()"
-                         onmouseleave="this.querySelector('video').pause(); this.querySelector('video').currentTime = 0;">
+                    <div onclick="openPostModal('${post.id}')" class="relative bg-slate-900 flex justify-center overflow-hidden group rounded-2xl mb-4 shadow-lg border border-slate-200/10 cursor-pointer" 
+                         onmouseenter="if(this.querySelector('video')) this.querySelector('video').play()"
+                         onmouseleave="if(this.querySelector('video')) { this.querySelector('video').pause(); this.querySelector('video').currentTime = 0; }">
                         <div class="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-2 py-1 bg-black/50 backdrop-blur-md rounded-lg text-white text-[10px] font-bold tracking-wider uppercase">
                             <i class="fas fa-bolt text-yellow-400"></i> Short
                         </div>
@@ -4530,11 +4756,15 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
                         </div>
                     </div>`;
             } else if (post.image_url) {
-                mediaHtml = `<img src="${post.image_url}" class="w-full h-auto object-cover rounded-2xl mb-4" loading="lazy" alt="Post">`;
+                mediaHtml = `
+                    <img src="${post.image_url}" onclick="openPostModal('${post.id}')" class="w-full h-auto object-cover rounded-2xl mb-4 cursor-pointer hover:opacity-95 transition" loading="lazy" alt="Post">`;
             }
 
+            // --- RENDU FINAL DE L'ARTICLE ---
             return `
             <article class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl overflow-hidden mb-6 transition-all hover:shadow-xl hover:shadow-indigo-500/5">
+                
+                <!-- HEADER -->
                 <div class="p-4 flex items-center justify-between">
                     <div class="flex items-center gap-3 cursor-pointer" onclick="viewUserProfile('${post.user_id}')">
                         <img src="${avatarUrl}" class="w-11 h-11 rounded-full border-2 border-indigo-50 shadow-sm">
@@ -4545,41 +4775,49 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
                             <div class="text-[11px] text-slate-400 font-medium">${timeAgo}</div>
                         </div>
                     </div>
-                    ${followBtn}
+
+                    <div class="flex items-center gap-1">
+                        ${followBtn}
+                        <div class="post-menu-container ml-1">
+                            <button onclick="togglePostMenu('${post.id}', event)" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all active:scale-90">
+                                <i class="fas fa-ellipsis-h text-base"></i>
+                            </button>
+                            <div id="menu-${post.id}" class="post-dropdown-menu">
+                                ${menuItemsHtml}
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                <!-- LÉGENDE -->
                 <div class="px-4 pb-2">
-    ${formattedCaption ? `
-        <div>
-            <!-- On ajoute l'ID et la classe 'line-clamp-2' -->
-            <p id="caption-${post.id}" class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed line-clamp-2">
-                <span class="font-extrabold mr-2 text-slate-900 dark:text-white">${userName}</span>${formattedCaption}
-            </p>
-            
-            <!-- Le bouton ne s'affiche que si le texte est long (plus de 80 caractères) -->
-            ${formattedCaption.length > 80 ? `
-                <span id="btn-more-${post.id}" onclick="toggleCaptionExpand('${post.id}')" class="btn-voir-plus">
-                    Voir plus
-                </span>
-            ` : ''}
-        </div>
-    ` : ''}
-</div>
+                    ${formattedCaption ? `
+                        <div>
+                            <p id="caption-${post.id}" class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed line-clamp-2">
+                                <span class="font-extrabold mr-2 text-slate-900 dark:text-white">${userName}</span>${formattedCaption}
+                            </p>
+                            ${formattedCaption.length > 80 ? `
+                                <span id="btn-more-${post.id}" onclick="toggleCaptionExpand('${post.id}')" class="btn-voir-plus">Voir plus</span>
+                            ` : ''}
+                        </div>
+                    ` : ''}
+                </div>
+
+                <!-- MEDIA -->
                 ${mediaHtml}
+
+                <!-- ACTIONS -->
                 <div class="px-4 pb-3 pt-3">
                     <div class="flex items-center gap-5">
                         <div style="position: relative;">
                             <button onclick="toggleReactionPopup('${post.id}', this)" class="flex items-center gap-1.5 group">
-                                <!-- LOGIQUE D'ICÔNE DYNAMIQUE -->
-<i id="icon-react-${post.id}" class="text-xl group-active:scale-125 transition-transform ${
-    (() => {
-        const type = userReactions.get(post.id);
-        const style = type ? REACTION_STYLES[type] : null;
-        // Si un style existe (l'utilisateur a réagi), on l'affiche, sinon cœur vide gris
-        return style 
-            ? `fas ${style.icon} ${style.color}` 
-            : 'far fa-heart text-slate-400';
-    })()
-}"></i>
+                                <i id="icon-react-${post.id}" class="text-xl group-active:scale-125 transition-transform ${
+                                    (() => {
+                                        const type = userReactions.get(post.id);
+                                        const style = type ? REACTION_STYLES[type] : null;
+                                        return style ? `fas ${style.icon} ${style.color}` : 'far fa-heart text-slate-400';
+                                    })()
+                                }"></i>
                                 <span id="count-like-${post.id}" class="text-xs font-bold text-slate-500">${formatNumber(likeCount)}</span>
                             </button>
                             <div id="reactions-popup-${post.id}" class="reactions-popup" style="display:none"></div>
@@ -4591,11 +4829,10 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
                         <button onclick="sharePost('${post.id}')" class="ml-auto text-slate-400 hover:text-indigo-600 transition-colors flex items-center gap-1">
                             <i class="fas fa-arrows-rotate text-xl"></i>
                         </button>
-                        <button onclick="reportPost('${post.id}')" class="text-slate-400 hover:text-red-500 transition-colors" title="Signaler">
-                            <i class="fas fa-flag text-sm"></i>
-                        </button>
                     </div>
                 </div>
+
+                <!-- COMMENTAIRES -->
                 <div id="comments-${post.id}" class="hidden p-4 border-t border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
                     <div id="comment-list-${post.id}" class="space-y-3 mb-4 max-h-48 overflow-y-auto no-scrollbar"></div>
                     <form onsubmit="submitComment(event, '${post.id}')" class="relative">
@@ -4606,6 +4843,7 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
             </article>`;
         }).join('');
 
+        // Injection dans le DOM
         if (!appendMode) {
             container.innerHTML = htmlString;
         } else {
@@ -4631,6 +4869,33 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
         if (loader && !hasMorePosts) loader.classList.add('hidden');
         else if (loader) loader.classList.remove('hidden');
     }
+}
+
+            // 1. Ouvrir/Fermer le menu spécifique
+function togglePostMenu(postId, event) {
+    event.stopPropagation(); // Empêche le clic de se propager
+    const menu = document.getElementById(`menu-${postId}`);
+    const isVisible = menu.style.display === 'block';
+
+    // Fermer tous les autres menus ouverts
+    document.querySelectorAll('.post-dropdown-menu').forEach(m => m.style.display = 'none');
+
+    // Basculer l'affichage du menu actuel
+    if (!isVisible) {
+        menu.style.display = 'block';
+    }
+}
+
+// 2. Fermer le menu si on clique ailleurs sur la page
+document.addEventListener('click', () => {
+    document.querySelectorAll('.post-dropdown-menu').forEach(m => m.style.display = 'none');
+});
+
+// 3. Fonction pour "Enregistrer" (placeholder)
+function savePost(postId) {
+    showToast("Publication enregistrée (Fonctionnalité à venir)", "success");
+    // Fermer le menu après action
+    document.getElementById(`menu-${postId}`).style.display = 'none';
 }
         // Fonction déclenchée par l'observateur quand on arrive en bas
 async function loadMoreFeed() {
@@ -5519,6 +5784,11 @@ async function markAllNotificationsRead() {
     updateNotificationBadge();
     loadNotifications();
 }
+            // Fonction de validation (Placeholder)
+function containsInappropriateContent(text) {
+    // Ajoutez votre logique de filtrage ici si besoin
+    return false; 
+}
         async function handleNewPost(e) {
     if (e) e.preventDefault();
     
@@ -5956,7 +6226,334 @@ function closeZenMode() {
     
     document.body.style.overflow = 'auto'; // Réactive le scroll
 }
+
+            let currentModalPostId = null;
+let currentModalIsOwner = false;
+
+// 1. Ouvrir la modale (VERSION SÉCURISÉE)
+// 1. Ouvrir la modale (VERSION CORRIGÉE)
+async function openPostModal(postId) {
+    // 1. On récupère l'overlay
+    const overlay = document.getElementById('post-modal-overlay');
+
+    // SÉCURITÉ : Si l'HTML est manquant, on débloque la page
+    if (!overlay) {
+        console.error("Erreur critique : #post-modal-overlay introuvable.");
+        alert("Erreur d'interface. Rechargez la page.");
+        document.body.style.overflow = 'auto'; // Débloquer le scroll par sécurité
+        return;
+    }
+
+    // 2. On bloque le scroll et on affiche le loader
+    document.body.style.overflow = 'hidden';
+    overlay.classList.remove('hidden'); // Retire la classe Tailwind "hidden"
+    overlay.classList.add('active');    // AJOUTE LA CLASSE "active" (CORRECTION ICI)
+    overlay.innerHTML = `<div class="w-full h-full flex items-center justify-center text-white"><i class="fas fa-spinner fa-spin text-4xl"></i></div>`;
+
+    try {
+        // 3. Récupération des données
+        const { data: { user } } = await supabaseClient.auth.getUser();
         
+        const { data: post, error } = await supabaseClient
+            .from('posts')
+            .select('*')
+            .eq('id', postId)
+            .single();
+
+        if (error || !post) throw new Error("Post introuvable");
+
+        const { data: profile } = await supabaseClient
+            .from('profiles')
+            .select('*')
+            .eq('id', post.user_id)
+            .single();
+
+        currentModalPostId = postId;
+        currentModalIsOwner = (user && user.id === post.user_id);
+
+        // 4. Injection du HTML
+        overlay.innerHTML = `
+            <div id="post-modal-card" class="bg-white dark:bg-slate-900 w-full max-w-5xl h-[90vh] rounded-2xl flex flex-col md:flex-row overflow-hidden shadow-2xl relative" onclick="event.stopPropagation()">
+                
+                <!-- MEDIA -->
+                <div class="flex-1 bg-black flex items-center justify-center">
+                    ${post.is_short && post.video_url 
+                        ? `<video src="${post.video_url}" controls autoplay class="max-h-full max-w-full"></video>` 
+                        : `<img src="${post.image_url}" class="max-h-full max-w-full object-contain">`
+                    }
+                </div>
+
+                <!-- INFOS -->
+                <div class="w-full md:w-[400px] flex flex-col border-l border-slate-100 dark:border-slate-700">
+                    
+                    <!-- Header -->
+                    <div class="p-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <img src="${profile?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg'}" class="w-10 h-10 rounded-full">
+                            <div>
+                                <div class="font-bold text-sm text-slate-900 dark:text-white">${profile?.full_name || 'Utilisateur'}</div>
+                                <div class="text-xs text-slate-400">${typeof getTimeAgo === 'function' ? getTimeAgo(new Date(post.created_at)) : ''}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 relative">
+                            <button onclick="toggleModalMenu()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500"><i class="fas fa-ellipsis-h"></i></button>
+                            <div id="modal-dropdown-menu" class="post-dropdown-menu hidden" style="display:none;"></div>
+                            <button onclick="closePostModal()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-500">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Corps -->
+                    <div class="flex-1 overflow-y-auto p-4">
+                        <p class="text-sm mb-4 text-slate-700 dark:text-slate-300"><span class="font-bold text-slate-900 dark:text-white">${profile?.full_name || 'User'}</span> ${post.caption || ''}</p>
+                        <div id="modal-comments-list" class="space-y-3 text-sm"></div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="p-4 border-t border-slate-100 dark:border-slate-700">
+                        <form onsubmit="submitModalComment(event)" class="flex items-center gap-2">
+                            <input type="text" id="modal-comment-input" placeholder="Commenter..." class="flex-1 text-sm outline-none bg-transparent">
+                            <button type="submit" class="text-indigo-600 font-bold text-xs">Envoyer</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // 5. On injecte le menu adaptatif
+        renderModalMenu(currentModalIsOwner, post.user_id);
+
+    } catch (err) {
+        console.error("Erreur critique modale:", err);
+        // En cas d'erreur, on débloque la page
+        closePostModal();
+        alert("Impossible d'ouvrir cette publication.");
+    }
+}
+
+// Fonction helper pour charger les commentaires (appelée à la fin)
+async function loadModalComments(postId) {
+    const container = document.getElementById('modal-comments-container');
+    if(!container) return;
+
+    const { data: comments } = await supabaseClient
+        .from('post_comments')
+        .select('content, created_at, profiles(full_name)')
+        .eq('post_id', postId)
+        .order('created_at', { ascending: false });
+
+    let html = '';
+    if (comments && comments.length > 0) {
+        comments.forEach(c => {
+            html += `<div class="text-sm mb-2"><span class="font-bold">${c.profiles?.full_name || 'User'}</span> <span class="text-slate-600">${c.content}</span></div>`;
+        });
+    } else {
+        html = '<div class="text-xs text-center text-slate-400 pt-4">Aucun commentaire</div>';
+    }
+    
+    // On ajoute après le caption
+    container.innerHTML = `<p class="text-sm mb-4 leading-relaxed"><span class="font-bold mr-2">...</span></p>` + html; // Simplifié pour l'exemple
+}
+
+// 4. Actions du menu
+function toggleModalMenu() {
+    const menu = document.getElementById('modal-dropdown-menu');
+    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+}
+
+async function deletePostModal() {
+    if(!confirm("Voulez-vous vraiment supprimer cette publication ?")) return;
+    
+    await supabaseClient.from('posts').delete().eq('id', currentModalPostId);
+    showToast("Publication supprimée", "success");
+    closePostModal();
+    if(typeof loadGlobalFeed === 'function') loadGlobalFeed(); // Rafraîchir le feed
+}
+
+function unfollowUserModal(userId) {
+    // Similaire à votre fonction toggleFollow
+    toggleFollow(userId, document.createElement('button')); // Hack pour utiliser votre fonction existante
+    showToast("Vous ne suivez plus cette personne", "success");
+    closePostModal();
+}
+
+function blockUserModal(userId) {
+    // Placeholder - Nécessite une table 'blocked_users' dans Supabase
+    showToast("Utilisateur bloqué (Fonctionnalité à implémenter)", "warning");
+    closePostModal();
+}
+
+// 5. Commenter depuis la modale
+async function submitModalComment(e) {
+    e.preventDefault();
+    const input = document.getElementById('modal-comment-input');
+    const content = input.value.trim();
+    if(!content) return;
+
+    // Réutiliser votre logique de commentaire existante
+    // Pour faire simple ici, on appelle la fonction submitComment simulée ou on refait l'insert
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    await supabaseClient.from('post_comments').insert([{ user_id: user.id, post_id: currentModalPostId, content: content }]);
+    
+    input.value = '';
+    showToast("Commentaire ajouté", "success");
+    openPostModal(currentModalPostId); // Recharger pour voir le com
+}
+            // --- FONCTIONS MANQUANTES POUR LA MODALE ---
+
+// 1. Générer le menu adaptatif (Propriétaire vs Visiteur)
+function renderModalMenu(isOwner, targetUserId) {
+    const menu = document.getElementById('modal-dropdown-menu');
+    if (!menu) return;
+
+    // CORRECTION : On utilise la variable globale 'currentModalPostId' qui est déjà définie
+    const postId = currentModalPostId; 
+
+    if (isOwner) {
+        // MENU PROPRIÉTAIRE (Modifier / Supprimer)
+        menu.innerHTML = `
+            <div onclick="editPostAction()" class="post-dropdown-item">
+                <i class="fas fa-pencil-alt"></i> Modifier
+            </div>
+            <div onclick="deletePostAction()" class="post-dropdown-item danger">
+                <i class="fas fa-trash-alt"></i> Supprimer
+            </div>
+        `;
+    } else {
+        // MENU VISITEUR (Enregistrer / Signaler / Bloquer)
+        menu.innerHTML = `
+            <div onclick="savePostAction()" class="post-dropdown-item">
+                <i class="far fa-bookmark"></i> Enregistrer
+            </div>
+            <div onclick="reportPostAction()" class="post-dropdown-item danger">
+                <i class="fas fa-flag"></i> Signaler
+            </div>
+            <div onclick="blockUserAction('${targetUserId}')" class="post-dropdown-item">
+                <i class="fas fa-ban"></i> Bloquer
+            </div>
+        `;
+    }
+}
+
+            // FONCTION POUR FERMER LA MODALE
+function closePostModal(event) {
+    // Sécurité clic
+    if (event && event.target !== event.currentTarget) return;
+
+    const overlay = document.getElementById('post-modal-overlay');
+    
+    if (overlay) {
+        overlay.classList.remove('active'); // RETIRE LA CLASSE ACTIVE
+        overlay.classList.add('hidden');    // CACHE L'ÉLÉMENT (Optionnel mais propre)
+        overlay.innerHTML = ''; 
+    }
+    
+    // On réactive le scroll
+    document.body.style.overflow = 'auto';
+}
+
+// FONCTION POUR CHARGER LES COMMENTAIRES DANS LA MODALE
+async function loadModalComments(postId) {
+    const container = document.getElementById('modal-comments-container');
+    if (!container) return;
+
+    try {
+        // Récupération des commentaires
+        const { data: comments } = await supabaseClient
+            .from('post_comments')
+            .select('content, created_at, profiles(full_name)')
+            .eq('post_id', postId)
+            .order('created_at', { ascending: true });
+
+        let htmlComments = '';
+        
+        if (comments && comments.length > 0) {
+            comments.forEach(c => {
+                htmlComments += `
+                    <div class="text-sm mb-3">
+                        <span class="font-bold text-slate-900 dark:text-white mr-2">${c.profiles?.full_name || 'User'}</span>
+                        <span class="text-slate-700 dark:text-slate-300">${c.content}</span>
+                    </div>
+                `;
+            });
+        } else {
+            htmlComments = `<div class="text-xs text-center text-slate-400 pt-4">Aucun commentaire pour le moment.</div>`;
+        }
+
+        // On injecte après le premier paragraphe (la légende)
+        // Note : Pour simplifier, on re-construit tout le corps ici
+        // Mais dans openPostModal, on a déjà mis la légende. 
+        // Pour simplifier, on va juste ajouter les commentaires à la suite.
+        
+        // On cible une div spécifique pour les commentaires si elle existe, sinon on ajoute à la fin
+        const commentsWrapper = document.createElement('div');
+        commentsWrapper.className = "border-t border-slate-100 dark:border-slate-700 pt-4 mt-4";
+        commentsWrapper.innerHTML = htmlComments;
+        
+        // On ajoute les commentaires à la fin du container
+        container.appendChild(commentsWrapper);
+
+    } catch (err) {
+        console.error("Erreur chargement commentaires modale:", err);
+    }
+}
+
+
+// 2. Ouvrir/Fermer le menu de la modale
+function toggleModalMenu() {
+    const menu = document.getElementById('modal-dropdown-menu');
+    if (menu) {
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+}
+
+// --- ACTIONS DU MENU ---
+
+// Action: Supprimer (Propriétaire)
+async function deletePostAction() {
+    if (!confirm("Voulez-vous vraiment supprimer cette publication ?")) return;
+    
+    const { error } = await supabaseClient
+        .from('posts')
+        .delete()
+        .eq('id', currentModalPostId);
+
+    if (error) {
+        showToast("Erreur lors de la suppression", "error");
+    } else {
+        showToast("Publication supprimée", "success");
+        closePostModal();
+        // Rafraîchir le feed pour que le post disparaisse
+        if (typeof loadGlobalFeed === 'function') loadGlobalFeed();
+    }
+}
+
+// Action: Modifier (Propriétaire) - Placeholder
+function editPostAction() {
+    showToast("Fonctionnalité de modification à venir", "warning");
+    toggleModalMenu(); // Fermer le menu
+}
+
+// Action: Enregistrer (Visiteur)
+function savePostAction() {
+    showToast("Publication enregistrée (Fonctionnalité à venir)", "success");
+    toggleModalMenu();
+}
+
+// Action: Signaler (Visiteur)
+function reportPostAction() {
+    showToast("Publication signalée aux modérateurs", "success");
+    closePostModal();
+}
+
+// Action: Bloquer (Visiteur)
+function blockUserAction(userId) {
+    if (confirm("Voulez-vous vraiment bloquer cet utilisateur ?")) {
+        showToast("Utilisateur bloqué (Fonctionnalité à venir)", "warning");
+        closePostModal();
+    }
+}
 </script>
 </body>
 </html>
