@@ -1100,6 +1100,26 @@ article {
     from { opacity: 0; transform: scale(0.95) translateY(10px); }
     to { opacity: 1; transform: scale(1) translateY(0); }
 }
+        /* Limite le texte à 2 lignes */
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Style du bouton "Voir plus" */
+.btn-voir-plus {
+    display: inline-block;
+    font-size: 0.75rem; /* text-xs */
+    font-weight: 700;
+    color: #64748b; /* text-slate-500 */
+    cursor: pointer;
+    margin-top: 4px;
+}
+.btn-voir-plus:hover {
+    color: #4f46e5; /* text-indigo-600 */
+}
     </style>
 </head>
 <body>
@@ -4500,8 +4520,22 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
                     ${followBtn}
                 </div>
                 <div class="px-4 pb-2">
-                    ${formattedCaption ? `<p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed"><span class="font-extrabold mr-2 text-slate-900 dark:text-white">${userName}</span>${formattedCaption}</p>` : ''}
-                </div>
+    ${formattedCaption ? `
+        <div>
+            <!-- On ajoute l'ID et la classe 'line-clamp-2' -->
+            <p id="caption-${post.id}" class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed line-clamp-2">
+                <span class="font-extrabold mr-2 text-slate-900 dark:text-white">${userName}</span>${formattedCaption}
+            </p>
+            
+            <!-- Le bouton ne s'affiche que si le texte est long (plus de 80 caractères) -->
+            ${formattedCaption.length > 80 ? `
+                <span id="btn-more-${post.id}" onclick="toggleCaptionExpand('${post.id}')" class="btn-voir-plus">
+                    Voir plus
+                </span>
+            ` : ''}
+        </div>
+    ` : ''}
+</div>
                 ${mediaHtml}
                 <div class="px-4 pb-3 pt-3">
                     <div class="flex items-center gap-5">
@@ -5629,6 +5663,26 @@ if (containsInappropriateContent(content)) {
         console.error("Erreur statut:", err);
     }
 }
+            // Fonction pour déplier/replier le texte
+function toggleCaptionExpand(postId) {
+    const textEl = document.getElementById(`caption-${postId}`);
+    const btnEl = document.getElementById(`btn-more-${postId}`);
+    
+    if (!textEl) return;
+
+    if (textEl.classList.contains('line-clamp-2')) {
+        // On déplie
+        textEl.classList.remove('line-clamp-2');
+        btnEl.textContent = "Voir moins";
+    } else {
+        // On replie
+        textEl.classList.add('line-clamp-2');
+        btnEl.textContent = "Voir plus";
+        // Optionnel : scroller un peu vers le haut si le texte est long
+        textEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+            
         // 1. Fonction pour ouvrir/fermer la barre de recherche
 function toggleSearch() {
     const searchBar = document.getElementById('feed-search-bar');
