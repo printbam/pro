@@ -20,7 +20,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -882,10 +881,6 @@ article {
     display: block;
     border-radius: 12px 12px 0 0; /* Coins arrondis en haut seulement */
 }
-        /* Force la position à 40px du haut */
-.feed-sticky-header {
-    top: 20px !important; 
-}
 
         /* --- MENTIONS & TAGS --- */
 .mention-highlight {
@@ -1214,7 +1209,7 @@ article {
 
     <!-- HEADERS -->
     <!-- MOBILE HEADER -->
-    <div class="sm:hidden fixed top-0 w-full z-[4000] px-4 py-4 transition-all duration-300" id="mobile-header">
+    <div class="sm:hidden fixed top-0 w-full z-[4000] px-4 py-1 transition-all duration-300" id="mobile-header">
         <div class="flex items-center justify-between gap-3">
             <button onclick="toggleSidebar()" class="flex items-center justify-center w-11 h-11 bg-white/90 border border-slate-200 rounded-xl shadow-sm backdrop-blur-md active:scale-95 transition-all group" aria-label="Menu"><i class="fas fa-bars text-slate-700 group-hover:text-indigo-600 transition-colors"></i></button>
             <div class="flex-1 h-11 bg-white/90 border border-slate-200 rounded-xl flex items-center justify-center px-4 shadow-sm backdrop-blur-md"><span class="font-bold text-lg tracking-tight"><span class="text-indigo-600">Print</span>bam</span></div>
@@ -1249,9 +1244,6 @@ article {
             </div>
         </nav>
     </div>
-<br>
-    <br>
-    <br>
     <!-- MAIN CONTENT WRAPPER -->
    <!-- PAGE 1: ACCUEIL (FEED GLOBAL) -->
 <div id="home-view" class="page-view">
@@ -1259,7 +1251,7 @@ article {
         
         <!-- NOUVEAU WRAPPER STICKY -->
         <!-- NOUVEAU WRAPPER STICKY MODIFIÉ -->
-<div class="sticky top-[75px] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md z-[4500] mb-1 py-1 -mx-4 px-4 border-b border-slate-200/60 dark:border-slate-700/50 transition-all">
+<div class="sticky top-[42px] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md z-[3500] mb-10 py-1 -mx-4 px-4 border-b border-slate-200/60 dark:border-slate-700/50 transition-all">
     
     <!-- HEADER DU FEED -->
     <div class="flex items-center justify-between mb-1"> <!-- mb-4 devient mb-1 -->
@@ -1311,7 +1303,7 @@ article {
 </div>
 
         <!-- SPACER FOR HEADER -->
-        <section class="max-w-2xl mx-auto px-4 pt-0 pb-20"> <!-- Changez pt-6 par pt-0 -->
+        <section class="max-w-2xl mx-auto px-4 pt-2 pb-20"> <!-- Changez pt-6 par pt-0 -->
         
         <div id="main-content">
         <!-- PAGE 2: MARKETPLACE -->
@@ -2417,28 +2409,6 @@ article {
     </section>
 </div>
 <!-- ESPACE DES MESSAGES -->
-<!-- VUE 1 : LISTE DES MESSAGES (Style WhatsApp) -->
-<div id="messages-view" class="page-view">
-    <section class="max-w-2xl mx-auto h-[calc(100vh-60px)] flex flex-col bg-white shadow-xl overflow-hidden relative">
-        
-        <!-- Header (Recherche) -->
-        <div class="p-3 bg-[#f0f2f5] border-b border-gray-200 flex items-center gap-3">
-            <button onclick="switchPage('home')" class="text-slate-400 hover:text-slate-800"><i class="fas fa-arrow-left"></i></button>
-            <div class="flex-1 relative">
-                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                <input type="text" placeholder="Rechercher une discussion..." class="w-full bg-white border border-gray-300 rounded-lg py-2 pl-9 text-sm focus:outline-none focus:border-emerald-500">
-            </div>
-        </div>
-
-        <!-- Liste -->
-        <div id="chat-list-container" class="flex-1 overflow-y-auto bg-white">
-            <!-- Liste injectée par JS -->
-             <div class="flex flex-col items-center justify-center h-full text-slate-400 text-sm">
-                <p>Aucun message.</p>
-            </div>
-        </div>
-    </section>
-</div>
 
 <!-- VUE 2 : DISCUSSION (Style WhatsApp Complet) -->
 <div id="chat-view" class="page-view">
@@ -2584,144 +2554,68 @@ article {
     </div>
 </div>
         <script>
-// 1. LISTE DE MOTS INTERDITS (À compléter selon votre besoin)
-const BANNED_WORDS = [
-    // Insultes et mots grossiers (Français & Anglais basiques)
-    "con", "salope", "putain", "merde", "connard", "enculé", "fdp", "ntm",
-    "fuck", "shit", "bitch", "asshole", "damn", "bastard",
-    
-    // Haine et discrimination
-    "nègre", "nigger", "race", "raciste", "meutre", "tuer", "mort", 
-    "viol", "gore", "porn", "sexe", "xxx", "nu", "naked", "nude",
-    
-    // Arnaque / Spam
-    "gagner de l'argent", "cliquer ici", "gratuit", "free money", "bitcoin", "scam",
-    
-    // Caractères sensibles
-    "pédophile", "inceste"
+// --- DÉBUT DU SCRIPT ---
+
+// 1. Configuration Supabase (Déjà présente, gardez-la)
+const SUPABASE_URL = 'https://lqqtvumwdixlhamwmqii.supabase.co'; 
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxcXR2dW13ZGl4bGhhbXdtcWlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyOTQ1NjMsImV4cCI6MjA4NTg3MDU2M30.QKTBQbZ78iRVyM1o-hhtAPkWP23h_vXAMA3zrfuzipY'; // Votre clé
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// 2. Variables Globales de gestion (CRUCIAL : Doivent être définies ici)
+const userReactions = new Map(); // Stocke les réactions de l'utilisateur (postId -> type)
+let chatInterval = null;
+let currentChatId = null;
+let currentTargetUserId = null;
+
+// 3. Configuration des Réactions (Doit être accessible pour le Feed)
+const REACTIONS = [
+    { type: 'like', icon: 'fa-heart', color: 'text-red-500' },
+    { type: 'support', icon: 'fa-hand-holding-heart', color: 'text-pink-500' },
+    { type: 'curious', icon: 'fa-eye', color: 'text-blue-500' },
+    { type: 'bravo', icon: 'fa-trophy', color: 'text-yellow-500' }
 ];
 
-// 2. FONCTION DE VALIDATION DU CONTENU
-function containsInappropriateContent(text) {
-    if (!text) return false;
-    
-    // On met tout en minuscule pour la comparaison
-    const lowerText = text.toLowerCase();
-    
-    // On vérifie si un mot banni est présent dans le texte
-    const foundBadWord = BANNED_WORDS.find(word => lowerText.includes(word));
-    
-    return !!foundBadWord; // Renvoie true si un mot est trouvé
+const REACTION_STYLES = {
+    like: { icon: 'fa-heart', color: 'text-red-500' },
+    support: { icon: 'fa-hand-holding-heart', color: 'text-pink-500' },
+    curious: { icon: 'fa-eye', color: 'text-blue-500' },
+    bravo: { icon: 'fa-trophy', color: 'text-yellow-500' }
+};
+
+// --- Suite du code (Variables Feed, etc.) ---
+let feedOffset = 0;
+const FEED_BATCH_SIZE = 10;
+let isLoadingFeed = false;
+let hasMorePosts = true;
+let feedObserver = null;
+// ... Le reste de votre code existant suit ici ...
+
+// --- VARIABLES DU TERMINAL (Si elles n'existent pas déjà) ---
+let currentStep = 1;
+let options = { reliure: false, plastique: false };
+
+// --- FONCTION MANQUANTE À AJOUTER ---
+function updateControls() {
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    // On récupère la langue actuelle pour les textes
+    const lang = localStorage.getItem('printbam-lang') || 'fr';
+
+    // Gestion du bouton RETOUR
+    if (prevBtn) {
+        prevBtn.style.visibility = currentStep === 1 ? 'hidden' : 'visible';
+    }
+
+    // Gestion du bouton SUIVANT / CONFIRMER
+    if (nextBtn) {
+        if (currentStep === 3) {
+            nextBtn.innerText = translations[lang]?.term_confirm || "Confirmer le Paiement";
+        } else {
+            nextBtn.innerText = translations[lang]?.term_continue || "Continuer";
+        }
+    }
 }
-            
-    // Variables pour la pagination infinie
-let feedOffset = 0;          // Où on en est dans la liste
-const FEED_BATCH_SIZE = 10;  // Combien de posts charger à la fois (ex: 10)
-let isLoadingFeed = false;   // Empêcher de charger deux fois en même temps
-let hasMorePosts = true;    // S'il reste des posts à charger
-let feedObserver = null;    // L'observateur
-            
-            const SUPABASE_URL = 'https://lqqtvumwdixlhamwmqii.supabase.co'; 
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxcXR2dW13ZGl4bGhhbXdtcWlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyOTQ1NjMsImV4cCI6MjA4NTg3MDU2M30.QKTBQbZ78iRVyM1o-hhtAPkWP23h_vXAMA3zrfuzipY'; // Votre clé
-
-// On récupère la fonction createClient de la librairie globale
-// const { createClient } = supabase;
-
-// On crée notre instance client avec un nom différent pour éviter le conflit
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            if (typeof pdfjsLib !== 'undefined') { pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; }
-            if (typeof emailjs !== 'undefined') { emailjs.init("thg5rkoV_YE3VuWnU"); }
-            let currentStep = 1; let options = { reliure: false, plastique: false };
-            const prices = { "A5": { "NB": 200, "CL": 400 }, "A4": { "NB": 400, "CL": 700 }, "A3": { "NB": 1000, "CL": 1800 }, "A2": { "NB": 4500, "CL": 7500 }, "A1": { "NB": 9000, "CL": 15000 }, "A0": { "NB": 18000, "CL": 25000 } };
-            const fileInput = document.getElementById('fileUpload');
-            if (fileInput) {
-                fileInput.addEventListener('change', async function(e) {
-                    const file = e.target.files[0]; if (!file) return;
-                    document.getElementById('previewBox').classList.remove('hidden'); document.getElementById('previewName').innerText = file.name;
-                    const imgT = document.getElementById('imagePreview'), canT = document.getElementById('pdfPreview'); imgT.classList.add('hidden'); canT.classList.add('hidden');
-                    if (file.type.startsWith('image/')) { const r = new FileReader(); r.onload = (e) => { imgT.src = e.target.result; imgT.classList.remove('hidden'); }; r.readAsDataURL(file); document.getElementById('nbPages').value = 1; }
-                    else if (file.type === "application/pdf" && typeof pdfjsLib !== 'undefined') { const r = new FileReader(); r.onload = async function() { const pdf = await pdfjsLib.getDocument(new Uint8Array(this.result)).promise; document.getElementById('nbPages').value = pdf.numPages; const page = await pdf.getPage(1); const vp = page.getViewport({ scale: 0.3 }); canT.height = vp.height; canT.width = vp.width; canT.classList.remove('hidden'); await page.render({canvasContext: canT.getContext('2d'), viewport: vp}).promise; calculatePrice(); }; r.readAsArrayBuffer(file); }
-                    calculatePrice();
-                });
-            }
-            function resetUpload() { document.getElementById('fileUpload').value = ""; document.getElementById('previewBox').classList.add('hidden'); calculatePrice(); }
-            function toggleOption(opt) { options[opt] = !options[opt]; document.getElementById(`opt-${opt}`).classList.toggle('active'); calculatePrice(); }
-            function toggleRectoVerso() {
-                const val = document.getElementById('rectoVerso').value === "true"; document.getElementById('rectoVerso').value = !val; const btn = document.getElementById('btnRV');
-                if(!val) btn.innerText = translations[localStorage.getItem('printbam-lang') || 'fr']?.term_recto_verso || "Recto / Verso"; else btn.innerText = translations[localStorage.getItem('printbam-lang') || 'fr']?.term_recto || "Recto Seul"; calculatePrice();
-            }
-            function calculatePrice() {
-                const f = document.getElementById('format').value, c = document.getElementById('couleur').value, isV = document.getElementById('rectoVerso').value === "true", p = parseInt(document.getElementById('nbPages').value) || 1, e = parseInt(document.getElementById('nbExemplaires').value) ||1;
-                let unitP = prices[f][c]; if(isV) unitP = Math.round(unitP * 1.6); const totalImp = unitP * p * e; let totalFin = 0; if(options.reliure) totalFin += 1500 * e; if(options.plastique) totalFin += (1000 * p) * e; const totalGlobal = totalImp + totalFin;
-                const totalDisplay = document.getElementById('totalDisplay'); if(totalDisplay) totalDisplay.innerText = totalGlobal.toLocaleString('fr-FR');
-                const resImpression = document.getElementById('resImpression'); if(resImpression) resImpression.innerText = `${f} ${c} (${p}p x ${e})`;
-                const resFinition = document.getElementById('resFinition'); if(resFinition) resFinition.innerText = totalFin.toLocaleString('fr-FR') + " FC";
-            }
-            function handleNavigation() { if (currentStep < 3) nextStep(); else validateFinalProcess(); }
-            function nextStep() {
-                if (currentStep === 1 && !document.getElementById('fileUpload').files[0]) return showErrorAnimation(document.getElementById('uploadContainer'));
-                if (currentStep === 2 && !['custName', 'custTel', 'custAddr'].every(id => document.getElementById(id).value.trim())) return;
-                document.getElementById(`step-${currentStep}`).classList.add('hidden-step'); document.getElementById(`pill-${currentStep}`).className = "px-6 py-2 rounded-full text-[10px] font-black text-indigo-600/30"; currentStep++;
-                document.getElementById(`step-${currentStep}`).classList.remove('hidden-step'); document.getElementById(`pill-${currentStep}`).className = "px-6 py-2 rounded-full text-[10px] font-black bg-indigo-600 text-white"; updateControls();
-            }
-            function prevStep() {
-                document.getElementById(`step-${currentStep}`).classList.add('hidden-step'); document.getElementById(`pill-${currentStep}`).className = "px-6 py-2 rounded-full text-[10px] font-black text-indigo-600/30"; currentStep--;
-                document.getElementById(`step-${currentStep}`).classList.remove('hidden-step'); document.getElementById(`pill-${currentStep}`).className = "px-6 py-2 rounded-full text-[10px] font-black bg-indigo-600 text-white"; updateControls();
-            }
-            function updateControls() {
-                const prevBtn = document.getElementById('prevBtn'); const nextBtn = document.getElementById('nextBtn'); const lang = localStorage.getItem('printbam-lang') || 'fr';
-                if(prevBtn) prevBtn.style.visibility = currentStep === 1 ? 'hidden' : 'visible';
-                if(nextBtn) { if(currentStep === 3) nextBtn.innerText = translations[lang]?.term_confirm || "Confirmer le Paiement"; else nextBtn.innerText = translations[lang]?.term_continue || "Continuer"; }
-            }
-            function selectMethod(el, op) { document.querySelectorAll('.payment-btn').forEach(b => b.classList.add('grayscale', 'opacity-50')); el.classList.remove('grayscale', 'opacity-50'); el.classList.add('border-indigo-600', 'bg-indigo-600/10'); document.getElementById('selectedOperator').value = op; }
-            async function validateFinalProcess() {
-                const op = document.getElementById('selectedOperator').value; if (!op) return; let prog = 0; document.getElementById('uploadModal').classList.remove('hidden');
-                const timer = setInterval(() => { if(prog < 90) { prog += 10; document.getElementById('progressBar').style.width = prog + "%"; document.getElementById('progressPercent').innerText = prog + "%"; } }, 400);
-                try {
-                    const url = await uploadToDrive(document.getElementById('fileUpload').files[0]); clearInterval(timer); document.getElementById('progressBar').style.width = "100%";
-                    setTimeout(() => { document.getElementById('uploadModal').classList.add('hidden'); if (op === "Cashbam") finalizeOrder(url, "CASHBAM"); else startFlutterwave(url, op); }, 500);
-                } catch (err) { clearInterval(timer); document.getElementById('uploadModal').classList.add('hidden'); alert("Erreur d'envoi"); }
-            }
-            async function uploadToDrive(file) {
-                return new Promise((resolve) => {
-                    const reader = new FileReader(); reader.readAsDataURL(file);
-                    reader.onload = async () => {
-                        const response = await fetch("https://script.google.com/macros/s/AKfycbzgcKmfauYb0i0hC2c72-WyBIsmL-gM__mJ4ESton4fHkWDBN07GGbLWflyuaHz-JK9/exec", { method: "POST", body: JSON.stringify({ base64: reader.result.split(',')[1], fileName: file.name, mimeType: file.type }) });
-                        const res = await response.json(); resolve(res.url || "Erreur");
-                    };
-                });
-            }
-            function startFlutterwave(url, op) {
-                if (typeof FlutterwaveCheckout !== 'undefined') {
-                    FlutterwaveCheckout({
-                        public_key: "FLWPUBK_TEST-025d82a383d1f6849351abbd725ffbe2-X",
-                        tx_ref: "BAM-" + Date.now(),
-                        amount: parseFloat(document.getElementById('totalDisplay').innerText.replace(/\s/g, '')),
-                        currency: "CDF",
-                        customer: { email: "cloud@printbam.com", phone_number: document.getElementById('custTel').value, name: document.getElementById('custName').value },
-                        callback: (d) => { if (d.status === "successful") finalizeOrder(url, op); }
-                    });
-                } else { alert("Erreur de chargement du module de paiement"); }
-            }
-            function finalizeOrder(url, m) {
-                const params = { nom: document.getElementById('custName').value, telephone: document.getElementById('custTel').value, adresse: document.getElementById('custAddr').value, details: `${document.getElementById('resImpression').innerText} | Reliure: ${options.reliure} | Plastique: ${options.plastique}`, total: document.getElementById('totalDisplay').innerText + " FC", file_link: url };
-                // Save locally
-                const totalAmount = parseInt(document.getElementById('totalDisplay').innerText.replace(/\s/g, ''));
-                const itemName = "Impression " + document.getElementById('format').value;
-                saveNewOrder(itemName, totalAmount);
-                
-                if (typeof emailjs !== 'undefined') {
-                    emailjs.send("service_jecwp3m", "template_znjxx9s", params).then(() => {
-                        document.getElementById('successModal').classList.remove('hidden'); setTimeout(() => { window.location.href = "index.html"; }, 3000);
-                    });
-                } else { alert("EmailJS non initialisé"); }
-            }
-            function showErrorAnimation(el) { el.classList.add('input-error'); setTimeout(() => el.classList.remove('input-error'), 400); }
-            calculatePrice();
-        </script>
-
-    <!-- SCRIPT PRINCIPAL -->
-    <script>
+    
         /* --- PRO FEATURES VARIABLES --- */
         let currentInvoiceData = null;
 
@@ -3905,7 +3799,6 @@ function updateDockAvatar(avatarUrl) {
 }
         /* --- GESTION DE L'OUVERTURE DU CHAT (MODIFIÉ) --- */
 /* --- GESTION DE L'OUVERTURE DU CHAT (CORRIGÉ POUR LE DOCK) --- */
-let chatInterval = null;
 
 window.toggleChat = async function() {
     const { data: authData } = await supabaseClient.auth.getUser();
@@ -3956,52 +3849,6 @@ window.toggleChat = async function() {
     }
 };
 
-        /* --- ENVOI DE MESSAGE CHAT --- */
-async function sendChatMessage(e) {
-    e.preventDefault(); // Empêche le rechargement de la page
-
-    const input = document.getElementById('chat-input');
-    const content = input.value.trim();
-
-    if (!content) return; // Ne rien faire si le message est vide
-
-    // Vérifier que l'utilisateur est connecté
-    const { data: { user }, error } = await supabaseClient.auth.getUser();
-    if (error || !user) {
-        showToast("Vous devez être connecté pour chatter.", "error");
-        return;
-    }
-
-    // Petit effet visuel sur le bouton (optionnel)
-    const btn = e.target.querySelector('button[type="submit"]');
-    const originalIcon = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
-
-    try {
-        // Insertion dans la table 'messages' de Supabase
-        const { error: insertError } = await supabaseClient
-            .from('messages')
-            .insert([{
-                user_id: user.id,
-                user_email: user.email, // Important pour l'affichage
-                content: content,
-                created_at: new Date().toISOString()
-            }]);
-
-        if (insertError) throw insertError;
-
-        // Succès
-        input.value = ''; // Vider le champ
-        await loadChatMessages(); // Recharger la liste pour voir son message
-
-    } catch (err) {
-        console.error("Erreur envoi message:", err);
-        showToast("Erreur lors de l'envoi du message", "error");
-    } finally {
-        // Remettre l'icône du bouton
-        btn.innerHTML = originalIcon;
-    }
-}
 async function loadChatMessages() {
     const container = document.getElementById('chat-messages');
     if (!container) return;
@@ -4139,11 +3986,7 @@ async function loadSocialProfile(targetUserId = null) {
             supabaseClient.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', profileId),
             supabaseClient.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', profileId)
         ]);
-
-        const formatNumber = (num) => num >= 1000 ? (num / 1000).toFixed(1) + 'K' : (num || 0);
-        updateText('stat-followers', formatNumber(followersRes.count));
-        updateText('stat-following', formatNumber(followingRes.count));
-
+        
         // 4. Gestion des éléments UI
         const editBtn = document.querySelector('button[onclick="toggleProfile()"]');
         const logoutBtn = document.querySelector('button[onclick="confirmSocialLogout()"]');
@@ -4666,11 +4509,14 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
                             <button onclick="toggleReactionPopup('${post.id}', this)" class="flex items-center gap-1.5 group">
                                 <!-- LOGIQUE D'ICÔNE DYNAMIQUE -->
 <i id="icon-react-${post.id}" class="text-xl group-active:scale-125 transition-transform ${
-    // On regarde dans la Map si l'utilisateur a réagi et quel type il a choisi
-    userReactions.get(post.id) ? 
-        (REACTION_STYLES[userReactions.get(post.id)].icon) + ' ' + REACTION_STYLES[userReactions.get(post.id)].color
-    : 
-        'far fa-heart text-slate-400'
+    (() => {
+        const type = userReactions.get(post.id);
+        const style = type ? REACTION_STYLES[type] : null;
+        // Si un style existe (l'utilisateur a réagi), on l'affiche, sinon cœur vide gris
+        return style 
+            ? `fas ${style.icon} ${style.color}` 
+            : 'far fa-heart text-slate-400';
+    })()
 }"></i>
                                 <span id="count-like-${post.id}" class="text-xs font-bold text-slate-500">${formatNumber(likeCount)}</span>
                             </button>
@@ -4942,11 +4788,6 @@ function getTimeAgo(date) {
     if (interval > 1) return Math.floor(interval) + " min";
     return "À l'instant";
 }
-        // Fonction pour formater 1200 en "1.2K"
-function formatNumber(num) {
-    if (!num) return '0';
-    return num >= 1000 ? (num / 1000).toFixed(1) + 'K' : num;
-}
        /* --- SYSTÈME D'ABONNEMENT (CORRIGÉ POUR ERREUR 409) --- */
 
 /* --- SYSTÈME D'ABONNEMENT (VERSION FINALE) --- */
@@ -5152,9 +4993,6 @@ function viewUserProfile(userId) {
     loadSocialProfile(userId);
 }
         /* --- SYSTÈME DE MESSAGERIE --- */
-
-let currentChatId = null;
-let currentTargetUserId = null;
 let lastMessageCount = 0; // Pour éviter le clignotement au rechargement
 
 // 1. Démarrer une conversation
@@ -5277,40 +5115,39 @@ async function openChatRoom(chatId, targetUserId) {
         .maybeSingle();
     
     if (profile) {
-    document.getElementById('chat-header-name').innerHTML = `
-        ${profile.full_name}
-        ${profile.is_certified ? '<i class="fas fa-check-circle text-blue-500 text-xs ml-1"></i>' : ''}
-    `;
-    document.getElementById('chat-header-avatar').src = profile.avatar_url || 'https://api.dicebear.com/7.x/identicon/svg?seed=NomUtilisateur';
+    // 1. On sécurise le nom et on gère la certification
+    const nameEl = document.getElementById('chat-header-name');
+    const badge = profile.is_certified ? '<i class="fas fa-check-circle text-blue-500 text-xs ml-1"></i>' : '';
+    nameEl.innerHTML = `${profile.full_name} ${badge}`;
+
+    // 2. On rend l'avatar par défaut unique grâce au nom de l'utilisateur
+    const avatarEl = document.getElementById('chat-header-avatar');
+    const defaultAvatar = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(profile.full_name)}`;
+    
+    avatarEl.src = profile.avatar_url || defaultAvatar;
 }
 
     loadChatMessages(chatId);
+    markChatAsRead(chatId);
     
-// Marquer tout de suite comme lu
-markChatAsRead(chatId);
+    // Nettoyage de l'ancien interval
+    if (chatInterval) clearInterval(chatInterval);
     
-    // Dans openChatRoom ...
-if (chatInterval) clearInterval(chatInterval);
-chatInterval = setInterval(() => {
-    // 1. Charger les nouveaux messages
-    loadChatMessages(currentChatId);
-    // 2. Vérifier le badge (pour s'il y a des messages dans d'autres chats)
-    updateMessageBadge();
-}, 3000);
-    // 1. Afficher le statut immédiatement
-refreshChatStatus(targetUserId);
+    // Lancement du nouvel interval pour les messages
+    chatInterval = setInterval(() => {
+        loadChatMessages(currentChatId);
+        updateMessageBadge(); // On met à jour le badge ici aussi pour la réactivité
+    }, 3000);
 
-// 2. Mettre à jour le statut toutes les 30 secondes
-const statusInterval = setInterval(() => {
+    // Rafraîchir le statut "En ligne"
     refreshChatStatus(targetUserId);
-}, 30000);
-    setInterval(() => {
-    updateMessageBadge();
-}, 5000); 
-    // Rafraîchir les notifications toutes les 10 secondes
-setInterval(() => {
-    updateNotificationBadge();
-}, 10000);
+    const statusInterval = setInterval(() => {
+        if(currentTargetUserId === targetUserId) {
+            refreshChatStatus(targetUserId);
+        } else {
+            clearInterval(statusInterval); // Stoppe si on change de conversation
+        }
+    }, 30000);
 }
 
 // 5. Charger les messages (AVEC GROUPING PAR DATE)
@@ -5631,15 +5468,18 @@ async function markAllNotificationsRead() {
     const typeEl = document.getElementById('current-post-type');
 
              // --- NOUVELLE VÉRIFICATION (Point 1 : Sécurité Frontend) ---
-    if (containsInappropriateContent(content)) {
-        showToast("Votre publication contient des mots interdits ou inappropriés.", "error");
-        // Petit effet visuel d'erreur sur le champ texte
-        if(captionEl) {
-            captionEl.classList.add('ring-2', 'ring-red-500', 'bg-red-50');
-            setTimeout(() => captionEl.classList.remove('ring-2', 'ring-red-500', 'bg-red-50'), 2000);
-        }
-        return; // On arrête tout ici
+    // --- NOUVELLE VÉRIFICATION ---
+// On récupère d'abord le texte du champ (caption)
+const content = captionEl ? captionEl.value.trim() : ""; 
+
+if (containsInappropriateContent(content)) {
+    showToast("Votre publication contient des mots interdits ou inappropriés.", "error");
+    if(captionEl) {
+        captionEl.classList.add('ring-2', 'ring-red-500', 'bg-red-50');
+        setTimeout(() => captionEl.classList.remove('ring-2', 'ring-red-500', 'bg-red-50'), 2000);
     }
+    return; 
+}
             
     // 2. Validation immédiate (Early Return)
     if (!currentPostFile) {
@@ -5847,17 +5687,7 @@ function searchFeed(query) {
 
     showToast("Signalement envoyé aux modérateurs.", "success");
 }
-        /* --- 1. GESTION DES RÉACTIONS --- */
-// Types de réactions disponibles
-const REACTIONS = [
-    { type: 'like', icon: 'fa-heart', color: 'text-red-500' },
-    { type: 'support', icon: 'fa-hand-holding-heart', color: 'text-pink-500' },
-    { type: 'curious', icon: 'fa-eye', color: 'text-blue-500' },
-    { type: 'bravo', icon: 'fa-trophy', color: 'text-yellow-500' }
-];
-        // Ajoutez ceci juste après la définition de REACTIONS
-const userReactions = new Map(); // Stocke postId -> reaction_type (ex: 'support')
-// Variable pour savoir si le menu des réactions est ouvert
+
 let openReactionsPopupId = null;
 
 function toggleReactionPopup(postId, btnElement) {
@@ -5894,55 +5724,85 @@ function closeReactionPopup(postId) {
     openReactionsPopupId = null;
 }
 
-// Tableau de correspondance Réaction -> Style (Icône + Couleur)
-const REACTION_STYLES = {
-    like: { icon: 'fa-heart', color: 'text-red-500' },
-    support: { icon: 'fa-hand-holding-heart', color: 'text-pink-500' },
-    curious: { icon: 'fa-eye', color: 'text-blue-500' },
-    bravo: { icon: 'fa-trophy', color: 'text-yellow-500' }
-};
-
 // Fonction de mise à jour du style (Remplacez l'ancienne setReaction)
 async function setReaction(postId, reactionType, btnElement) {
     const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return showToast("Connectez-vous pour réagir", "warning");
+    if (!user) {
+        showToast("Connectez-vous pour réagir", "warning");
+        return;
+    }
 
     try {
-        // 1. On vérifie l'état actuel localement (pour le Toggle Off)
-        const currentStoredType = userReactions.get(postId);
+        // 1. Vérifier si une réaction existe déjà
+        const { data: existingReaction } = await supabaseClient
+            .from('post_likes')
+            .select('*')
+            .eq('post_id', postId)
+            .eq('user_id', user.id)
+            .maybeSingle();
 
-        if (currentStoredType === reactionType) {
-            // CAS : Même réaction -> On supprime (Toggle Off)
-            await supabaseClient
-                .from('post_likes')
-                .delete()
-                .eq('post_id', postId)
-                .eq('user_id', user.id);
+        // 2. Logique de changement
+        if (existingReaction) {
+            if (existingReaction.reaction_type === reactionType) {
+                // On annule la réaction (Toggle OFF)
+                const { error } = await supabaseClient
+                    .from('post_likes')
+                    .delete()
+                    .match({ post_id: postId, user_id: user.id });
+                
+                if (error) throw error;
+
+                // On supprime de la mémoire locale
+                userReactions.delete(postId);
+                updateMainIcon(postId, null);
+            } else {
+                // On change de type (ex: Heart -> Support)
+                const { error } = await supabaseClient
+                    .from('post_likes')
+                    .update({ reaction_type: reactionType })
+                    .match({ id: existingReaction.id });
+                
+                if (error) throw error;
+
+                // On met à jour la mémoire locale
+                userReactions.set(postId, reactionType);
+                updateMainIcon(postId, reactionType);
+            }
             
-            userReactions.delete(postId);
-            updateMainIcon(postId, null);
-            showToast("Réaction retirée", "default");
-        } 
-        else {
-            // CAS : Nouvelle réaction ou Changement -> Un seul appel UPSERT
-            // .upsert gère l'Insert et l'Update d'un coup grâce à la contrainte UNIQUE(post_id, user_id)
+            // ---> C'EST ICI LE POINT CRITIQUE <---
+            // On ferme le menu dès que l'action est réussie
+            closeReactionPopup(postId);
+            // --------------------------------
+            
+            showToast("Mise à jour effectuée", "success");
+
+        } else {
+            // Nouvelle réaction (Insertion)
             const { error } = await supabaseClient
                 .from('post_likes')
-                .upsert({
+                .insert([{
                     post_id: postId,
                     user_id: user.id,
                     reaction_type: reactionType
-                }, { onConflict: 'post_id, user_id' });
+                }]);
 
             if (error) throw error;
-            
+
+            // On sauvegarde dans la Map
             userReactions.set(postId, reactionType);
             updateMainIcon(postId, reactionType);
-            showToast(currentStoredType ? "Réaction changée" : "Réaction enregistrée", "success");
+            
+            // ---> C'EST ICI LE POINT CRITIQUE <---
+            // On ferme le menu dès que l'action est réussie
+            closeReactionPopup(postId); // Note: postId suffit comme argument si la fonction gère l'ID
+            // ----------------------------------
+            
+            showToast("Réaction enregistrée", "success");
         }
+
     } catch (err) {
         console.error("Erreur Réaction:", err);
-        showToast("Problème de connexion au serveur", "danger");
+        showToast("Erreur lors de la mise à jour", "danger");
     }
 }
 
@@ -5982,16 +5842,21 @@ function formatTextWithHighlights(text) {
 
 /* --- 4. MODE ZEN (LECTURE VIDÉO) --- */
 function openZenMode(url) {
-    // Création d'un overlay plein écran
-    const modal = document.createElement('div');
-    modal.className = "fixed inset-0 z-[9999] bg-black flex items-center justify-center p-4 md:p-8 animate-in fade-in zoom-in duration-300";
-    modal.innerHTML = `
-        <button onclick="this.parentElement.remove()" class="absolute top-6 right-6 text-white text-3xl hover:rotate-90 transition-transform">
-            <i class="fas fa-times"></i>
-        </button>
-        <video src="${url}" class="h-full max-w-full rounded-xl shadow-2xl" controls autoplay loop></video>
-    `;
-    document.body.appendChild(modal);
+    // On utilise l'élément HTML existant au lieu d'en créer un nouveau
+    const modal = document.getElementById('zen-mode-modal');
+    const video = document.getElementById('zen-video-player');
+    
+    if (!modal || !video) {
+        console.error("Element Zen Mode introuvable");
+        return;
+    }
+
+    video.src = url;
+    modal.classList.add('active'); // Affiche le modal via CSS
+    document.body.style.overflow = 'hidden'; // Bloque le scroll du corps
+    
+    // Lecture automatique
+    video.play().catch(e => console.log("Autoplay bloqué par le navigateur", e));
 }
 
 function closeZenMode() {
@@ -6000,12 +5865,16 @@ function closeZenMode() {
     
     if (video) {
         video.pause();
-        video.src = '';
+        video.src = ''; // Vide la source pour arrêter le chargement
     }
     
-    modal.classList.remove('active');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+    
     document.body.style.overflow = 'auto'; // Réactive le scroll
 }
+        
 </script>
 </body>
 </html>
