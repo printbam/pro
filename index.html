@@ -1120,6 +1120,32 @@ article {
 .btn-voir-plus:hover {
     color: #4f46e5; /* text-indigo-600 */
 }
+       /* --- FOND UNIFIÉ POUR LE HEADER (MÊME STYLE QUE EXPLORER) --- */
+.header-bg-extension {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 150px; 
+    
+    /* COPIE EXACTE DU STYLE DE LA BARRE EXPLORER */
+    /* Blanc légèrement transparent */
+    background-color: rgba(255, 255, 255, 0.95); 
+    /* Effet de flou (Glassmorphism) */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    
+    z-index: 5; 
+    pointer-events: none; 
+    transition: background-color 0.3s ease;
+}
+
+/* --- ADAPTATION MODE SOMBRE --- */
+/* Force la même couleur que la barre Explorer en mode sombre */
+body.dark-mode .header-bg-extension {
+    /* Gris foncé légèrement transparent */
+    background-color: rgba(15, 23, 42, 0.95);
+}
     </style>
 </head>
 <body>
@@ -1139,6 +1165,8 @@ article {
     <!-- BACKGROUNDS -->
     <div class="bg-grid" id="parallax-bg"></div>
     <div class="bg-glow"></div>
+    <!-- Fond blanc/noir unifié derrière le header -->
+<div class="header-bg-extension"></div>
 
     <!-- SIDEBAR OVERLAY -->
     <div id="sidebar-overlay" class="fixed inset-0 z-[5000] invisible transition-all duration-500" aria-hidden="true">
@@ -4561,7 +4589,7 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
                             <span id="count-comment-${post.id}" class="text-xs font-bold text-slate-500">${formatNumber(commentCount)}</span>
                         </button>
                         <button onclick="sharePost('${post.id}')" class="ml-auto text-slate-400 hover:text-indigo-600 transition-colors flex items-center gap-1">
-                            <i class="fas fa-arrows-rotate text-xl"></i> Partager
+                            <i class="fas fa-arrows-rotate text-xl"></i>
                         </button>
                         <button onclick="reportPost('${post.id}')" class="text-slate-400 hover:text-red-500 transition-colors" title="Signaler">
                             <i class="fas fa-flag text-sm"></i>
