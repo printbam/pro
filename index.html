@@ -869,7 +869,7 @@ article {
     width: 100%;
     height: auto;
     display: block;
-    border-radius: 12px 12px 0 0; /* Coins arrondis en haut seulement */
+    border-radius: 5px 5px 0 0; /* Coins arrondis en haut seulement */
 }
 
         /* --- MENTIONS & TAGS --- */
@@ -2175,7 +2175,7 @@ body, html {
         .hidden { display: none !important; }
         
         @media (max-width: 768px) {
-            h1 { font-size: 2.5rem; }
+            h1 { font-size: 25px; }
             .footer-container { grid-template-columns: 1fr; }
             .file-item { grid-template-columns: 40px 1fr 30px; }
             .file-item div:nth-child(3) { display: none; } /* Hide status on mobile */
@@ -4746,12 +4746,12 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
                     </div>`;
             } else if (post.image_url) {
                 mediaHtml = `
-                    <img src="${post.image_url}" onclick="openPostModal('${post.id}')" class="w-full h-auto object-cover rounded-2xl mb-4 cursor-pointer hover:opacity-95 transition" loading="lazy" alt="Post">`;
+                    <img src="${post.image_url}" onclick="openPostModal('${post.id}')" class="w-full h-auto object-cover rounded-2xl mb-1 cursor-pointer hover:opacity-95 transition" loading="lazy" alt="Post">`;
             }
 
             // --- RENDU FINAL DE L'ARTICLE ---
             return `
-            <article class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl overflow-hidden mb-6 transition-all hover:shadow-xl hover:shadow-indigo-500/5">
+            <article class="bg-white dark:bg-slate-900 border border-slate-100 rounded-3xl overflow-hidden mb-6 transition-all hover:shadow-xl hover:shadow-indigo-500/5">
                 
                 <!-- HEADER -->
                 <div class="p-4 flex items-center justify-between">
@@ -4768,8 +4768,8 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
                     <div class="flex items-center gap-1">
                         ${followBtn}
                         <div class="post-menu-container ml-1">
-                            <button onclick="togglePostMenu('${post.id}', event)" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all active:scale-90">
-                                <i class="fas fa-ellipsis-h text-base"></i>
+                            <button onclick="togglePostMenu('${post.id}', event)" class="w-25 h-9 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all active:scale-90">
+                                <i class="fas fa-ellipsis-v text-[18px] text-black dark:text-white"></i>
                             </button>
                             <div id="menu-${post.id}" class="post-dropdown-menu">
                                 ${menuItemsHtml}
@@ -4783,9 +4783,9 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
                     ${formattedCaption ? `
                         <div>
                             <p id="caption-${post.id}" class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed line-clamp-2">
-                                <span class="font-extrabold mr-2 text-slate-900 dark:text-white">${userName}</span>${formattedCaption}
+                                <span class="font-extrabold text-slate-900 dark:text-white"></span>${formattedCaption}
                             </p>
-                            ${formattedCaption.length > 80 ? `
+                            ${formattedCaption.length > 50 ? `
                                 <span id="btn-more-${post.id}" onclick="toggleCaptionExpand('${post.id}')" class="btn-voir-plus">Voir plus</span>
                             ` : ''}
                         </div>
@@ -4796,7 +4796,7 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
                 ${mediaHtml}
 
                 <!-- ACTIONS -->
-                <div class="px-4 pb-3 pt-3">
+                <div class="px-4 pb-2 pt-1">
                     <div class="flex items-center gap-5">
                         <div style="position: relative;">
                             <button onclick="toggleReactionPopup('${post.id}', this)" class="flex items-center gap-1.5 group">
