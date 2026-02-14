@@ -788,11 +788,28 @@ body.dark-mode .chat-header { color: #94a3b8; }
 
 /* 2. Optimisation des cartes (Glassmorphism gourmand en ressources) */
 .glass {
-    /* Dit au navigateur : "Attention, cet élément va bouger ou changer, prépare-le" */
-    will-change: transform; 
-    /* Force la création d'une couche GPU */
-    backface-visibility: hidden; 
-    transform: translateZ(0);
+    /* Fond plus clair pour laisser passer les couleurs du média derrière */
+    background: rgba(255, 255, 255, 0.75);
+    
+    /* Augmentation du flou pour un effet "givré" plus luxueux */
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    
+    /* Bordure ultra-fine et Noir Pur très transparent */
+    border: 0.5px solid rgba(0, 0, 0, 0.1);
+    
+    /* Rayon de bordure Instagram (plus carré que rond) */
+    border-radius: 12px; 
+    
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Version Mode Sombre pour votre Noir Pur #242526 ou Pur Black */
+.dark .glass {
+    background: rgba(0, 0, 0, 0.8); /* Noir pur transparent */
+    border: 0.5px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(25px);
 }
 
 /* 3. Optimisation des éléments Sticky (Header et Dock) */
@@ -1340,7 +1357,23 @@ body, html {
     /* Pour les iPhones récents (gestion de la barre home) */
     padding-bottom: env(safe-area-inset-bottom);
     height: calc(60px + env(safe-area-inset-bottom));
-}       
+}     
+        
+/* 1. Supprimer TOUS les espaces automatiques entre les posts */
+#global-feed-container > * {
+    margin-top: 0 !important;
+    margin-bottom: 2 !important;
+}
+
+/* 2. SUR MOBILE : Style "Plein Écran" natif */
+@media (max-width: 50px) {
+    /* Force le conteneur parent à toucher les bords */
+    #home-view > section {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        padding-top: 0 !important;
+        max-width: 100% !important;
+    }
     </style>
 </head>
 <body>
@@ -1525,22 +1558,34 @@ body, html {
     </div>
 
     <!-- BOUTONS DE TRI -->
-    <div class="flex gap-2 border-b border-slate-100 dark:border-slate-700 pb-1 overflow-x-auto no-scrollbar">
-        <button onclick="sortFeed('recent')" id="btn-sort-recent" class="text-sm font-bold pb-2 px-2 border-b-2 border-indigo-600 text-indigo-600 transition-colors whitespace-nowrap">
-            Actualités
-        </button>
-        <button onclick="sortFeed('popular')" id="btn-sort-popular" class="text-sm font-bold pb-2 px-2 border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-colors whitespace-nowrap">
-            <i class="fas fa-fire text-orange-500 mr-1"></i> Tendances
-        </button>
-        <button onclick="filterFeed('shorts')" id="btn-filter-shorts" class="text-sm font-bold pb-2 px-2 border-b-2 border-transparent text-slate-400 hover:text-pink-600 transition-colors whitespace-nowrap flex items-center gap-1">
-            <i class="fas fa-play text-pink-500"></i> Shorts
-        </button>
-    </div>
+    <div class="flex gap-2 pb-1 overflow-x-auto no-scrollbar" id="sort-container">
+    
+    <button onclick="handleSortClick(this, 'recent')" 
+        title="Actualités"
+        class="sort-btn flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 text-[14px] font-semibold transition-all duration-300">
+        <i class="fas fa-bolt-lightning text-sm"></i>
+        <span class="btn-text">Actualités</span>
+    </button>
+
+    <button onclick="handleSortClick(this, 'popular')" 
+        title="Tendances"
+        class="sort-btn flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[14px] font-semibold transition-all duration-300">
+        <i class="fas fa-arrow-trend-up text-sm text-indigo-500"></i>
+        <span class="btn-text hidden">Tendances</span>
+    </button>
+
+    <button onclick="handleSortClick(this, 'shorts')" 
+        title="Shorts"
+        class="sort-btn flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[14px] font-semibold transition-all duration-300">
+        <i class="fas fa-clapperboard text-sm text-pink-500"></i>
+        <span class="btn-text hidden">Shorts</span>
+    </button>
+</div>
 </div> 
         <!-- FIN DU WRAPPER STICKY -->
 
         <!-- CONTENEUR DES POSTS -->
-        <div id="global-feed-container" class="space-y-6">
+        <div id="global-feed-container">
              <!-- ... les posts ... -->
         </div>
         <!-- AJOUTEZ CE BLOC ICI (Le sentinelle de chargement) -->
@@ -2233,6 +2278,26 @@ body, html {
         background-color: #00a884;
         color: white;
     }
+        /* Positionnement pour le survol */
+.sort-btn {
+    position: relative;
+}
+
+/* L'infobulle n'apparaît que si le texte interne est caché */
+.sort-btn .btn-text.hidden ~ i:hover::after {
+    content: attr(data-title);
+    position: absolute;
+    bottom: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #000;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    white-space: nowrap;
+    z-index: 100;
+}
     </style>
     <!-- HERO -->
     <div class="hero">
@@ -4746,12 +4811,12 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
                     </div>`;
             } else if (post.image_url) {
                 mediaHtml = `
-                    <img src="${post.image_url}" onclick="openPostModal('${post.id}')" class="w-full h-auto object-cover rounded-2xl mb-1 cursor-pointer hover:opacity-95 transition" loading="lazy" alt="Post">`;
+                    <img src="${post.image_url}" onclick="openPostModal('${post.id}')" class="w-full h-auto object-cover rounded-lg mb-1 cursor-pointer hover:opacity-95 transition" loading="lazy" alt="Post">`;
             }
 
             // --- RENDU FINAL DE L'ARTICLE ---
             return `
-            <article class="bg-white dark:bg-slate-900 border border-slate-100 rounded-3xl overflow-hidden mb-6 transition-all hover:shadow-xl hover:shadow-indigo-500/5">
+            <article class="bg-white dark:bg-slate-900 border border-slate-100 rounded-lg overflow-hidden mb-6 transition-all hover:shadow-xl hover:shadow-indigo-500/5">
                 
                 <!-- HEADER -->
                 <div class="p-4 flex items-center justify-between">
@@ -6219,59 +6284,35 @@ function closeZenMode() {
 // --- VARIABLES GLOBALES MODALE ---
 let currentModalPostId = null;
 
-// 1. Ouvrir la modale (VERSION CORRIGEE)
+// --- NOUVELLE VERSION ROBUSTE OPEN POST MODAL ---
 async function openPostModal(postId) {
-    console.log("Tentative d'ouverture du post :", postId);
-    
+    console.log("Ouverture modale pour:", postId);
     const overlay = document.getElementById('post-modal-overlay');
-    if (!overlay) {
-        console.error("Erreur: L'élément #post-modal-overlay est introuvable dans le HTML.");
-        return;
-    }
+    if (!overlay) return;
 
-    // On bloque le scroll
-    document.body.style.overflow = 'hidden';
-    
-    // On affiche le loader immédiatement
-    // On force la suppression de 'hidden' et l'ajout de 'active'
-        // On affiche le loader immédiatement
+    // 1. On affiche le conteneur immédiatement avec un style inline fort
     overlay.classList.remove('hidden');
     overlay.classList.add('active');
+    overlay.style.cssText = "display: flex !important; opacity: 1 !important; z-index: 99999 !important; pointer-events: auto !important;";
     
-    // On force les styles en ligne pour "casser" le blocage CSS
-    overlay.style.opacity = '1';
-    overlay.style.pointerEvents = 'auto';
-    overlay.style.display = 'flex';
-    overlay.style.zIndex = '99999';
-    
-    // On met un loader
-    overlay.innerHTML = `
-        <div class="w-full h-full flex items-center justify-center">
-            <i class="fas fa-spinner fa-spin text-4xl text-white"></i>
-        </div>`;
+    // 2. On bloque le scroll du body
+    document.body.style.overflow = 'hidden';
+
+    // 3. On injecte un loader le temps du chargement
+    overlay.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-black/90"><i class="fas fa-spinner fa-spin text-4xl text-white"></i></div>`;
 
     try {
         // Récupération des données
         const { data: { user } } = await supabaseClient.auth.getUser();
-        
-        const { data: post, error } = await supabaseClient
-            .from('posts')
-            .select('*')
-            .eq('id', postId)
-            .single();
+        const { data: post, error } = await supabaseClient.from('posts').select('*').eq('id', postId).single();
+        if (error) throw error;
 
-        if (error || !post) throw new Error("Post introuvable ou erreur BDD");
-
-        const { data: profile } = await supabaseClient
-            .from('profiles')
-            .select('*')
-            .eq('id', post.user_id)
-            .single();
-
+        const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', post.user_id).single();
         currentModalPostId = postId;
         const isMyPost = (user && user.id === post.user_id);
 
-        // Injection du HTML
+        // 4. Injection du HTML final
+        // Note: J'ai réduit les arrondis ici aussi pour la modale (rounded-2xl au lieu de 3xl)
         overlay.innerHTML = `
             <div class="bg-white dark:bg-slate-900 w-full max-w-5xl h-[90vh] rounded-2xl flex flex-col md:flex-row overflow-hidden shadow-2xl relative" onclick="event.stopPropagation()">
                 
@@ -6285,7 +6326,6 @@ async function openPostModal(postId) {
 
                 <!-- PARTIE DROITE : INFOS -->
                 <div class="w-full md:w-[400px] flex flex-col border-l border-slate-100 dark:border-slate-700">
-                    
                     <!-- Header -->
                     <div class="p-4 border-b dark:border-slate-700 flex items-center justify-between">
                         <div class="flex items-center gap-3">
@@ -6305,8 +6345,7 @@ async function openPostModal(postId) {
                             </button>
                         </div>
                     </div>
-
-                    <!-- Corps (Commentaires) -->
+                    <!-- Corps -->
                     <div id="modal-comments-container" class="flex-1 overflow-y-auto p-4">
                         <p class="text-sm mb-4 text-slate-700 dark:text-slate-300">
                             <span class="font-bold text-slate-900 dark:text-white mr-2">${profile?.full_name || 'User'}</span> 
@@ -6314,7 +6353,6 @@ async function openPostModal(postId) {
                         </p>
                         <div id="modal-comments-list" class="space-y-3 text-sm"></div>
                     </div>
-
                     <!-- Footer -->
                     <div class="p-4 border-t dark:border-slate-700">
                         <form onsubmit="submitModalComment(event)" class="flex items-center gap-2">
@@ -6325,14 +6363,13 @@ async function openPostModal(postId) {
                 </div>
             </div>
         `;
-
-        // Générer le menu
+        
         renderModalMenu(isMyPost, post.user_id);
 
     } catch (err) {
-        console.error("Erreur critique modale:", err);
-        alert("Impossible d'ouvrir ce post.");
+        console.error("Erreur modale:", err);
         closePostModal();
+        showToast("Impossible de charger cette publication", "error");
     }
 }
 
@@ -6404,6 +6441,31 @@ window.toggleModalMenu = toggleModalMenu;
 window.deletePostAction = deletePostAction;
 window.reportPostAction = reportPostAction;
 window.submitModalComment = submitModalComment;
+
+            function handleSortClick(element, filterType) {
+    const allButtons = document.querySelectorAll('.sort-btn');
+    
+    allButtons.forEach(btn => {
+        // Reset Styles : Gris + Carré/Cercle (px-3 pour icône seule)
+        btn.classList.remove('bg-blue-50', 'text-blue-600', 'dark:bg-blue-900/30', 'dark:text-blue-400');
+        btn.classList.add('bg-slate-100', 'text-slate-600', 'dark:bg-slate-800', 'dark:text-slate-300');
+        btn.classList.replace('px-4', 'px-3'); 
+        
+        const textSpan = btn.querySelector('.btn-text');
+        if (textSpan) textSpan.classList.add('hidden');
+    });
+
+    // Active Style : Bleu + Largeur auto (px-4 pour texte + icône)
+    element.classList.remove('bg-slate-100', 'text-slate-600', 'dark:bg-slate-800', 'dark:text-slate-300');
+    element.classList.add('bg-blue-50', 'text-blue-600', 'dark:bg-blue-900/30', 'dark:text-blue-400');
+    element.classList.replace('px-3', 'px-4');
+
+    const activeText = element.querySelector('.btn-text');
+    if (activeText) activeText.classList.remove('hidden');
+
+    // Appel des fonctions de tri
+    filterType === 'shorts' ? filterFeed('shorts') : sortFeed(filterType);
+}
 </script>
 </body>
 </html>
