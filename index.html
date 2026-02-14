@@ -778,14 +778,6 @@ body.dark-mode .chat-header { color: #94a3b8; }
 
         /* --- OPTIMISATION SCROLL (GPU) --- */
 
-/* 1. Force le navigateur à créer une couche composite pour le flux principal */
-#global-feed-container {
-    /* Isolation : évite que le reste de la page soit redessiné quand le feed bouge */
-    contain: layout style paint; 
-    /* Prépare l'élément pour l'animation GPU */
-    transform: translateZ(0); 
-}
-
 /* 2. Optimisation des cartes (Glassmorphism gourmand en ressources) */
 .glass {
     /* Fond plus clair pour laisser passer les couleurs du média derrière */
@@ -828,8 +820,9 @@ img {
         /* --- 1. REDUCTION DE L'ESPACE --- */
 #home-view section {
     /* On réduit le padding en haut (pt-6 devient pt-2) */
-    padding-top: 0.5rem; 
+    padding-top: 1rem; 
     padding-bottom: 80px;
+    z-index: 99999 !important;
 }
 
 /* --- 2. LAYOUT AUTEUR OVERLAY (Style TikTok/Insta Pro) --- */
@@ -1364,16 +1357,59 @@ body, html {
     margin-top: 0 !important;
     margin-bottom: 2 !important;
 }
+        /* --- STYLE MENU FACEBOOK --- */
 
-/* 2. SUR MOBILE : Style "Plein Écran" natif */
-@media (max-width: 50px) {
-    /* Force le conteneur parent à toucher les bords */
-    #home-view > section {
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-        padding-top: 0 !important;
-        max-width: 100% !important;
+/* Conteneur utilisateur */
+#sidebar-user-card {
+    transition: background 0.2s;
+}
+#sidebar-user-card:hover {
+    background-color: rgba(0, 0, 0, 0.03); /* Gris très léger */
+}
+
+/* Liens du menu */
+.nav-link-pro {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    margin: 2px 8px; /* Espacement aéré */
+    border-radius: 10px; /* Arrondi Facebook */
+    color: #050505; /* Noir Facebook */
+    font-size: 15px; /* Taille standard FB */
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.dark-mode .nav-link-pro { color: #e4e6eb; }
+
+.nav-link-pro:hover {
+    background-color: #f2f2f2;
+}
+.dark-mode .nav-link-pro:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.nav-link-pro.active {
+    background-color: transparent; /* Pas de fond bleu lourd */
+    font-weight: 700; /* Juste plus gras */
+}
+.nav-link-pro.active span {
+    color: #0866ff; /* Bleu Facebook pour le texte actif */
+}
+
+/* Icônes dans le cercle coloré */
+.nav-link-pro .w-8 {
+    flex-shrink: 0;
+}
+
+/* Correction largeur Sidebar sur mobile */
+@media (max-width: 768px) {
+    #sidebar-panel {
+        width: 85vw !important; /* Prend 85% de la largeur sur mobile */
+        max-width: 320px !important; /* Mais dépasse pas 320px */
     }
+}
     </style>
 </head>
 <body>
@@ -1399,89 +1435,173 @@ body, html {
     <!-- SIDEBAR OVERLAY -->
     <div id="sidebar-overlay" class="fixed inset-0 z-[5000] invisible transition-all duration-500" aria-hidden="true">
         <div id="sidebar-bg" class="absolute inset-0 bg-slate-900/20 backdrop-blur-sm opacity-0 transition-opacity duration-500" onclick="toggleSidebar()"></div>
-        <div id="sidebar-panel" class="fixed top-0 left-0 h-full w-[300px] bg-white z-[5001] -translate-x-full opacity-0 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col shadow-2xl border-r border-slate-100">
-            <div class="pt-10 pb-6 px-8 border-b border-slate-100 bg-white/50"><span class="text-2xl font-bold text-slate-900 tracking-tight">Print<span class="text-indigo-600">bam</span></span><p class="text-[10px] text-slate-400 mt-1 uppercase tracking-widest">v3.5 Pro</p></div>
-            <nav class="flex-1 overflow-y-auto p-5">
-    <!-- SECTION NAVIGATION -->
-    <div class="mb-8">
-        <p class="px-4 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider" data-i18n="nav_navigation">Navigation</p>
-        <div class="flex flex-col gap-2">
-            <a onclick="switchPage('home')" class="nav-link-pro active">
-                <i class="fa-solid fa-house w-5 text-center text-sm"></i> 
-                <span data-i18n="nav_home">Accueil</span>
-            </a>
-            <a onclick="switchPage('marketplace')" class="nav-link-pro">
-                <i class="fa-solid fa-shop w-5 text-center text-sm"></i> 
-                <span data-i18n="nav_market">Marketplace</span>
-            </a>
-            <a onclick="switchPage('services')" class="nav-link-pro">
-                <i class="fa-solid fa-layer-group w-5 text-center text-sm"></i> 
-                <span data-i18n="nav_services">Services & Tarifs</span>
-            </a>
+        
+       <div id="sidebar-panel" class="fixed top-0 left-0 h-full w-[280px] md:w-[300px] bg-white dark:bg-slate-900 z-[5001] -translate-x-full opacity-0 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col shadow-2xl border-r border-slate-100 dark:border-slate-800 overflow-y-auto">
+    
+    <!-- HEADER FERMETURE (Mobile) -->
+    <div class="p-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-700/50 md:hidden">
+        <div class="flex items-center gap-2 text-xl font-black text-slate-900 dark:text-white">
+            Link<span class="text-indigo-600">o</span>
         </div>
+        <button onclick="toggleSidebar()" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+            <i class="fas fa-times text-slate-500"></i>
+        </button>
     </div>
 
-    <!-- SECTION COMPTE -->
-    <div>
-        <p class="px-4 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider" data-i18n="nav_account">Compte</p>
-        <div class="flex flex-col gap-2">
-            <a href="javascript:void(0)" onclick="switchPage('profile-social')" class="nav-link-pro">
-                <i class="fa-solid fa-user-circle w-5 text-center text-sm"></i> 
-                <span>Mon Profil</span>
-            </a>
-            <a href="javascript:void(0)" onclick="toggleOrders()" class="nav-link-pro">
-                <i class="fa-solid fa-receipt w-5 text-center text-sm"></i> 
-                <span data-i18n="nav_orders">Mes Commandes</span>
-            </a>
-        </div>
+    <!-- 1. PROFIL UTILISATEUR (Style Facebook) -->
+    <div id="sidebar-user-card" onclick="switchPage('profile-social'); toggleSidebar();" 
+     class="p-3 flex items-center gap-3 hover:bg-slate-100 dark:hover:bg-slate-800/60 cursor-pointer transition-all mx-2 mt-3 rounded-lg group">
+    
+    <div class="relative">
+        <img id="sidebar-avatar" src="https://ui-avatars.com/api/?name=Guest&background=e2e8f0&color=64748b" 
+             class="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full"></div>
     </div>
-    <!-- SECTION OUTILS -->
-    <div>
-        <p class="px-4 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider" data-i18n="nav_outils">Outils</p>
-        <div class="flex flex-col gap-2">
-            <!-- BOUTON CONVERTIR FICHIER -->
-            <a href="javascript:void(0)" onclick="switchPage('convert')" class="nav-link-pro">
-                <i class="fa-solid fa-file-import w-5 text-center text-sm"></i> 
-                <span>Conversion fichiers</span>
-            </a>
-            <!-- BOUTON CONVERTIR FICHIER -->
-            <a href="javascript:void(0)" onclick="switchPage('convert')" class="nav-link-pro">
-                <i class="fa-solid fa-print w-5 text-center text-sm"></i> 
-                <span>Impression</span>
-            </a>
+    
+    <div class="flex-1 overflow-hidden">
+        <h4 id="sidebar-username" class="font-bold text-[15px] text-black dark:text-white leading-tight truncate">
+            Chargement...
+        </h4>
+        <span class="text-[13px] text-slate-500 dark:text-slate-400 font-normal group-hover:underline">
+            Voir votre profil
+        </span>
     </div>
-    <!-- SECTION APPLICATION (NOUVEAU) -->
-    <div class="mt-8">
-        <p class="px-4 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider"data-i18n="nav_app">Application</p>
-        <div class="flex flex-col gap-2">
-            <a href="javascript:void(0)" onclick="toggleSettings()" class="nav-link-pro">
-                <i class="fa-solid fa-gear w-5 text-center text-sm"></i> 
-                <span data-i18n="nav_settings">Paramètres</span>
-            </a>
-            <a href="javascript:void(0)" onclick="toggleSupport()" class="nav-link-pro">
-                <i class="fa-solid fa-headset w-5 text-center text-sm"></i> 
-                <span data-i18n="nav_help">Aide</span>
-            </a>
-            <a href="javascript:void(0)" onclick="toggleAbout()" class="nav-link-pro">
-                <i class="fa-solid fa-circle-info w-5 text-center text-sm"></i> 
-                <span data-i18n="nav_about">À propos</span>
-            </a>
-            <!-- Lien Admin (Caché par défaut) -->
-            <a href="javascript:void(0)" onclick="switchPage('admin')" id="nav-admin-link" class="nav-link-pro hidden">
-                <i class="fa-solid fa-shield-halved w-5 text-center text-sm"></i> 
-                <span>Espace Admin</span>
-            </a>
-        </div>
-    </div>
-</nav>
-            <div class="p-5 border-t border-slate-100 bg-slate-50/50">
-                <div class="flex bg-slate-200/50 p-1 rounded-xl">
-                    <button onclick="setTheme('light')" id="btn-light" class="flex-1 py-2.5 text-xs font-semibold rounded-lg shadow-sm bg-white text-slate-800 transition-all flex justify-center items-center gap-2"><i class="fas fa-sun text-xs"></i> Light</button>
-                    <button onclick="setTheme('dark')" id="btn-dark" class="flex-1 py-2.5 text-xs font-semibold rounded-lg text-slate-500 hover:text-slate-800 transition-all flex justify-center items-center gap-2"><i class="fas fa-moon text-xs"></i> Dark</button>
-                </div>
+
+    <i class="fas fa-chevron-right text-[10px] text-slate-400"></i>
+</div>
+
+    <!-- LISTE MENU -->
+    <nav class="flex-1 p-2 space-y-1">
+        
+        <!-- MENU PRINCIPAL -->
+        <a onclick="switchPage('home'); toggleSidebar();" class="nav-link-pro active group">
+            <div class="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center mr-3 transition-colors group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50">
+                <i class="fas fa-house text-indigo-600 dark:text-indigo-400 text-sm"></i>
             </div>
+            <span>Accueil</span>
+        </a>
+
+        <a onclick="switchPage('messages'); toggleSidebar();" class="nav-link-pro group">
+            <div class="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center mr-3 transition-colors group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50">
+                <i class="fas fa-comment-dots text-blue-500 dark:text-blue-400 text-sm"></i>
+            </div>
+            <span>Messenger</span>
+        </a>
+
+        <a onclick="switchPage('notifications'); toggleSidebar();" class="nav-link-pro group">
+            <div class="w-8 h-8 rounded-lg bg-pink-50 dark:bg-pink-900/30 flex items-center justify-center mr-3 transition-colors group-hover:bg-pink-100 dark:group-hover:bg-pink-900/50">
+                <i class="fas fa-bell text-pink-500 dark:text-pink-400 text-sm"></i>
+            </div>
+            <span>Notifications</span>
+        </a>
+
+        <a onclick="switchPage('marketplace'); toggleSidebar();" class="nav-link-pro group">
+            <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center mr-3 transition-colors group-hover:bg-slate-200 dark:group-hover:bg-slate-700">
+                <i class="fas fa-store text-slate-600 dark:text-slate-400 text-sm"></i>
+            </div>
+            <span>Marketplace</span>
+        </a>
+
+        <!-- SÉPARATEUR -->
+        <div class="border-t border-slate-100 dark:border-slate-800 my-3 mx-2"></div>
+
+        <!-- RACCOURCIS (Nouveau Design) -->
+        <!-- RACCOURCIS (Style Grille Facebook) -->
+<div class="flex items-center justify-between px-4 mb-3">
+    <p class="text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tight">Raccourcis</p>
+    <button class="text-blue-600 dark:text-blue-400 text-[12px] font-medium">Modifier</button>
+</div>
+
+<div class="grid grid-cols-3 gap-y-4 gap-x-2 px-2 mb-6">
+    
+    <a href="javascript:void(0)" onclick="switchPage('saved'); toggleSidebar();" class="flex flex-col items-center group">
+        <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-1 group-active:scale-90 transition-transform">
+            <i class="fas fa-bookmark text-blue-600 text-[20px]"></i>
         </div>
+        <span class="text-[12px] font-medium text-slate-900 dark:text-slate-200">Enregistrés</span>
+    </a>
+
+    <a href="javascript:void(0)" onclick="switchPage('pages'); toggleSidebar();" class="flex flex-col items-center group">
+        <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-1 group-active:scale-90 transition-transform">
+            <i class="fas fa-flag text-orange-500 text-[20px]"></i>
+        </div>
+        <span class="text-[12px] font-medium text-slate-900 dark:text-slate-200">Pages</span>
+    </a>
+
+    <a href="javascript:void(0)" onclick="switchPage('groups'); toggleSidebar();" class="flex flex-col items-center group">
+        <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-1 group-active:scale-90 transition-transform">
+            <i class="fas fa-users text-cyan-500 text-[20px]"></i>
+        </div>
+        <span class="text-[12px] font-medium text-slate-900 dark:text-slate-200">Canaux</span>
+    </a>
+
+    <a href="javascript:void(0)" onclick="switchPage('events'); toggleSidebar();" class="flex flex-col items-center group">
+        <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-1 group-active:scale-90 transition-transform">
+            <i class="fas fa-calendar-day text-red-500 text-[20px]"></i>
+        </div>
+        <span class="text-[12px] font-medium text-slate-900 dark:text-slate-200">Événements</span>
+    </a>
+
+    <a href="javascript:void(0)" onclick="switchPage('stats'); toggleSidebar();" class="flex flex-col items-center group">
+        <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-1 group-active:scale-90 transition-transform">
+            <i class="fas fa-chart-simple text-emerald-500 text-[20px]"></i>
+        </div>
+        <span class="text-[12px] font-medium text-slate-900 dark:text-slate-200">Tableau bord</span>
+    </a>
+
+</div>
+
+        <div class="flex items-center justify-between px-4 mb-3">
+    <p class="text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tight">Outils professionnels</p>
+    <button class="text-blue-600 dark:text-blue-400 text-[12px] font-medium hover:underline">Voir tout</button>
+</div>
+
+<div class="grid grid-cols-3 gap-1 px-2 mb-6">
+
+    <a href="javascript:void(0)" onclick="switchPage('certification'); toggleSidebar();" class="flex flex-col items-center p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all group">
+        <div class="w-11 h-11 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-2 group-active:scale-95 transition-transform">
+            <i class="fas fa-check-circle text-sky-500 text-[18px]"></i>
+        </div>
+        <span class="text-[12px] font-medium text-slate-900 dark:text-slate-200">Vérifié</span>
+    </a>
+
+</div>
+
+    <!-- FOOTER -->
+    <div class="p-4 border-t border-slate-100 dark:border-slate-800 mt-auto">
+    
+    <a onclick="switchPage('settings'); toggleSidebar();" 
+       class="flex items-center gap-3 p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer">
+        <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
+            <i class="fas fa-cog text-sm"></i>
+        </div>
+        <span class="text-[13px] font-semibold">Paramètres et confidentialité</span>
+    </a>
+
+    <a onclick="handleLogout();" 
+       class="flex items-center gap-3 p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all cursor-pointer mt-1">
+        <div class="w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center">
+            <i class="fas fa-sign-out-alt text-sm"></i>
+        </div>
+        <span class="text-[13px] font-semibold">Se déconnecter</span>
+    </a>
+    
+    <div class="mt-4 flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl shadow-inner">
+        <button onclick="setTheme('light')" id="btn-light-menu" 
+            class="flex-1 flex items-center justify-center gap-2 py-2 text-[11px] font-bold rounded-lg transition-all
+            bg-white dark:bg-transparent text-slate-900 dark:text-slate-400 shadow-sm dark:shadow-none">
+            <i class="fas fa-sun"></i> Clair
+        </button>
+        
+        <button onclick="setTheme('dark')" id="btn-dark-menu" 
+            class="flex-1 flex items-center justify-center gap-2 py-2 text-[11px] font-bold rounded-lg transition-all
+            bg-transparent dark:bg-[#242526] text-slate-500 dark:text-white dark:shadow-sm">
+            <i class="fas fa-moon"></i> Sombre
+        </button>
     </div>
+</div>
+</div>
+        </div>
 
     <!-- HEADERS -->
     <!-- MOBILE HEADER -->
@@ -1532,7 +1652,7 @@ body, html {
     <!-- MAIN CONTENT WRAPPER -->
    <!-- PAGE 1: ACCUEIL (FEED GLOBAL) -->
 <div id="home-view" class="page-view">
-    <section class="max-w-2xl mx-auto px-4 pt-10 pb-20">
+    <section class="max-w-2xl mx-auto px-4 pt-10 pb-20 ">
         
         <!-- NOUVEAU WRAPPER STICKY MODIFIÉ -->
 <div class="sticky top-[42px] z-[3500] mb-10 py-1 -mx-4 px-4 border-b border-slate-200/60 dark:border-slate-700/50 transition-all">
@@ -3261,7 +3381,7 @@ function setupInfiniteScroll() {
                 } catch (e) {
                     console.warn(`⚠️ Échec ${nom}:`, e.message);
                 }
-            };
+            }; loadSidebarUser();
 
             // Lancement séquentiel cadencé
             await Promise.allSettled([
@@ -6465,6 +6585,33 @@ window.submitModalComment = submitModalComment;
 
     // Appel des fonctions de tri
     filterType === 'shorts' ? filterFeed('shorts') : sortFeed(filterType);
+}
+            // --- CHARGER LES INFOS DANS LE MENU SIDEBAR ---
+async function loadSidebarUser() {
+    try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+
+        const { data: profile } = await supabaseClient
+            .from('profiles')
+            .select('full_name, avatar_url')
+            .eq('id', user.id)
+            .single();
+
+        if (profile) {
+            const imgEl = document.getElementById('sidebar-avatar');
+            const nameEl = document.getElementById('sidebar-username');
+
+            if (imgEl) {
+                imgEl.src = profile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.full_name || 'User')}&background=e2e8f0&color=64748b`;
+            }
+            if (nameEl) {
+                nameEl.innerText = profile.full_name || 'Utilisateur';
+            }
+        }
+    } catch (e) {
+        console.error("Erreur chargement sidebar user:", e);
+    }
 }
 </script>
 </body>
