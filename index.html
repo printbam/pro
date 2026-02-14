@@ -259,16 +259,6 @@
 
         #main-content { transition: filter 0.3s ease; will-change: filter; }
 
-        .mobile-dock { display: none; }
-        @media (max-width: 768px) {
-            .mobile-dock { display: flex !important; position: fixed !important; bottom: 24px !important; left: 50% !important; transform: translateX(-50%) !important; width: 90% !important; max-width: 400px !important; z-index: 9999 !important; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
-            h1 { font-size: 1.75rem !important; } h2 { font-size: 1.5rem !important; }
-            .glass:hover { transform: none !important; }
-            .nav-desktop-container { display: none !important; } .mobile-hide { display: none !important; }
-            body { overscroll-behavior-y: none; }
-        }
-        @media (min-width:769px) { .mobile-dock { display: none !important; } }
-
         /* TERMINAL STYLES */
         /* --- TERMINAL WRAPPER PRINCIPAL --- */
 #terminal-wrapper { 
@@ -1224,18 +1214,12 @@ body.dark-mode .post-dropdown-item.danger:hover { background: rgba(239, 68, 68, 
     transition: opacity 0.3s ease;
 }
 
-#post-modal-overlay.active {
-    display: flex;
-    opacity: 1;
-}
-
 .post-modal-card {
     background: white;
     width: 100%;
     max-width: 1000px; /* Grand écran */
     height: 90vh;
     max-height: 800px;
-    border-radius: 20px;
     display: flex;
     overflow: hidden;
     box-shadow: 0 20px 60px -10px rgba(0,0,0,0.4);
@@ -1315,6 +1299,48 @@ body.dark-mode .post-modal-card { background: #1e293b; }
 body.dark-mode .post-modal-details { background: #1e293b; }
 body.dark-mode .post-modal-header { border-color: #334155; }
 body.dark-mode .post-modal-footer { border-color: #334155; }
+
+/* Caché par défaut */
+#post-modal-overlay {
+    display: none; 
+    opacity: 0;
+    pointer-events: none; /* Empêche les clics quand invisible */
+}
+
+        /* --- CORRECTION FORCEE MODALE --- */
+/* Force l'affichage peu importe les autres classes */
+#post-modal-overlay.active {
+    display: flex !important;
+    opacity: 1 !important;
+    z-index: 99999 !important;
+    pointer-events: auto !important;
+}
+
+/* S'assure que le fond est bien visible */
+#post-modal-overlay {
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
+}
+ /* Supprime les marges parasites du body sur mobile */
+body, html {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow-x: hidden;
+}
+
+/* Force la barre à ignorer les paddings des parents */
+.mobile-dock {
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important; /* Enlève les coins arrondis */
+    width: 100vw !important; /* Prend toute la largeur de l'écran */
+    
+    /* Pour les iPhones récents (gestion de la barre home) */
+    padding-bottom: env(safe-area-inset-bottom);
+    height: calc(60px + env(safe-area-inset-bottom));
+}       
     </style>
 </head>
 <body>
@@ -1440,27 +1466,36 @@ body.dark-mode .post-modal-footer { border-color: #334155; }
         </div>
     </div>
 
-    <!-- DESKTOP NAV -->
-    <div class="nav-desktop-container fixed top-0 w-full z-[4000] px-6 py-6 transition-all duration-300">
-        <nav id="nav-main" class="glass-header max-w-6xl mx-auto rounded-2xl px-6 h-16 flex justify-between items-center transition-all duration-300">
-            <a onclick="switchPage('home')" class="flex items-center gap-2 group cursor-pointer">
-                <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white text-xs shadow-lg shadow-indigo-200 group-hover:scale-110 transition-transform"><i class="fas fa-print"></i></div>
-                <span class="text-xl font-bold text-slate-900 tracking-tight group-hover:text-indigo-600 transition-colors">Print<span class="text-slate-400 group-hover:text-indigo-400">bam</span></span>
-            </a>
-            <div class="hidden md:flex items-center gap-1">
-                <a onclick="switchPage('home')" class="nav-link-pro rounded-lg"><span data-i18n="nav_home">Accueil</span></a>
-                <a href="javascript:void(0)" onclick="toggleChat()" class="nav-link-pro rounded-lg">
-                    <i class="fas fa-comments"></i> <span>Discussion</span>
-                </a>
-                <a onclick="switchPage('marketplace')" class="nav-link-pro rounded-lg"><span data-i18n="nav_market">Marketplace</span></a>
-            </div>
-            <div class="flex items-center gap-3">
-                <button onclick="toggleSidebar()" class="md:hidden w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors"><i class="fas fa-bars"></i></button>
-                <a href="login.html" class="hidden md:block text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-colors" data-i18n="nav_login">Connexion</a>
-                <a href="javascript:void(0)" onclick="openTerminal()" class="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-indigo-600 transition-all shadow-lg shadow-indigo-200/50 flex items-center gap-2 btn-glow" aria-label="Démarrer une commande"><span data-i18n="btn_start">Démarrer</span> <i class="fas fa-arrow-right text-[10px]"></i></a>
-            </div>
-        </nav>
+    <!-- MOBILE DOCK -->
+    <div class="mobile-dock md:hidden fixed bottom-0 left-0 w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 h-[47px] flex items-center justify-around z-[9999] m-0 p-0">
+    
+    <a onclick="switchPage('home')" class="flex flex-col items-center justify-center w-full h-full cursor-pointer">
+        <i class="fas fa-house text-[20px] text-slate-900 dark:text-white"></i>
+    </a>
+
+    <a onclick="switchPage('marketplace')" class="flex flex-col items-center justify-center w-full h-full cursor-pointer">
+        <i class="far fa-compass text-[20px] text-slate-500"></i>
+    </a>
+
+    <div class="flex items-center justify-center w-full h-full">
+        <a href="javascript:void(0)" onclick="openNewPostModal()" class="flex items-center justify-center border-2 border-slate-900 dark:border-white rounded-[8px] w-[22px] h-[22px]">
+            <i class="fas fa-plus text-slate-900 dark:text-white text-[10px]"></i>
+        </a>
     </div>
+
+    <a href="javascript:void(0)" onclick="switchPage('messages')" class="flex flex-col items-center justify-center w-full h-full cursor-pointer relative">
+        <i class="far fa-paper-plane text-[20px] text-slate-500"></i>
+        <span id="msg-badge-count" class="hidden absolute top-1 right-4 bg-red-500 text-white text-[10px] font-bold px-1 rounded-full min-w-[15px] h-4 border-2 border-white dark:border-slate-900">0</span>
+    </a>
+
+    <a href="javascript:void(0)" onclick="switchPage('profile-social')" class="flex flex-col items-center justify-center w-full h-full cursor-pointer">
+        <div class="w-6 h-6 rounded-full border border-slate-300 overflow-hidden">
+            <img id="dock-avatar-img" src="" alt="" class="w-full h-full object-cover hidden">
+            <i id="dock-avatar-icon" class="fas fa-user text-slate-500 flex items-center justify-center h-full text-xs"></i>
+        </div>
+    </a>
+</div>
+
     <!-- MAIN CONTENT WRAPPER -->
    <!-- PAGE 1: ACCUEIL (FEED GLOBAL) -->
 <div id="home-view" class="page-view">
@@ -2358,52 +2393,6 @@ body.dark-mode .post-modal-footer { border-color: #334155; }
         </div>
     </section>
 </div>
-    </div>
-        
-    <!-- MOBILE DOCK -->
-    <div class="mobile-dock md:hidden bg-white rounded-2xl px-2 py-2 flex items-center justify-between shadow-xl border border-slate-100">
-        <a onclick="switchPage('home')" class="flex flex-1 flex-col items-center gap-1 group cursor-pointer"><i class="fas fa-house text-lg text-indigo-600"></i><span class="text-[9px] font-medium text-indigo-600">Explorer</span></a>
-        <a onclick="switchPage('marketplace')" class="flex flex-1 flex-col items-center gap-1 group cursor-pointer"><i class="fas fa-shopping-bag text-lg text-slate-400 group-hover:text-slate-600"></i><span class="text-[9px] font-medium text-slate-400">Marketplace</span></a>
-        <!-- BOUTON CENTRAL DU DOCK MODIFIÉ -->
-<div class="flex flex-1 justify-center -mt-6"> 
-    <a href="javascript:void(0)" 
-       onclick="openNewPostModal()" 
-       class="relative group cursor-pointer">
-        <div class="w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-indigo-200 border-4 border-slate-50">
-            <!-- CHANGEZ L'ICÔNE ICI -->
-            <i class="fas fa-plus text-white text-lg"></i>
-        </div>
-    </a>
-</div>
-        <!-- NOUVEAU CODE POUR L'ONGLET MESSAGES -->
-<!-- LIEN MESSAGES AVEC BADGE -->
-<a href="javascript:void(0)" onclick="switchPage('messages')" class="flex flex-1 flex-col items-center gap-1 group cursor-pointer relative">
-    <div class="relative">
-        <i class="far fa-paper-plane text-lg text-slate-400 group-hover:text-indigo-600 transition-colors"></i>
-        <!-- LE BADGE (Caché par défaut) -->
-        <span id="msg-badge-count" class="hidden absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center shadow-sm border-2 border-white dark:border-slate-900">0</span>
-    </div>
-    <span class="text-[9px] font-medium text-slate-400">Messages</span>
-</a>
-        <!-- LIEN PROFIL MODIFIÉ -->
-<a href="javascript:void(0)" onclick="switchPage('profile-social')" class="flex flex-1 flex-col items-center gap-1 group relative">
-    
-    <!-- Conteneur de l'avatar (Rond) -->
-    <div class="w-10 h-10 rounded-full bg-indigo-100 border-2 border-indigo-600 overflow-hidden flex items-center justify-center relative shadow-md group-hover:scale-110 transition-transform">
-        
-        <!-- Image de l'utilisateur (Cachée par défaut) -->
-        <img id="dock-avatar-img" src="" alt="Profil" class="w-full h-full object-cover hidden">
-        
-        <!-- Icône par défaut (Visible si pas de photo) -->
-        <i id="dock-avatar-icon" class="fas fa-user text-indigo-600 text-sm"></i>
-    </div>
-
-    <!-- Texte -->
-    <span class="text-[9px] font-bold text-indigo-600">Profil</span>
-    
-    <!-- Petit badge rouge si non lu (Optionnel, décochez pour l'enlever) -->
-    <div class="absolute top-0 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-slate-50"></div>
-</a>
     </div>
 
     <!-- SETTINGS, SUPPORT, ORDERS OVERLAYS -->
@@ -6227,31 +6216,42 @@ function closeZenMode() {
     document.body.style.overflow = 'auto'; // Réactive le scroll
 }
 
-            let currentModalPostId = null;
-let currentModalIsOwner = false;
+// --- VARIABLES GLOBALES MODALE ---
+let currentModalPostId = null;
 
-// 1. Ouvrir la modale (VERSION SÉCURISÉE)
-// 1. Ouvrir la modale (VERSION CORRIGÉE)
+// 1. Ouvrir la modale (VERSION CORRIGEE)
 async function openPostModal(postId) {
-    // 1. On récupère l'overlay
+    console.log("Tentative d'ouverture du post :", postId);
+    
     const overlay = document.getElementById('post-modal-overlay');
-
-    // SÉCURITÉ : Si l'HTML est manquant, on débloque la page
     if (!overlay) {
-        console.error("Erreur critique : #post-modal-overlay introuvable.");
-        alert("Erreur d'interface. Rechargez la page.");
-        document.body.style.overflow = 'auto'; // Débloquer le scroll par sécurité
+        console.error("Erreur: L'élément #post-modal-overlay est introuvable dans le HTML.");
         return;
     }
 
-    // 2. On bloque le scroll et on affiche le loader
+    // On bloque le scroll
     document.body.style.overflow = 'hidden';
-    overlay.classList.remove('hidden'); // Retire la classe Tailwind "hidden"
-    overlay.classList.add('active');    // AJOUTE LA CLASSE "active" (CORRECTION ICI)
-    overlay.innerHTML = `<div class="w-full h-full flex items-center justify-center text-white"><i class="fas fa-spinner fa-spin text-4xl"></i></div>`;
+    
+    // On affiche le loader immédiatement
+    // On force la suppression de 'hidden' et l'ajout de 'active'
+        // On affiche le loader immédiatement
+    overlay.classList.remove('hidden');
+    overlay.classList.add('active');
+    
+    // On force les styles en ligne pour "casser" le blocage CSS
+    overlay.style.opacity = '1';
+    overlay.style.pointerEvents = 'auto';
+    overlay.style.display = 'flex';
+    overlay.style.zIndex = '99999';
+    
+    // On met un loader
+    overlay.innerHTML = `
+        <div class="w-full h-full flex items-center justify-center">
+            <i class="fas fa-spinner fa-spin text-4xl text-white"></i>
+        </div>`;
 
     try {
-        // 3. Récupération des données
+        // Récupération des données
         const { data: { user } } = await supabaseClient.auth.getUser();
         
         const { data: post, error } = await supabaseClient
@@ -6260,7 +6260,7 @@ async function openPostModal(postId) {
             .eq('id', postId)
             .single();
 
-        if (error || !post) throw new Error("Post introuvable");
+        if (error || !post) throw new Error("Post introuvable ou erreur BDD");
 
         const { data: profile } = await supabaseClient
             .from('profiles')
@@ -6269,25 +6269,25 @@ async function openPostModal(postId) {
             .single();
 
         currentModalPostId = postId;
-        currentModalIsOwner = (user && user.id === post.user_id);
+        const isMyPost = (user && user.id === post.user_id);
 
-        // 4. Injection du HTML
+        // Injection du HTML
         overlay.innerHTML = `
-            <div id="post-modal-card" class="bg-white dark:bg-slate-900 w-full max-w-5xl h-[90vh] rounded-2xl flex flex-col md:flex-row overflow-hidden shadow-2xl relative" onclick="event.stopPropagation()">
+            <div class="bg-white dark:bg-slate-900 w-full max-w-5xl h-[90vh] rounded-2xl flex flex-col md:flex-row overflow-hidden shadow-2xl relative" onclick="event.stopPropagation()">
                 
-                <!-- MEDIA -->
-                <div class="flex-1 bg-black flex items-center justify-center">
+                <!-- PARTIE GAUCHE : MEDIA -->
+                <div class="flex-1 bg-black flex items-center justify-center relative">
                     ${post.is_short && post.video_url 
                         ? `<video src="${post.video_url}" controls autoplay class="max-h-full max-w-full"></video>` 
                         : `<img src="${post.image_url}" class="max-h-full max-w-full object-contain">`
                     }
                 </div>
 
-                <!-- INFOS -->
+                <!-- PARTIE DROITE : INFOS -->
                 <div class="w-full md:w-[400px] flex flex-col border-l border-slate-100 dark:border-slate-700">
                     
                     <!-- Header -->
-                    <div class="p-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                    <div class="p-4 border-b dark:border-slate-700 flex items-center justify-between">
                         <div class="flex items-center gap-3">
                             <img src="${profile?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg'}" class="w-10 h-10 rounded-full">
                             <div>
@@ -6296,22 +6296,27 @@ async function openPostModal(postId) {
                             </div>
                         </div>
                         <div class="flex items-center gap-2 relative">
-                            <button onclick="toggleModalMenu()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500"><i class="fas fa-ellipsis-h"></i></button>
-                            <div id="modal-dropdown-menu" class="post-dropdown-menu hidden" style="display:none;"></div>
-                            <button onclick="closePostModal()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-500">
+                            <button onclick="toggleModalMenu()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500">
+                                <i class="fas fa-ellipsis-h"></i>
+                            </button>
+                            <div id="modal-dropdown-menu" class="post-dropdown-menu hidden absolute top-10 right-0 bg-white dark:bg-slate-800 shadow-xl rounded-lg w-48 py-1 border dark:border-slate-700 z-50"></div>
+                            <button onclick="closePostModal()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
                     </div>
 
-                    <!-- Corps -->
-                    <div class="flex-1 overflow-y-auto p-4">
-                        <p class="text-sm mb-4 text-slate-700 dark:text-slate-300"><span class="font-bold text-slate-900 dark:text-white">${profile?.full_name || 'User'}</span> ${post.caption || ''}</p>
+                    <!-- Corps (Commentaires) -->
+                    <div id="modal-comments-container" class="flex-1 overflow-y-auto p-4">
+                        <p class="text-sm mb-4 text-slate-700 dark:text-slate-300">
+                            <span class="font-bold text-slate-900 dark:text-white mr-2">${profile?.full_name || 'User'}</span> 
+                            ${post.caption || ''}
+                        </p>
                         <div id="modal-comments-list" class="space-y-3 text-sm"></div>
                     </div>
 
                     <!-- Footer -->
-                    <div class="p-4 border-t border-slate-100 dark:border-slate-700">
+                    <div class="p-4 border-t dark:border-slate-700">
                         <form onsubmit="submitModalComment(event)" class="flex items-center gap-2">
                             <input type="text" id="modal-comment-input" placeholder="Commenter..." class="flex-1 text-sm outline-none bg-transparent">
                             <button type="submit" class="text-indigo-600 font-bold text-xs">Envoyer</button>
@@ -6321,239 +6326,84 @@ async function openPostModal(postId) {
             </div>
         `;
 
-        // 5. On injecte le menu adaptatif
-        renderModalMenu(currentModalIsOwner, post.user_id);
+        // Générer le menu
+        renderModalMenu(isMyPost, post.user_id);
 
     } catch (err) {
         console.error("Erreur critique modale:", err);
-        // En cas d'erreur, on débloque la page
+        alert("Impossible d'ouvrir ce post.");
         closePostModal();
-        alert("Impossible d'ouvrir cette publication.");
     }
 }
 
-// Fonction helper pour charger les commentaires (appelée à la fin)
-async function loadModalComments(postId) {
-    const container = document.getElementById('modal-comments-container');
-    if(!container) return;
+// 2. Fermer la modale
+function closePostModal() {
+    const overlay = document.getElementById('post-modal-overlay');
+    if (overlay) {
+        overlay.classList.remove('active');
+        overlay.classList.add('hidden');
+        overlay.innerHTML = ''; 
+    }
+    document.body.style.overflow = 'auto';
+}
 
-    const { data: comments } = await supabaseClient
-        .from('post_comments')
-        .select('content, created_at, profiles(full_name)')
-        .eq('post_id', postId)
-        .order('created_at', { ascending: false });
+// 3. Générer le menu (FONCTION MANQUANTE CORRIGÉE)
+function renderModalMenu(isOwner, targetUserId) {
+    const menu = document.getElementById('modal-dropdown-menu');
+    if (!menu) return;
 
-    let html = '';
-    if (comments && comments.length > 0) {
-        comments.forEach(c => {
-            html += `<div class="text-sm mb-2"><span class="font-bold">${c.profiles?.full_name || 'User'}</span> <span class="text-slate-600">${c.content}</span></div>`;
-        });
+    if (isOwner) {
+        menu.innerHTML = `
+            <div onclick="deletePostAction()" class="post-dropdown-item danger">
+                <i class="fas fa-trash-alt"></i> Supprimer
+            </div>`;
     } else {
-        html = '<div class="text-xs text-center text-slate-400 pt-4">Aucun commentaire</div>';
+        menu.innerHTML = `
+            <div onclick="reportPostAction()" class="post-dropdown-item danger">
+                <i class="fas fa-flag"></i> Signaler
+            </div>`;
     }
-    
-    // On ajoute après le caption
-    container.innerHTML = `<p class="text-sm mb-4 leading-relaxed"><span class="font-bold mr-2">...</span></p>` + html; // Simplifié pour l'exemple
 }
 
-// 4. Actions du menu
+// 4. Actions simples
 function toggleModalMenu() {
     const menu = document.getElementById('modal-dropdown-menu');
-    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    if(menu) menu.classList.toggle('hidden');
 }
 
-async function deletePostModal() {
-    if(!confirm("Voulez-vous vraiment supprimer cette publication ?")) return;
-    
+async function deletePostAction() {
+    if (!confirm("Supprimer ?")) return;
     await supabaseClient.from('posts').delete().eq('id', currentModalPostId);
-    showToast("Publication supprimée", "success");
+    showToast("Supprimé", "success");
     closePostModal();
-    if(typeof loadGlobalFeed === 'function') loadGlobalFeed(); // Rafraîchir le feed
+    if(typeof loadGlobalFeed === 'function') loadGlobalFeed();
 }
 
-function unfollowUserModal(userId) {
-    // Similaire à votre fonction toggleFollow
-    toggleFollow(userId, document.createElement('button')); // Hack pour utiliser votre fonction existante
-    showToast("Vous ne suivez plus cette personne", "success");
+function reportPostAction() {
+    showToast("Signalé", "success");
     closePostModal();
 }
 
-function blockUserModal(userId) {
-    // Placeholder - Nécessite une table 'blocked_users' dans Supabase
-    showToast("Utilisateur bloqué (Fonctionnalité à implémenter)", "warning");
-    closePostModal();
-}
-
-// 5. Commenter depuis la modale
 async function submitModalComment(e) {
     e.preventDefault();
     const input = document.getElementById('modal-comment-input');
     const content = input.value.trim();
     if(!content) return;
-
-    // Réutiliser votre logique de commentaire existante
-    // Pour faire simple ici, on appelle la fonction submitComment simulée ou on refait l'insert
+    
     const { data: { user } } = await supabaseClient.auth.getUser();
     await supabaseClient.from('post_comments').insert([{ user_id: user.id, post_id: currentModalPostId, content: content }]);
-    
     input.value = '';
-    showToast("Commentaire ajouté", "success");
-    openPostModal(currentModalPostId); // Recharger pour voir le com
-}
-            // --- FONCTIONS MANQUANTES POUR LA MODALE ---
-
-// 1. Générer le menu adaptatif (Propriétaire vs Visiteur)
-function renderModalMenu(isOwner, targetUserId) {
-    const menu = document.getElementById('modal-dropdown-menu');
-    if (!menu) return;
-
-    // CORRECTION : On utilise la variable globale 'currentModalPostId' qui est déjà définie
-    const postId = currentModalPostId; 
-
-    if (isOwner) {
-        // MENU PROPRIÉTAIRE (Modifier / Supprimer)
-        menu.innerHTML = `
-            <div onclick="editPostAction()" class="post-dropdown-item">
-                <i class="fas fa-pencil-alt"></i> Modifier
-            </div>
-            <div onclick="deletePostAction()" class="post-dropdown-item danger">
-                <i class="fas fa-trash-alt"></i> Supprimer
-            </div>
-        `;
-    } else {
-        // MENU VISITEUR (Enregistrer / Signaler / Bloquer)
-        menu.innerHTML = `
-            <div onclick="savePostAction()" class="post-dropdown-item">
-                <i class="far fa-bookmark"></i> Enregistrer
-            </div>
-            <div onclick="reportPostAction()" class="post-dropdown-item danger">
-                <i class="fas fa-flag"></i> Signaler
-            </div>
-            <div onclick="blockUserAction('${targetUserId}')" class="post-dropdown-item">
-                <i class="fas fa-ban"></i> Bloquer
-            </div>
-        `;
-    }
+    showToast("Commenté", "success");
+    openPostModal(currentModalPostId); // Recharge
 }
 
-            // FONCTION POUR FERMER LA MODALE
-function closePostModal(event) {
-    // Sécurité clic
-    if (event && event.target !== event.currentTarget) return;
-
-    const overlay = document.getElementById('post-modal-overlay');
-    
-    if (overlay) {
-        overlay.classList.remove('active'); // RETIRE LA CLASSE ACTIVE
-        overlay.classList.add('hidden');    // CACHE L'ÉLÉMENT (Optionnel mais propre)
-        overlay.innerHTML = ''; 
-    }
-    
-    // On réactive le scroll
-    document.body.style.overflow = 'auto';
-}
-
-// FONCTION POUR CHARGER LES COMMENTAIRES DANS LA MODALE
-async function loadModalComments(postId) {
-    const container = document.getElementById('modal-comments-container');
-    if (!container) return;
-
-    try {
-        // Récupération des commentaires
-        const { data: comments } = await supabaseClient
-            .from('post_comments')
-            .select('content, created_at, profiles(full_name)')
-            .eq('post_id', postId)
-            .order('created_at', { ascending: true });
-
-        let htmlComments = '';
-        
-        if (comments && comments.length > 0) {
-            comments.forEach(c => {
-                htmlComments += `
-                    <div class="text-sm mb-3">
-                        <span class="font-bold text-slate-900 dark:text-white mr-2">${c.profiles?.full_name || 'User'}</span>
-                        <span class="text-slate-700 dark:text-slate-300">${c.content}</span>
-                    </div>
-                `;
-            });
-        } else {
-            htmlComments = `<div class="text-xs text-center text-slate-400 pt-4">Aucun commentaire pour le moment.</div>`;
-        }
-
-        // On injecte après le premier paragraphe (la légende)
-        // Note : Pour simplifier, on re-construit tout le corps ici
-        // Mais dans openPostModal, on a déjà mis la légende. 
-        // Pour simplifier, on va juste ajouter les commentaires à la suite.
-        
-        // On cible une div spécifique pour les commentaires si elle existe, sinon on ajoute à la fin
-        const commentsWrapper = document.createElement('div');
-        commentsWrapper.className = "border-t border-slate-100 dark:border-slate-700 pt-4 mt-4";
-        commentsWrapper.innerHTML = htmlComments;
-        
-        // On ajoute les commentaires à la fin du container
-        container.appendChild(commentsWrapper);
-
-    } catch (err) {
-        console.error("Erreur chargement commentaires modale:", err);
-    }
-}
-
-
-// 2. Ouvrir/Fermer le menu de la modale
-function toggleModalMenu() {
-    const menu = document.getElementById('modal-dropdown-menu');
-    if (menu) {
-        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-    }
-}
-
-// --- ACTIONS DU MENU ---
-
-// Action: Supprimer (Propriétaire)
-async function deletePostAction() {
-    if (!confirm("Voulez-vous vraiment supprimer cette publication ?")) return;
-    
-    const { error } = await supabaseClient
-        .from('posts')
-        .delete()
-        .eq('id', currentModalPostId);
-
-    if (error) {
-        showToast("Erreur lors de la suppression", "error");
-    } else {
-        showToast("Publication supprimée", "success");
-        closePostModal();
-        // Rafraîchir le feed pour que le post disparaisse
-        if (typeof loadGlobalFeed === 'function') loadGlobalFeed();
-    }
-}
-
-// Action: Modifier (Propriétaire) - Placeholder
-function editPostAction() {
-    showToast("Fonctionnalité de modification à venir", "warning");
-    toggleModalMenu(); // Fermer le menu
-}
-
-// Action: Enregistrer (Visiteur)
-function savePostAction() {
-    showToast("Publication enregistrée (Fonctionnalité à venir)", "success");
-    toggleModalMenu();
-}
-
-// Action: Signaler (Visiteur)
-function reportPostAction() {
-    showToast("Publication signalée aux modérateurs", "success");
-    closePostModal();
-}
-
-// Action: Bloquer (Visiteur)
-function blockUserAction(userId) {
-    if (confirm("Voulez-vous vraiment bloquer cet utilisateur ?")) {
-        showToast("Utilisateur bloqué (Fonctionnalité à venir)", "warning");
-        closePostModal();
-    }
-}
+// 5. Attacher les fonctions au window pour être sûr qu'elles sont accessibles globalement
+window.openPostModal = openPostModal;
+window.closePostModal = closePostModal;
+window.toggleModalMenu = toggleModalMenu;
+window.deletePostAction = deletePostAction;
+window.reportPostAction = reportPostAction;
+window.submitModalComment = submitModalComment;
 </script>
 </body>
 </html>
