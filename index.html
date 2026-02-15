@@ -1576,7 +1576,7 @@ body.dark-mode .market-item .bg-emerald-50 {
         <span class="text-[13px] font-semibold">Paramètres et confidentialité</span>
     </a>
 
-    <a onclick="handleLogout();" 
+    <a onclick="onclick="confirmSocialLogout()" 
        class="flex items-center gap-3 p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all cursor-pointer mt-1">
         <div class="w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center">
             <i class="fas fa-sign-out-alt text-sm"></i>
@@ -2065,6 +2065,7 @@ let searchDebounceTimer = null;
 let globalMessageListener = null;
 let globalNotifListener = null;
 let myChatIdsCache = new Set(); // Cache des IDs de chat de l'utilisateur
+let chatStatusInterval = null;
 
 // 3. Configuration des Réactions (Doit être accessible pour le Feed)
 const REACTIONS = [
@@ -3603,68 +3604,62 @@ async function initFollowButtonOnProfile(targetUserId, myId) {
 }
 
 // 3. Chargement des Photos (Grille 3 colonnes)
+// 3. Chargement des Photos (Grille 3 colonnes) - VERSION CORRIGÉE
 async function loadSocialPosts(userId) {
     const grid = document.getElementById('social-posts-grid');
+    if (!grid) return;
+
     try {
-        // Dans loadGlobalFeed, REMPLACEZ la requête entière par ceci :
+        // --- CORRECTION : Récupération de l'utilisateur connecté (myId) ---
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        const myId = user?.id || null; // Si pas connecté, myId est null
 
-// On récupère d'abord la liste des amis (IDs)
-let friendIds = [];
-if (myId) {
-    const { data: follows } = await supabaseClient
-        .from('follows')
-        .select('following_id')
-        .eq('follower_id', myId);
-    friendIds = follows ? follows.map(f => f.following_id) : [];
-}
+        // Récupération des posts du profil visité
+        const { data: posts, error } = await supabaseClient
+            .from('posts')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
 
-// Requête principale avec filtre complexe
-// Un post est visible si : 
-// 1. Il est PUBLIC
-// 2. OU Il est pour AMIS et je suis dans la liste d'amis
-// 3. OU C'est MON post
-// Note: Supabase ne gère pas les "OR" complexes sur les clés étrangères facilement en une ligne, on fait donc un filtre simple ici pour l'exemple.
+        if (error) throw error;
 
-let query = supabaseClient
-    .from('posts')
-    .select(`
-        *,
-        profiles ( id, full_name, username, avatar_url, is_certified ),
-        post_likes(count),
-        post_comments(count)
-    `)
-    .order('created_at', { ascending: false })
-    .range(feedOffset, feedOffset + FEED_BATCH_SIZE - 1);
-
-// On ne peut pas faire de filtre "OR" SQL complexe côté client facilement, 
-// donc on récupère tout et on filtre en JS (plus simple pour commencer) 
-// POUR UNE APP PRO : Utilisez une "PostgreSQL Function" (RPC) côté Supabase.
-
-const { data: posts, error } = await query;
-
-if (error) throw error;
-
-// FILTRAGE CÔTÉ CLIENT (Pour respecter la confidentialité)
-const visiblePosts = posts.filter(post => {
-    if (post.visibility === 'public') return true; // Tout le monde voit
-    if (post.user_id === myId) return true; // Je vois mes posts privés
-    if (post.visibility === 'friends' && friendIds.includes(post.user_id)) return true; // Je suis ami
-    if (blockedIds.includes(post.user_id)) return false; // <--- AJOUTER CECI
-    return true;
-})
-
-// Utilisez 'visiblePosts' au lieu de 'posts' pour la suite du code
+        if (!posts || posts.length === 0) {
+            grid.innerHTML = `
+                <div class="col-span-3 flex flex-col items-center justify-center py-20 text-gray-400">
+                    <i class="fas fa-camera text-3xl mb-2"></i>
+                    <p class="text-xs">Aucune publication</p>
+                </div>`;
+            return;
+        }
 
         // Génération HTML pour la grille (carrés parfaits)
-        grid.innerHTML = posts.map(post => `
-            <div class="aspect-square bg-gray-200 relative group cursor-pointer overflow-hidden">
-                <img src="${post.image_url}" decoding="async" class="w-full h-full object-cover" loading="lazy">
-                <!-- Overlay au survol (optionnel, style Instagram) -->
-                <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white text-xs font-bold">
-                    <span class="flex items-center gap-1"><i class="fas fa-heart"></i> 0</span>
+        grid.innerHTML = posts.map(post => {
+            // Logique de confidentialité (Optionnel : masquer les posts privés si ce n'est pas le propriétaire)
+            if (post.visibility === 'private' && myId !== userId) {
+                return ''; // Ne pas afficher les posts privés des autres
+            }
+            
+            // Déterminer le média (Image ou Vidéo)
+            const mediaUrl = post.image_url || post.video_url;
+            const isVideo = post.is_short || post.video_url;
+
+            return `
+            <div class="aspect-square bg-gray-200 relative group cursor-pointer overflow-hidden" onclick="openPostModal('${post.id}')">
+                ${mediaUrl 
+                    ? (isVideo 
+                        ? `<video src="${mediaUrl}" class="w-full h-full object-cover" muted></video>
+                           <div class="absolute top-2 right-2 text-white drop-shadow-lg"><i class="fas fa-play-circle"></i></div>`
+                        : `<img src="${mediaUrl}" decoding="async" class="w-full h-full object-cover" loading="lazy">`
+                      )
+                    : `<div class="w-full h-full flex items-center justify-center bg-slate-100 text-slate-300"><i class="fas fa-image text-2xl"></i></div>`
+                }
+                <!-- Overlay au survol (Style Instagram) -->
+                <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4 text-white text-sm font-bold">
+                    ${post.image_url ? `<span class="flex items-center gap-1"><i class="fas fa-heart"></i> 0</span>` : '<i class="fas fa-play fa-2x"></i>'}
                 </div>
             </div>
-        `).join('');
+            `;
+        }).join('');
 
     } catch (err) {
         console.error("Erreur posts:", err);
@@ -4706,7 +4701,7 @@ async function startChat(targetUserId) {
     }
 }
 
-// 2. Charger la liste des discussions
+/* --- CHARGEMENT DE LA LISTE DES DISCUSSIONS (VERSION PRO AVEC NON-LUS) --- */
 async function loadChatList() {
     const container = document.getElementById('chat-list-container');
     if (!container) return;
@@ -4715,61 +4710,120 @@ async function loadChatList() {
     if (!user) return;
 
     try {
+        // 1. Récupérer TOUTES mes discussions
         const { data: chats, error } = await supabaseClient
             .from('chats')
-            .select(`
-                id, user_1_id, user_2_id, updated_at,
-                messages(content, created_at)
-            `)
+            .select('*')
             .or(`user_1_id.eq.${user.id},user_2_id.eq.${user.id}`)
-            .order('updated_at', { ascending: false });
+            .order('updated_at', { ascending: false }); // Trie par la date du chat (nécessite une maj de la colonne updated_at)
 
         if (error) throw error;
 
         if (!chats || chats.length === 0) {
-            container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-slate-400 p-8 text-center"><p>Aucune discussion pour le moment.</p></div>`;
+            container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-slate-400 p-8 text-center"><i class="fas fa-comments text-4xl mb-3 opacity-20"></i><p>Aucune discussion pour le moment.</p></div>`;
             return;
         }
 
-        const userIds = chats.map(c => c.user_1_id === user.id ? c.user_2_id : c.user_1_id);
+        // 2. Préparer les listes d'IDs pour les requêtes groupées (Optimisation)
+        const chatIds = chats.map(c => c.id);
+        const otherUserIds = chats.map(c => c.user_1_id === user.id ? c.user_2_id : c.user_1_id);
+
+        // A. Récupérer les profils des autres utilisateurs
         const { data: profiles } = await supabaseClient
             .from('profiles')
             .select('id, full_name, avatar_url, is_certified')
-            .in('id', userIds);
-
+            .in('id', otherUserIds);
         const profileMap = new Map(profiles?.map(p => [p.id, p]));
 
+        // B. Récupérer le dernier message de chaque discussion (pour l'aperçu)
+        // Note: Supabase ne permet pas facilement "LIMIT 1 par groupe", on récupère les derniers globaux et on map
+        const { data: lastMessages } = await supabaseClient
+            .from('messages')
+            .select('*')
+            .in('chat_id', chatIds)
+            .order('created_at', { ascending: false });
+
+        // On garde uniquement le dernier message par chat_id
+        const latestMessagesMap = new Map();
+        lastMessages?.forEach(msg => {
+            if (!latestMessagesMap.has(msg.chat_id)) {
+                latestMessagesMap.set(msg.chat_id, msg);
+            }
+        });
+
+        // C. Compter les messages NON LUS (C'est la clé de la fonctionnalité)
+        const { data: unreadData } = await supabaseClient
+            .from('messages')
+            .select('chat_id')
+            .in('chat_id', chatIds)
+            .eq('is_read', false)       // Non lu
+            .neq('sender_id', user.id); // Pas envoyé par moi
+
+        // On compte combien de non-lus par chat_id
+        const unreadCountsMap = new Map();
+        unreadData?.forEach(msg => {
+            unreadCountsMap.set(msg.chat_id, (unreadCountsMap.get(msg.chat_id) || 0) + 1);
+        });
+
+        // 3. Génération du HTML (Rendu)
         container.innerHTML = chats.map(chat => {
             const otherUserId = chat.user_1_id === user.id ? chat.user_2_id : chat.user_1_id;
-            const profile = profileMap.get(otherUserId) || { full_name: 'Utilisateur', avatar_url: null };
+            const profile = profileMap.get(otherUserId) || { full_name: 'Utilisateur', avatar_url: '' };
             
-            const lastMsg = chat.messages && chat.messages.length > 0 
-                ? chat.messages[chat.messages.length - 1].content 
-                : 'Nouvelle discussion';
-            const time = chat.messages && chat.messages[0] ? getTimeAgo(new Date(chat.messages[0].created_at)) : '';
+            const lastMsg = latestMessagesMap.get(chat.id);
+            const unreadCount = unreadCountsMap.get(chat.id) || 0;
+            
+            // Style conditionnel (Pro Style)
+            const isUnread = unreadCount > 0;
+            const textBoldClass = isUnread ? 'font-bold text-slate-900 dark:text-white' : 'font-medium text-slate-600 dark:text-slate-300';
+            const subBoldClass = isUnread ? 'font-semibold text-slate-800 dark:text-slate-200' : 'text-slate-500 dark:text-slate-400';
+            
+            // Badge HTML (Style WhatsApp / Facebook)
+            let badgeHtml = '';
+            if (isUnread) {
+                badgeHtml = `<span class="bg-blue-600 text-white text-[10px] font-bold rounded-full px-2 py-0.5 ml-2">${unreadCount}</span>`;
+            }
 
+            const time = lastMsg ? getTimeAgo(new Date(lastMsg.created_at)) : '';
+            const previewText = lastMsg?.content || 'Aucun message';
+            const isMyLastMsg = lastMsg?.sender_id === user.id;
 
             return `
-            <div onclick="openChatRoom('${chat.id}', '${otherUserId}')" 
-                 class="flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer border-b border-slate-100 dark:border-slate-800 transition">
-                <img src="${profile.avatar_url || 'https://ui-avatars.com/api/?name=' + profile.full_name}" class="w-12 h-12 rounded-full object-cover bg-slate-200">
+            <div onclick="startChat('${otherUserId}')" 
+                 class="flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer border-b border-slate-100 dark:border-slate-700 transition ${isUnread ? 'bg-blue-50/50 dark:bg-slate-800/40' : ''}">
+                 
+                <div class="relative flex-shrink-0">
+                    <img src="${profile.avatar_url || `https://ui-avatars.com/api/?name=${profile.full_name}`}" 
+                         class="w-12 h-12 rounded-full object-cover bg-slate-200 shadow-sm">
+                    ${profile.is_certified ? '<i class="fas fa-check-circle text-blue-500 text-[10px] absolute bottom-0 right-0 bg-white dark:bg-slate-900 rounded-full p-0.5"></i>' : ''}
+                </div>
+                
                 <div class="flex-1 min-w-0">
-                    <div class="flex justify-between items-baseline mb-1">
-                        <h4 class="font-bold text-slate-900 dark:text-white truncate">${profile.full_name} ${profile.is_certified ? '<i class="fas fa-check-circle text-blue-500 text-xs ml-1"></i>' : ''}</h4>
-                        <span class="text-xs text-slate-400">${time}</span>
+                    <div class="flex justify-between items-baseline mb-0.5">
+                        <h4 class="truncate ${textBoldClass}">
+                            ${profile.full_name}
+                        </h4>
+                        <span class="text-[10px] text-slate-400 flex-shrink-0 ml-2">${time}</span>
                     </div>
-                    <p class="text-sm text-slate-500 dark:text-slate-400 truncate">${lastMsg}</p>
+                    <div class="flex justify-between items-center">
+                        <p class="truncate text-sm ${subBoldClass}">
+                            ${isMyLastMsg ? '<i class="fas fa-check-double text-blue-500 mr-1 text-[10px]"></i>' : ''}
+                            ${previewText}
+                        </p>
+                        ${badgeHtml}
+                    </div>
                 </div>
             </div>`;
         }).join('');
 
     } catch (err) {
         console.error("Erreur liste chat:", err);
+        container.innerHTML = `<div class="p-4 text-center text-red-500">Erreur de chargement</div>`;
     }
-} // <--- L'accolade qui manquait était ici !
-
+}
 /* --- GESTION DU CHAT TEMPS RÉEL (VERSION ULTRA PRO) --- */
 
+/* --- OUVERTURE D'UNE DISCUSSION (VERSION FINALE CORRIGÉE) --- */
 async function openChatRoom(chatId, targetUserId) {
     currentChatId = chatId;
     currentTargetUserId = targetUserId;
@@ -4794,42 +4848,34 @@ async function openChatRoom(chatId, targetUserId) {
         avatarEl.src = profile.avatar_url || defaultAvatar;
     }
 
-    // 3. Charger l'historique initial (Messages passés) UNE SEULE FOIS
+    // 3. Charger l'historique initial (Messages passés)
     await loadChatMessages(chatId);
     
     // Marquer les messages comme lus immédiatement
     markChatAsRead(chatId);
 
-    // 4. NETTOYAGE DE L'ANCIEN CHANNEL (SÉCURITÉ)
-    // On s'assure de fermer l'ancienne connexion WebSocket avant d'en ouvrir une nouvelle
+    // 4. NETTOYAGE DE L'ANCIEN CHANNEL WEBSOCKET
     if (window.currentChatChannel) {
         await supabaseClient.removeChannel(window.currentChatChannel);
-        console.log("Ancien channel fermé.");
     }
 
-    // 5. CONNEXION WEBSOCKET (SUPABASE REALTIME)
+    // 5. CONNEXION WEBSOCKET (REALTIME)
     window.currentChatChannel = supabaseClient
-        .channel(`realtime:chat:${chatId}`) // Identifiant unique pour ce chat
+        .channel(`realtime:chat:${chatId}`)
         .on('postgres_changes', {
-            event: 'INSERT',      // On écoute SEULEMENT les nouveaux messages
+            event: 'INSERT',
             schema: 'public',
             table: 'messages',
-            filter: `chat_id=eq.${chatId}` // Filtre précis
+            filter: `chat_id=eq.${chatId}`
         }, (payload) => {
-            // Cette fonction se déclenche AUTOMATIQUEMENT quand un message arrive
             handleRealtimeMessage(payload.new);
         })
-        .subscribe((status) => {
-            if (status === 'SUBSCRIBED') {
-                console.log("✅ Connecté au chat en temps réel !");
-            }
-            if (status === 'CLOSED') {
-                console.log("❌ Connexion chat fermée.");
-            }
-        });
+        .subscribe();
 
-    // 6. Rafraîchir le statut "En ligne" (On garde un interval léger car le statut ne change pas souvent)
+    // 6. Rafraîchir le statut "En ligne" (Interval corrigé)
+    // On utilise la variable globale 'chatStatusInterval' déclarée plus haut
     if (chatStatusInterval) clearInterval(chatStatusInterval);
+    
     refreshChatStatus(targetUserId); // Appel immédiat
     chatStatusInterval = setInterval(() => {
         // On vérifie si on est toujours sur ce chat avant de rafraîchir
@@ -4838,7 +4884,7 @@ async function openChatRoom(chatId, targetUserId) {
         } else {
             clearInterval(chatStatusInterval);
         }
-    }, 30000); // Toutes les 30 secondes (économie de ressources)
+    }, 30000); // Toutes les 30 secondes
 }
 
             async function initGlobalRealtimeListeners() {
