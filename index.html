@@ -29,13 +29,16 @@
     <style>
         :root {
             --glass-bg: #ffffff;
-            --glass-border: #f1f1f1;
+            --glass-border: rgba(0, 0, 0, 0.08);
             --accent-blue: #38bdf8; /* Bleu Ciel */
             --text-main: #000000; /* Noir Pur */
             --text-muted: #6b7280;
             --bg-body: #ffffff; /* Blanc Pur */
-            --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.08);
-            --shadow-hover: 0 10px 25px rgba(0, 0, 0, 0.15);
+            --panel-bg: #ffffff;
+            --input-bg: #f9fafb;
+            --btn-secondary-bg: #f1f1f1;
+            --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.05);
+            --shadow-hover: 0 10px 25px rgba(0, 0, 0, 0.08);
         }
 
         body {
@@ -133,11 +136,14 @@
         body.dark-mode {
             background: #000000 !important; /* Noir Pur */
             color: #ffffff !important; /* Blanc Pur */
-            --glass-bg: #0a0a0a; /* Noir très léger pour les cartes */
-            --glass-border: #222222;
+            --glass-bg: #0a0a0a;
+            --glass-border: rgba(255, 255, 255, 0.1);
             --text-main: #ffffff;
             --text-muted: #a1a1aa;
             --bg-body: #000000;
+            --panel-bg: #0a0a0a;
+            --input-bg: #111111;
+            --btn-secondary-bg: #1a1a1a;
         }
         body.dark-mode .bg-grid { background-image: linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px); opacity: 0.4; }
         body.dark-mode .bg-glow { background: radial-gradient(circle at 50% 0%, rgba(79, 70, 229, 0.15) 0%, transparent 60%); }
@@ -150,42 +156,26 @@
         body.dark-mode .nav-link-pro.active { background: rgba(79, 70, 229, 0.2); color: #818cf8; }
 
         /* THEME ADAPTATIONS (FORCE VARIABLES ON ALL COMPONENTS) */
-       /* 1. Base et Transitions */
-#sidebar-panel, #settings-panel, #orders-panel, #support-panel, 
-#track-modal div:last-child, .mobile-dock, #invoice-modal, #stats-dashboard,
-input, select, textarea, button {
-    transition: all 0.3s ease;
-}
-
-/* 2. Conteneurs Principaux */
 #sidebar-panel, #settings-panel, #orders-panel, #support-panel, 
 #track-modal div:last-child, .mobile-dock, #invoice-modal, #stats-dashboard {
-    background-color: var(--panel-bg);
-    border: 1px solid var(--panel-border);
-    color: var(--text-main);
-}
-
-/* 3. Textes (Héritage automatique du parent, mais forçage si nécessaire) */
-body.dark-mode h2, body.dark-mode h3, body.dark-mode p, 
-body.dark-mode span, body.dark-mode td {
-    color: var(--text-main);
-}
-
-/* 4. Formulaires (Inputs, Selects, Textarea) */
-#sidebar-panel input, #settings-panel input, #support-panel input,
-#track-modal input, #track-modal textarea, select, .input-crystal {
-    background-color: var(--input-bg) !important;
-    border: 1px solid var(--panel-border) !important;
+    background-color: var(--panel-bg) !important;
+    border-color: var(--glass-border) !important;
     color: var(--text-main) !important;
 }
 
-/* 5. Boutons Secondaires */
+/* Inputs et Formulaires */
+input, select, textarea, .input-crystal {
+    background-color: var(--input-bg) !important;
+    border: 1px solid var(--glass-border) !important;
+    color: var(--text-main) !important;
+}
+
+/* Boutons secondaires */
 body.dark-mode button.bg-white, 
-body.dark-mode button.bg-slate-100, 
-body.dark-mode button.bg-slate-50 {
+body.dark-mode button.bg-slate-100 {
     background-color: var(--btn-secondary-bg) !important;
     color: var(--text-main) !important;
-    border: 1px solid var(--panel-border);
+    border-color: var(--glass-border);
 }
 
         /* TRACKING TIMELINE */
@@ -1374,6 +1364,50 @@ body, html {
         max-width: 320px !important; /* Mais dépasse pas 320px */
     }
 }
+        /* BOUTON DÉGRADÉ PRO */
+.btn-sky-yellow {
+    background: linear-gradient(to right, #38bdf8, #facc15) !important; 
+    color: #000000 !important; /* Texte noir obligatoire pour contraste */
+    font-weight: 800;
+    border: none;
+    box-shadow: 0 4px 14px rgba(56, 189, 248, 0.4);
+    transition: all 0.3s ease;
+}
+.btn-sky-yellow:hover {
+    opacity: 0.9;
+    box-shadow: 0 6px 20px rgba(250, 204, 21, 0.5);
+}
+        /* --- ADAPTATION CARTES PUB / MARKETPLACE --- */
+.market-item, .market-item.glass {
+    background-color: var(--surface-bg) !important;
+    border: 1px solid var(--glass-border) !important;
+}
+
+/* Titre de la carte */
+.market-item h3 {
+    color: var(--text-main) !important;
+}
+
+/* Description */
+.market-item p {
+    color: var(--text-muted) !important;
+}
+
+/* Prix */
+.market-item .font-black {
+    color: var(--text-main) !important;
+}
+
+/* Fond de l'icône (ex: le cercle violet/bleu derrière l'icône) */
+.market-item .bg-indigo-50, .market-item .bg-emerald-50 {
+    background-color: var(--input-bg) !important;
+}
+
+/* En mode Sombre, on rend les fonds d'icônes très discrets */
+body.dark-mode .market-item .bg-indigo-50, 
+body.dark-mode .market-item .bg-emerald-50 {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
     </style>
 </head>
 <body>
@@ -1823,12 +1857,20 @@ body, html {
         <img id="preview-img-el" class="max-h-full object-contain hidden">
         <video id="preview-video-el" class="max-h-full object-contain hidden" controls></video>
     </div>
-
+<!-- Ajoutez ceci DANS le formulaire, avant le bouton de publication -->
+<div class="mb-4">
+    <label class="text-xs font-bold text-slate-500 mb-1 block">Visibilité</label>
+    <select id="post-visibility" class="w-full bg-slate-100 dark:bg-slate-800 rounded-lg p-2.5 text-sm border-none">
+        <option value="public">🌍 Public</option>
+        <option value="friends">👥 Abonnés uniquement</option>
+        <option value="private">🔒 Privé (Moi uniquement)</option>
+    </select>
+</div>
     <textarea id="post-caption" rows="3" placeholder="Écrivez une légende..." class="w-full text-sm p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 resize-none"></textarea>
     
     <input type="hidden" id="current-post-type" value="image">
     
-   <button onclick="handleNewPost(e)" type="submit" class="w-full py-3 btn-sky-yellow font-bold rounded-lg transition">Publier</button>
+   <button onclick="handleNewPost(e)" type="submit" class="w-full py-3 font-bold rounded-lg transition">Publier</button>
 </form>
         </div>
     </div>
@@ -2019,6 +2061,10 @@ const userReactions = new Map(); // Stocke les réactions de l'utilisateur (post
 let chatInterval = null;
 let currentChatId = null;
 let currentTargetUserId = null;
+let searchDebounceTimer = null;
+let globalMessageListener = null;
+let globalNotifListener = null;
+let myChatIdsCache = new Set(); // Cache des IDs de chat de l'utilisateur
 
 // 3. Configuration des Réactions (Doit être accessible pour le Feed)
 const REACTIONS = [
@@ -2437,6 +2483,13 @@ function setupInfiniteScroll() {
         }
     }
 
+            // LANCEMENT DU SERVICE GLOBAL
+initGlobalRealtimeListeners();
+
+// Rafraîchir les badges au démarrage
+updateMessageBadge();
+updateNotificationBadge();
+            
     // --- 5. LANCEMENT DE L'APPLICATION ---
     // On attend que tout soit prêt
     await initialiserApplication();
@@ -3150,7 +3203,7 @@ async function loadMarketplaceArticles() {
                     <span class="text-xs font-bold uppercase tracking-wider text-slate-400 italic">Détails</span>
                     <a href="javascript:void(0)" 
                        onclick="openTerminal()" 
-                       class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center hover:btn-sky-yellow hover:scale-110 transition-all shadow-md">
+                       class="w-10 h-10 rounded-full btn-sky-yellow text-white flex items-center justify-center hover:scale-110 transition-all shadow-md">
                         <i class="fas fa-arrow-right"></i>
                     </a>
                 </div>
@@ -3553,22 +3606,54 @@ async function initFollowButtonOnProfile(targetUserId, myId) {
 async function loadSocialPosts(userId) {
     const grid = document.getElementById('social-posts-grid');
     try {
-        const { data: posts, error } = await supabaseClient
-            .from('posts')
-            .select('*')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false });
+        // Dans loadGlobalFeed, REMPLACEZ la requête entière par ceci :
 
-        if (error) throw error;
+// On récupère d'abord la liste des amis (IDs)
+let friendIds = [];
+if (myId) {
+    const { data: follows } = await supabaseClient
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', myId);
+    friendIds = follows ? follows.map(f => f.following_id) : [];
+}
 
-        if (!posts || posts.length === 0) {
-            grid.innerHTML = `
-                <div class="col-span-3 flex flex-col items-center justify-center py-20 text-gray-400">
-                    <i class="fas fa-camera text-3xl mb-2"></i>
-                    <p class="text-xs">Aucune publication</p>
-                </div>`;
-            return;
-        }
+// Requête principale avec filtre complexe
+// Un post est visible si : 
+// 1. Il est PUBLIC
+// 2. OU Il est pour AMIS et je suis dans la liste d'amis
+// 3. OU C'est MON post
+// Note: Supabase ne gère pas les "OR" complexes sur les clés étrangères facilement en une ligne, on fait donc un filtre simple ici pour l'exemple.
+
+let query = supabaseClient
+    .from('posts')
+    .select(`
+        *,
+        profiles ( id, full_name, username, avatar_url, is_certified ),
+        post_likes(count),
+        post_comments(count)
+    `)
+    .order('created_at', { ascending: false })
+    .range(feedOffset, feedOffset + FEED_BATCH_SIZE - 1);
+
+// On ne peut pas faire de filtre "OR" SQL complexe côté client facilement, 
+// donc on récupère tout et on filtre en JS (plus simple pour commencer) 
+// POUR UNE APP PRO : Utilisez une "PostgreSQL Function" (RPC) côté Supabase.
+
+const { data: posts, error } = await query;
+
+if (error) throw error;
+
+// FILTRAGE CÔTÉ CLIENT (Pour respecter la confidentialité)
+const visiblePosts = posts.filter(post => {
+    if (post.visibility === 'public') return true; // Tout le monde voit
+    if (post.user_id === myId) return true; // Je vois mes posts privés
+    if (post.visibility === 'friends' && friendIds.includes(post.user_id)) return true; // Je suis ami
+    if (blockedIds.includes(post.user_id)) return false; // <--- AJOUTER CECI
+    return true;
+})
+
+// Utilisez 'visiblePosts' au lieu de 'posts' pour la suite du code
 
         // Génération HTML pour la grille (carrés parfaits)
         grid.innerHTML = posts.map(post => `
@@ -3804,7 +3889,7 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
     const loader = document.getElementById('feed-loader');
     if (!container) return;
 
-    // Gestion du Loader et du Reset
+    // --- 1. GESTION DU LOADER ET PAGINATION ---
     if (!appendMode) {
         container.innerHTML = `<div class="flex justify-center py-12"><i class="fas fa-circle-notch animate-spin text-3xl text-indigo-600 opacity-20"></i></div>`;
         feedOffset = 0;
@@ -3816,11 +3901,22 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
     if (appendMode) isLoadingFeed = true;
 
     try {
-        // 1. Récupération de l'utilisateur connecté
+        // --- 2. AUTHENTIFICATION & DATA INIT ---
         const { data: userData } = await supabaseClient.auth.getUser();
         const myId = userData?.user?.id || null;
 
-        // 2. Récupération de la liste des abonnements (pour le bouton "Suivre")
+        // A. Récupération des utilisateurs bloqués (Sécurité)
+        let blockedIds = [];
+        if (myId) {
+            const { data: blocked } = await supabaseClient
+                .from('blocked_users')
+                .select('blocked_id')
+                .eq('blocker_id', myId);
+            blockedIds = blocked ? blocked.map(b => b.blocked_id) : [];
+        }
+
+        // B. Récupération de mes abonnements (Pour la confidentialité "Friends")
+        // "Friends" ici = Les gens que JE SUIS (myFollowingSet)
         let myFollowingSet = new Set();
         if (myId) {
             const { data: followingData } = await supabaseClient
@@ -3830,7 +3926,8 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
             if (followingData) myFollowingSet = new Set(followingData.map(f => f.following_id));
         }
 
-        // 3. Récupération des Posts
+        // --- 3. RÉCUPÉRATION DES POSTS (Query principale) ---
+        // On récupère un batch brut, puis on filtre en JS
         const { data: posts, error } = await supabaseClient
             .from('posts')
             .select(`
@@ -3854,27 +3951,59 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
             return;
         }
 
-        // 4. Récupération des Réactions de l'utilisateur pour ces posts
+        // --- 4. FILTRAGE CÔTÉ CLIENT (Confidentialité & Blocage) ---
+        // C'est ici qu'on applique la logique "Pro" de visibilité
+        const visiblePosts = posts.filter(post => {
+            // 1. Si l'utilisateur est bloqué, on cache le post
+            if (blockedIds.includes(post.user_id)) return false;
+
+            // 2. Si c'est MON post, je le vois toujours (même privé)
+            if (post.user_id === myId) return true;
+
+            // 3. Logique de Confidentialité (Visibility)
+            const visibility = post.visibility || 'public'; // Défaut 'public' si non défini
+
+            if (visibility === 'public') {
+                return true; // Tout le monde peut voir
+            }
+            
+            if (visibility === 'private') {
+                return false; // Seul l'auteur (moi) peut voir (géré par la condition 2)
+            }
+
+            if (visibility === 'friends') {
+                // "Friends" = Mes Abonnements.
+                // Je vois le post SI je suis l'auteur (condition 2) OU SI je le suis.
+                return myFollowingSet.has(post.user_id);
+            }
+
+            return false; // Sécurité par défaut
+        });
+
+        // --- 5. RÉACTIONS UTILISATEUR ---
         let myLikedPostIds = new Set();
-        const postIds = posts.map(p => p.id);
+        // On ne cherche les likes que pour les posts visibles (optimisation)
+        const postIds = visiblePosts.map(p => p.id);
 
-        const { data: myLikes } = await supabaseClient
-            .from('post_likes')
-            .select('post_id, reaction_type')
-            .eq('user_id', myId)
-            .in('post_id', postIds);
+        if (myId && postIds.length > 0) {
+            const { data: myLikes } = await supabaseClient
+                .from('post_likes')
+                .select('post_id, reaction_type')
+                .eq('user_id', myId)
+                .in('post_id', postIds);
 
-        if (myLikes) {
-            myLikedPostIds = new Set(myLikes.map(l => l.post_id));
-            if (typeof userReactions !== 'undefined') {
-                myLikes.forEach(like => {
-                    userReactions.set(like.post_id, like.reaction_type);
-                });
+            if (myLikes) {
+                myLikedPostIds = new Set(myLikes.map(l => l.post_id));
+                if (typeof userReactions !== 'undefined') {
+                    myLikes.forEach(like => {
+                        userReactions.set(like.post_id, like.reaction_type);
+                    });
+                }
             }
         }
 
-        // 5. Filtre et Tri
-        let processedPosts = filterType === 'shorts' ? posts.filter(p => p.is_short) : posts;
+        // --- 6. FILTRE SECONDaire (Shorts) & TRI ---
+        let processedPosts = filterType === 'shorts' ? visiblePosts.filter(p => p.is_short) : visiblePosts;
 
         if (sortBy === 'popular' && typeof calculatePostScore === 'function') {
             processedPosts = processedPosts.map(post => ({
@@ -3883,7 +4012,8 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
             })).sort((a, b) => b.calculatedScore - a.calculatedScore);
         }
 
-        // 6. Génération du HTML
+        // --- 7. GÉNÉRATION HTML (Rendu) ---
+        // Note: On utilise 'processedPosts' qui est le résultat final filtré
         const htmlString = processedPosts.map(post => {
             const profile = post.profiles || {};
             const avatarUrl = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username || 'user'}`; 
@@ -3893,7 +4023,7 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
             
             const likeCount = post.post_likes?.[0]?.count || 0;
             const commentCount = post.post_comments?.[0]?.count || 0;
-            const isMyPost = (post.user_id === myId); // IMPORTANT pour le menu
+            const isMyPost = (post.user_id === myId);
 
             let formattedCaption = "";
             if (post.caption) {
@@ -3911,32 +4041,20 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
                     </button>`;
             }
 
-            // --- LOGIQUE MENU ADAPTATIF (3 POINTS) ---
+            // Menu Contextuel
             let menuItemsHtml = '';
             if (isMyPost) {
-                // MENU PROPRIÉTAIRE
                 menuItemsHtml = `
-                    <div onclick="editPost('${post.id}')" class="post-dropdown-item">
-                        <i class="fas fa-pencil-alt"></i> Modifier
-                    </div>
-                    <div onclick="deletePostModal('${post.id}')" class="post-dropdown-item danger">
-                        <i class="fas fa-trash-alt"></i> Supprimer
-                    </div>`;
+                    <div onclick="editPost('${post.id}')" class="post-dropdown-item"><i class="fas fa-pencil-alt"></i> Modifier</div>
+                    <div onclick="deletePostModal('${post.id}')" class="post-dropdown-item danger"><i class="fas fa-trash-alt"></i> Supprimer</div>`;
             } else {
-                // MENU VISITEUR
                 menuItemsHtml = `
-                    <div onclick="savePost('${post.id}')" class="post-dropdown-item">
-                        <i class="far fa-bookmark"></i> Enregistrer
-                    </div>
-                    <div onclick="sharePost('${post.id}')" class="post-dropdown-item">
-                        <i class="fas fa-link"></i> Copier le lien
-                    </div>
-                    <div onclick="reportPost('${post.id}')" class="post-dropdown-item danger">
-                        <i class="fas fa-flag"></i> Signaler
-                    </div>`;
+                    <div onclick="savePost('${post.id}')" class="post-dropdown-item"><i class="far fa-bookmark"></i> Enregistrer</div>
+                    <div onclick="sharePost('${post.id}')" class="post-dropdown-item"><i class="fas fa-link"></i> Copier le lien</div>
+                    <div onclick="reportPost('${post.id}')" class="post-dropdown-item danger"><i class="fas fa-flag"></i> Signaler</div>`;
             }
 
-            // --- MEDIA HTML (AVEC MODALE) ---
+            // Média HTML
             let mediaHtml = '';
             if (post.is_short && post.video_url) {
                 mediaHtml = `
@@ -3954,16 +4072,12 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
                         </div>
                     </div>`;
             } else if (post.image_url) {
-                mediaHtml = `
-                    <img src="${post.image_url}" onclick="openPostModal('${post.id}')" class="w-full h-auto object-cover rounded-lg mb-1 cursor-pointer hover:opacity-95 transition" loading="lazy" alt="Post">`;
+                mediaHtml = `<img src="${post.image_url}" onclick="openPostModal('${post.id}')" class="w-full h-auto object-cover rounded-lg mb-1 cursor-pointer hover:opacity-95 transition" loading="lazy" alt="Post">`;
             }
 
-            // --- RENDU FINAL DE L'ARTICLE ---
-            // ---CARTE PUBLICATION
+            // Rendu Final
             return `
             <article class="bg-white dark:bg-black border border-black/5 dark:border-white/10 rounded-lg overflow-hidden mb-2 transition-all hover:shadow-xl hover:shadow-black/5 dark:hover:shadow-white/5">
-                
-                <!-- HEADER -->
                 <div class="p-4 flex items-center justify-between">
                     <div class="flex items-center gap-3 cursor-pointer" onclick="viewUserProfile('${post.user_id}')">
                         <img src="${avatarUrl}" class="w-11 h-11 rounded-full border-2 border-indigo-50 shadow-sm">
@@ -3974,38 +4088,20 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
                             <div class="text-[11px] text-slate-400 font-medium">${timeAgo}</div>
                         </div>
                     </div>
-
                     <div class="flex items-center gap-1">
                         ${followBtn}
                         <div class="post-menu-container ml-1">
                             <button onclick="togglePostMenu('${post.id}', event)" class="w-25 h-9 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all active:scale-90">
                                 <i class="fas fa-ellipsis-v text-[18px] text-black dark:text-white"></i>
                             </button>
-                            <div id="menu-${post.id}" class="post-dropdown-menu">
-                                ${menuItemsHtml}
-                            </div>
+                            <div id="menu-${post.id}" class="post-dropdown-menu">${menuItemsHtml}</div>
                         </div>
                     </div>
                 </div>
-
-                <!-- LÉGENDE -->
                 <div class="px-4 pb-2">
-                    ${formattedCaption ? `
-                        <div>
-                            <p id="caption-${post.id}" class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed line-clamp-2">
-                                <span class="font-extrabold text-slate-900 dark:text-white"></span>${formattedCaption}
-                            </p>
-                            ${formattedCaption.length > 50 ? `
-                                <span id="btn-more-${post.id}" onclick="toggleCaptionExpand('${post.id}')" class="btn-voir-plus">Voir plus</span>
-                            ` : ''}
-                        </div>
-                    ` : ''}
+                    ${formattedCaption ? `<div><p id="caption-${post.id}" class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed line-clamp-2"><span class="font-extrabold text-slate-900 dark:text-white"></span>${formattedCaption}</p>${formattedCaption.length > 50 ? `<span id="btn-more-${post.id}" onclick="toggleCaptionExpand('${post.id}')" class="btn-voir-plus">Voir plus</span>` : ''}</div>` : ''}
                 </div>
-
-                <!-- MEDIA -->
                 ${mediaHtml}
-
-                <!-- ACTIONS -->
                 <div class="px-4 pb-2 pt-1">
                     <div class="flex items-center gap-5">
                         <div style="position: relative;">
@@ -4030,8 +4126,6 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
                         </button>
                     </div>
                 </div>
-
-                <!-- COMMENTAIRES -->
                 <div id="comments-${post.id}" class="hidden p-4 border-t border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
                     <div id="comment-list-${post.id}" class="space-y-3 mb-4 max-h-48 overflow-y-auto no-scrollbar"></div>
                     <form onsubmit="submitComment(event, '${post.id}')" class="relative">
@@ -4042,15 +4136,23 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
             </article>`;
         }).join('');
 
-        // Injection dans le DOM
+        // --- 8. INJECTION DOM ---
         if (!appendMode) {
             container.innerHTML = htmlString;
         } else {
             container.insertAdjacentHTML('beforeend', htmlString);
         }
 
-        feedOffset += posts.length;
+        // Gestion du scroll infini
+        feedOffset += posts.length; // On incrémente basé sur le batch BRUT reçu, pas le filtré, pour éviter les boucles infinies sur l'offset SQL
         
+        // Si le nombre de posts VISIBLES est 0 mais qu'on a reçu des posts (tous filtrés), on relance automatiquement le chargement du suivant
+        if (processedPosts.length === 0 && posts.length === FEED_BATCH_SIZE) {
+             // Cas rare : tout le batch était filtré (privé/bloqué), on charge le suivant pour l'utilisateur
+             loadMoreFeed(); 
+             return;
+        }
+
         if (posts.length < FEED_BATCH_SIZE) {
             hasMorePosts = false;
             if (loader) loader.classList.add('hidden');
@@ -4091,10 +4193,31 @@ document.addEventListener('click', () => {
 });
 
 // 3. Fonction pour "Enregistrer" (placeholder)
-function savePost(postId) {
-    showToast("Publication enregistrée (Fonctionnalité à venir)", "success");
-    // Fermer le menu après action
-    document.getElementById(`menu-${postId}`).style.display = 'none';
+async function savePost(postId) {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return showToast("Connectez-vous", "error");
+
+    // Vérifier si déjà enregistré
+    const { data: existing } = await supabaseClient
+        .from('saved_posts')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('post_id', postId)
+        .maybeSingle();
+
+    if (existing) {
+        // Supprimer
+        await supabaseClient.from('saved_posts').delete().eq('id', existing.id);
+        showToast("Retiré des enregistrements", "success");
+    } else {
+        // Ajouter
+        await supabaseClient.from('saved_posts').insert([{ user_id: user.id, post_id: postId }]);
+        showToast("Post enregistré !", "success");
+    }
+    
+    // Mettre à jour l'icône visuellement (Optionnel)
+    const btn = document.querySelector(`[onclick="savePost('${postId}')"] i`);
+    if (btn) btn.classList.toggle('fas'); // Change l'icône en plein
 }
         // Fonction déclenchée par l'observateur quand on arrive en bas
 async function loadMoreFeed() {
@@ -4522,45 +4645,64 @@ function viewUserProfile(userId) {
 let lastMessageCount = 0; // Pour éviter le clignotement au rechargement
 
 // 1. Démarrer une conversation
+/* --- DÉMARRER OU CRÉER UNE DISCUSSION (VERSION OPTIMISÉE) --- */
 async function startChat(targetUserId) {
+    // 1. Validation de base
     if (!targetUserId) return;
     
     const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user || user.id === targetUserId) return;
+    if (!user) {
+        showToast("Veuillez vous connecter pour discuter", "error");
+        return;
+    }
+    if (user.id === targetUserId) return; // Interdit de discuter avec soi-même
 
-    showToast("Ouverture de la discussion...", "success");
-
+    // 2. Recherche d'un chat existant
+    // Optimisation : On ne sélectionne que l'ID pour la performance
     try {
-        // Correction : .maybeSingle() au lieu de .single()
         const { data: existingChat } = await supabaseClient
             .from('chats')
-            .select('*')
+            .select('id')
             .or(`and(user_1_id.eq.${user.id},user_2_id.eq.${targetUserId}),and(user_1_id.eq.${targetUserId},user_2_id.eq.${user.id})`)
-            .maybeSingle();
+            .maybeSingle(); // Utilisation correcte de maybeSingle()
 
         let chatId;
 
         if (existingChat) {
+            // --- CAS A : Discussion existante ---
             chatId = existingChat.id;
         } else {
+            // --- CAS B : Nouvelle discussion ---
+            // Afficher un léger loader pendant la création
+            showToast("Création de la discussion...", "success");
+
             const { data: newChat, error } = await supabaseClient
                 .from('chats')
                 .insert([{
                     user_1_id: user.id,
                     user_2_id: targetUserId
                 }])
-                .select()
+                .select('id')
                 .single();
             
             if (error) throw error;
             chatId = newChat.id;
+
+            // --- POINT CLÉ : MISE À JOUR DU CACHE GLOBAL ---
+            // On ajoute ce nouveau chat au cache pour que le système de notification 
+            // (initGlobalRealtimeListeners) le prenne en compte immédiatement.
+            if (typeof myChatIdsCache !== 'undefined') {
+                myChatIdsCache.add(chatId);
+                console.log("Nouveau chat ajouté au cache temps réel :", chatId);
+            }
         }
 
+        // 3. Ouverture de la salle de discussion
         openChatRoom(chatId, targetUserId);
 
     } catch (err) {
-        console.error("Erreur startChat:", err);
-        showToast("Erreur de connexion", "error");
+        console.error("Erreur critique startChat:", err);
+        showToast("Erreur de connexion au serveur", "error");
     }
 }
 
@@ -4626,62 +4768,225 @@ async function loadChatList() {
     }
 } // <--- L'accolade qui manquait était ici !
 
-// 3. Ouvrir la salle de discussion
+/* --- GESTION DU CHAT TEMPS RÉEL (VERSION ULTRA PRO) --- */
+
 async function openChatRoom(chatId, targetUserId) {
     currentChatId = chatId;
     currentTargetUserId = targetUserId;
-    lastMessageCount = 0; // Reset pour forcer le premier affichage
 
-    switchPage('chat'); 
+    // 1. Changement de page et Nettoyage UI
+    switchPage('chat');
 
+    // 2. Charger les infos du header (Avatar, Nom, Certification)
     const { data: profile } = await supabaseClient
         .from('profiles')
         .select('full_name, avatar_url, is_certified')
         .eq('id', targetUserId)
         .maybeSingle();
-    
+
     if (profile) {
-    // 1. On sécurise le nom et on gère la certification
-    const nameEl = document.getElementById('chat-header-name');
-    const badge = profile.is_certified ? '<i class="fas fa-check-circle text-blue-500 text-xs ml-1"></i>' : '';
-    nameEl.innerHTML = `${profile.full_name} ${badge}`;
+        const nameEl = document.getElementById('chat-header-name');
+        const badge = profile.is_certified ? '<i class="fas fa-check-circle text-blue-500 text-xs ml-1"></i>' : '';
+        nameEl.innerHTML = `${profile.full_name} ${badge}`;
 
-    // 2. On rend l'avatar par défaut unique grâce au nom de l'utilisateur
-    const avatarEl = document.getElementById('chat-header-avatar');
-    const defaultAvatar = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(profile.full_name)}`;
+        const avatarEl = document.getElementById('chat-header-avatar');
+        const defaultAvatar = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(profile.full_name)}`;
+        avatarEl.src = profile.avatar_url || defaultAvatar;
+    }
+
+    // 3. Charger l'historique initial (Messages passés) UNE SEULE FOIS
+    await loadChatMessages(chatId);
     
-    avatarEl.src = profile.avatar_url || defaultAvatar;
-}
-
-    loadChatMessages(chatId);
+    // Marquer les messages comme lus immédiatement
     markChatAsRead(chatId);
-    
-    // Nettoyage de l'ancien interval
-    if (chatInterval) clearInterval(chatInterval);
-    
-    // Lancement du nouvel interval pour les messages
-    chatInterval = setInterval(() => {
-        loadChatMessages(currentChatId);
-        updateMessageBadge(); // On met à jour le badge ici aussi pour la réactivité
-    }, 3000);
 
-    // Rafraîchir le statut "En ligne"
-    refreshChatStatus(targetUserId);
-    const statusInterval = setInterval(() => {
-        if(currentTargetUserId === targetUserId) {
+    // 4. NETTOYAGE DE L'ANCIEN CHANNEL (SÉCURITÉ)
+    // On s'assure de fermer l'ancienne connexion WebSocket avant d'en ouvrir une nouvelle
+    if (window.currentChatChannel) {
+        await supabaseClient.removeChannel(window.currentChatChannel);
+        console.log("Ancien channel fermé.");
+    }
+
+    // 5. CONNEXION WEBSOCKET (SUPABASE REALTIME)
+    window.currentChatChannel = supabaseClient
+        .channel(`realtime:chat:${chatId}`) // Identifiant unique pour ce chat
+        .on('postgres_changes', {
+            event: 'INSERT',      // On écoute SEULEMENT les nouveaux messages
+            schema: 'public',
+            table: 'messages',
+            filter: `chat_id=eq.${chatId}` // Filtre précis
+        }, (payload) => {
+            // Cette fonction se déclenche AUTOMATIQUEMENT quand un message arrive
+            handleRealtimeMessage(payload.new);
+        })
+        .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+                console.log("✅ Connecté au chat en temps réel !");
+            }
+            if (status === 'CLOSED') {
+                console.log("❌ Connexion chat fermée.");
+            }
+        });
+
+    // 6. Rafraîchir le statut "En ligne" (On garde un interval léger car le statut ne change pas souvent)
+    if (chatStatusInterval) clearInterval(chatStatusInterval);
+    refreshChatStatus(targetUserId); // Appel immédiat
+    chatStatusInterval = setInterval(() => {
+        // On vérifie si on est toujours sur ce chat avant de rafraîchir
+        if (currentTargetUserId === targetUserId) {
             refreshChatStatus(targetUserId);
         } else {
-            clearInterval(statusInterval); // Stoppe si on change de conversation
+            clearInterval(chatStatusInterval);
         }
-    }, 30000);
+    }, 30000); // Toutes les 30 secondes (économie de ressources)
 }
 
-// 5. Charger les messages (AVEC GROUPING PAR DATE)
-async function loadChatMessages(chatId) {
-    const container = document.getElementById('chat-messages-container');
+            async function initGlobalRealtimeListeners() {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) return;
 
+    console.log("🚀 Initialisation du service global Realtime...");
+
+    // 1. Préparer le cache des chats (pour savoir si un message nous concerne)
+    const { data: chats } = await supabaseClient
+        .from('chats')
+        .select('id')
+        .or(`user_1_id.eq.${user.id},user_2_id.eq.${user.id}`);
+    
+    if (chats) {
+        chats.forEach(c => myChatIdsCache.add(c.id));
+    }
+
+    // 2. NETTOYER LES ANCIENS CHANNELS (Évite les doublons)
+    if (globalMessageListener) await supabaseClient.removeChannel(globalMessageListener);
+    if (globalNotifListener) await supabaseClient.removeChannel(globalNotifListener);
+
+    // 3. ÉCOUTEUR A : NOUVEAUX MESSAGES (Pour tous les chats)
+    globalMessageListener = supabaseClient
+        .channel('global-messages-channel')
+        .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages'
+        }, async (payload) => {
+            const msg = payload.new;
+
+            // Vérifier si ce message nous appartient (dans un de nos chats)
+            if (!myChatIdsCache.has(msg.chat_id)) return;
+
+            // Si c'est MOI qui envoie le message, on ne notifie pas
+            if (msg.sender_id === user.id) return;
+
+            // --- LOGIQUE D'AFFICHAGE ---
+            
+            // A. Si on est DÉJÀ dans ce chat spécifique -> On fait rien (géré par le listener local)
+            // currentChatId est défini dans openChatRoom
+            if (window.currentChatId === msg.chat_id) {
+                return; 
+            }
+
+            // B. Récupérer les infos de l'expéditeur pour le Toast
+            const { data: senderProfile } = await supabaseClient
+                .from('profiles')
+                .select('full_name, avatar_url')
+                .eq('id', msg.sender_id)
+                .single();
+
+            // C. Afficher le Toast Facebook Style
+            if (senderProfile) {
+                showIncomingMessageToast(
+                    senderProfile.full_name,
+                    msg.content.substring(0, 30) + '...', // Aperçu
+                    senderProfile.avatar_url,
+                    msg.chat_id,
+                    msg.sender_id
+                );
+            }
+
+            // D. Mettre à jour le badge rouge du Dock
+            updateMessageBadge();
+        })
+        .subscribe();
+
+    // 4. ÉCOUTEUR B : NOUVELLES NOTIFICATIONS
+    globalNotifListener = supabaseClient
+        .channel('global-notifs-channel')
+        .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'notifications',
+            filter: `recipient_id=eq.${user.id}` // Filtre précis !
+        }, (payload) => {
+            const notif = payload.new;
+            
+            // Mettre à jour le badge
+            updateNotificationBadge();
+
+            // Afficher un Toast simple
+            showToast(`🔔 Nouvelle notification !`, "success"); 
+        })
+        .subscribe();
+}
+            
+// --- FONCTION HELPER POUR L'INJECTION DIRECTE ---
+// Cette fonction gère l'arrivée d'un NOUVEAU message sans recharger tout le DOM
+async function handleRealtimeMessage(newMessage) {
+    const container = document.getElementById('chat-messages-container');
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user || !container) return;
+
+    const isMe = newMessage.sender_id === user.id;
+
+    // 1. Si le message est de MOI, on ne fait rien.
+    // Pourquoi ? Car notre fonction 'sendChatMessage' a déjà optimistement ajouté le message à l'écran
+    // ou le trigger DB va le renvoyer. Pour éviter les doublons, on gère ça intelligemment.
+    // ASTUCE PRO : Si on veut gérer la confirmation d'envoi (double coche), c'est ici qu'on peut update l'ID temporaire.
+    // Pour simplifier, on ignore si c'est moi pour éviter le doublon visuel instantané.
+    if (isMe) return;
+
+    // 2. Construction HTML de la bulle (Style WhatsApp)
+    const bubbleClass = 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-2xl rounded-tl-sm shadow-sm border border-slate-100 dark:border-slate-700';
+    
+    const row = document.createElement('div');
+    row.className = 'flex w-full mb-4 justify-start animate-fade-in'; // Animation d'apparition
+    row.innerHTML = `
+        <div class="flex flex-col items-start max-w-[75%]">
+            <div class="${bubbleClass} px-4 py-2 text-sm leading-relaxed break-words">
+                ${newMessage.content}
+            </div>
+            <span class="text-[10px] text-slate-400 mt-1 mx-1">
+                ${new Date(newMessage.created_at).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})}
+            </span>
+        </div>
+    `;
+
+    // 3. Injection dans le DOM
+    container.appendChild(row);
+
+    // 4. Scroll automatique vers le bas
+    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+
+    // 5. Notification Légère (Vibration ou Son) si l'app est en arrière-plan (Optionnel)
+    if (document.hidden && navigator.vibrate) navigator.vibrate(200);
+
+    // 6. Mettre à jour le badge de notification (puisque j'ai reçu un message)
+    updateMessageBadge();
+}
+
+// 5. Charger les messages (AVEC GROUPING PAR DATE)
+/* ==========================================================
+   SECTION 1 : CHAT MESSAGING (ULTRA OPTIMISÉ)
+   ========================================================== */
+
+// 1. Charger l'historique (Version Performance avec DocumentFragment)
+async function loadChatMessages(chatId) {
+    const container = document.getElementById('chat-messages-container');
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user || !container) return;
+
+    // Sauvegarder la position de scroll pour ne pas perturber la lecture
+    const isScrolledToBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 50;
+    
     try {
         const { data: messages, error } = await supabaseClient
             .from('messages')
@@ -4690,61 +4995,77 @@ async function loadChatMessages(chatId) {
             .order('created_at', { ascending: true });
 
         if (error) throw error;
+
+        // Utilisation d'un Fragment pour performances optimales (1 seul repaint DOM)
+        const fragment = document.createDocumentFragment();
+        let lastDate = null;
+
         if (!messages || messages.length === 0) {
             container.innerHTML = '<div class="text-center py-10 text-slate-400 text-xs">Commencez la conversation !</div>';
             return;
         }
 
-        // On vide le conteneur
-        container.innerHTML = '';
-
-        // Variable pour mémoriser la date du message précédent
-        let lastDate = null;
+        container.innerHTML = ''; // Vider une seule fois
 
         messages.forEach(msg => {
-            // 1. Récupérer la date "pure" (sans l'heure), ex: "12/10/2024"
             const msgDate = new Date(msg.created_at).toLocaleDateString('fr-FR');
 
-            // 2. Si la date change par rapport au message précédent, on affiche le séparateur
+            // Séparateur de date
             if (lastDate !== msgDate) {
-                const dateSeparator = document.createElement('div');
-                dateSeparator.className = 'text-center my-4';
-                dateSeparator.innerHTML = `<span class="text-[10px] font-bold text-slate-400 uppercase bg-slate-200 dark:bg-slate-800 px-3 py-1 rounded-full">${msgDate}</span>`;
-                container.appendChild(dateSeparator);
-
-                // On met à jour la mémoire
+                const dateEl = document.createElement('div');
+                dateEl.className = 'text-center my-4';
+                dateEl.innerHTML = `<span class="text-[10px] font-bold text-slate-400 uppercase bg-slate-200 dark:bg-slate-800 px-3 py-1 rounded-full">${msgDate}</span>`;
+                fragment.appendChild(dateEl);
                 lastDate = msgDate;
             }
 
-            // 3. Affichage de la bulle de message (On garde l'heure dedans)
+            // Bulle de message
             const isMe = msg.sender_id === user.id;
-            const bubbleClass = isMe 
-                ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-2xl rounded-tr-sm shadow-md' 
-                : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-2xl rounded-tl-sm shadow-sm border border-slate-100 dark:border-slate-700';
-
-            const row = document.createElement('div');
-            row.className = `flex w-full mb-4 ${isMe ? 'justify-end' : 'justify-start'}`;
-            row.innerHTML = `
-                <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%]">
-                    <div class="${bubbleClass} px-4 py-2 text-sm leading-relaxed break-words">
-                        ${msg.content}
-                    </div>
-                    <span class="text-[10px] text-slate-400 mt-1 mx-1">
-                        ${new Date(msg.created_at).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})}
-                    </span>
-                </div>
-            `;
-            container.appendChild(row);
+            const row = createMessageBubble(msg, isMe);
+            fragment.appendChild(row);
         });
 
-        // Scroll en bas
-        container.scrollTop = container.scrollHeight;
+        container.appendChild(fragment);
+
+        // Auto-scroll uniquement si on était déjà en bas
+        if (isScrolledToBottom) {
+            container.scrollTop = container.scrollHeight;
+        }
 
     } catch (err) {
         console.error("Erreur loadMessages:", err);
     }
 }
-// 5. Envoyer un message
+
+// Helper pour créer une bulle (Code plus propre)
+function createMessageBubble(msg, isMe) {
+    const row = document.createElement('div');
+    row.className = `flex w-full mb-3 ${isMe ? 'justify-end' : 'justify-start'}`;
+    row.setAttribute('data-msg-id', msg.id); // Pour le tracking
+
+    const bubbleClass = isMe 
+        ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-2xl rounded-br-sm shadow-md' 
+        : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-2xl rounded-bl-sm shadow-sm border dark:border-slate-700';
+
+    const time = new Date(msg.created_at).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
+    
+    // Gestion des ticks (Envoyé/Lu) - nécessite un champ 'is_read' dans la DB pour être complet
+    const statusIcon = isMe ? `<i class="fas fa-check-double text-[8px] ml-1 ${msg.is_read ? 'text-blue-300' : 'text-white/50'}"></i>` : '';
+
+    row.innerHTML = `
+        <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%]">
+            <div class="${bubbleClass} px-4 py-2 text-sm leading-relaxed break-words">
+                ${msg.content}
+            </div>
+            <span class="text-[10px] text-slate-400 mt-1 mx-2 flex items-center gap-1">
+                ${time} ${statusIcon}
+            </span>
+        </div>
+    `;
+    return row;
+}
+
+// 2. Envoyer un message (UI Optimiste)
 async function sendChatMessage(e) {
     if(e) e.preventDefault();
     const input = document.getElementById('chat-input');
@@ -4755,37 +5076,220 @@ async function sendChatMessage(e) {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) return;
 
-    input.value = ''; // On vide tout de suite pour l'effet de vitesse
+    // A. Vider l'input immédiatement (UX Rapide)
+    input.value = '';
 
-    const { error } = await supabaseClient
-        .from('messages')
-        .insert([{
-            chat_id: currentChatId,
-            sender_id: user.id,
-            content: content
-        }]);
+    // B. Créer un message temporaire pour l'affichage immédiat
+    const tempId = 'temp-' + Date.now();
+    const tempMsg = {
+        id: tempId,
+        sender_id: user.id,
+        content: content,
+        created_at: new Date().toISOString(),
+        is_read: false
+    };
 
-    if (error) {
+    // C. Injection Optimiste (On affiche direct sans attendre le serveur)
+    const container = document.getElementById('chat-messages-container');
+    const row = createMessageBubble(tempMsg, true);
+    row.classList.add('opacity-75'); // Légèrement transparent pour indiquer "envoi en cours"
+    container.appendChild(row);
+    container.scrollTop = container.scrollHeight; // Force scroll pour le message qu'on envoie
+
+    // D. Envoi Serveur
+    try {
+        const { error } = await supabaseClient
+            .from('messages')
+            .insert([{
+                chat_id: currentChatId,
+                sender_id: user.id,
+                content: content
+            }]);
+
+        if (error) throw error;
+        
+        // Succès : Le message est envoyé. Le WebSocket va recevoir le message "réel" de la DB.
+        // On peut soit supprimer le temporaire et laisser le WebSocket ajouter le vrai, 
+        // soit mettre à jour l'opacité à 1.
+        row.classList.remove('opacity-75'); 
+
+    } catch (err) {
         showToast("Erreur d'envoi", "error");
-        console.error(error);
-    } else {
-        loadChatMessages(currentChatId);
+        row.innerHTML += '<span class="text-red-500 text-[10px] block text-right">Échec de l\'envoi</span>';
     }
 }
 
-// Nettoyage lors du changement de page
-const originalSwitchPage = window.switchPage;
-window.switchPage = function(pageId) {
-    if (pageId !== 'chat' && chatInterval) {
-        clearInterval(chatInterval);
-        chatInterval = null;
-    }
-    if (typeof originalSwitchPage === 'function') {
-        originalSwitchPage(pageId);
-    }
-};
-        /* --- LOGIQUE DU BADGE (UNIQUEMENT SI NON LU) --- */
+/* ==========================================================
+   SECTION 2 : NOTIFICATIONS (TEMPS RÉEL & BADGES)
+   ========================================================== */
 
+// 1. Initialisation du Listener Temps Réel (À appeler au démarrage de l'app)
+function initRealtimeNotifications() {
+    supabaseClient
+        .channel('realtime:notifications')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, payload => {
+            const notif = payload.new;
+            // Vérifier si c'est pour moi
+            if (notif.recipient_id === supabaseClient.auth.user()?.id) {
+                updateNotificationBadge(); // MAJ badge
+                showToast("🔔 Nouvelle notification !", "success");
+            }
+        })
+        .subscribe();
+}
+
+// 2. Charger les notifications (Render Optimisé)
+async function loadNotifications() {
+    const container = document.getElementById('notifications-list-container');
+    if (!container) return;
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return;
+
+    // Loader simple
+    container.innerHTML = `<div class="text-center py-10 text-slate-400"><i class="fas fa-spinner fa-spin"></i></div>`;
+
+    try {
+        const { data: notifs, error } = await supabaseClient
+            .from('notifications')
+            .select(`*, profiles ( full_name, avatar_url )`)
+            .eq('recipient_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(50); // Limite pour perf
+
+        if (error) throw error;
+
+        if (!notifs || notifs.length === 0) {
+            container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-slate-400"><i class="far fa-bell-slash text-4xl mb-3 opacity-20"></i><p>Aucune notification.</p></div>`;
+            return;
+        }
+
+        container.innerHTML = notifs.map(notif => {
+            const actor = notif.profiles || {};
+            const avatar = actor.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix';
+            const name = actor.full_name || 'Utilisateur';
+            
+            // Logique d'icône et message
+            const config = {
+                'like': { icon: 'fa-heart', color: 'text-red-500', msg: 'a aimé votre publication.' },
+                'comment': { icon: 'fa-comment', color: 'text-blue-500', msg: `a commenté : "${notif.content_preview || '...'}"` },
+                'follow': { icon: 'fa-user-plus', color: 'text-green-500', msg: 'a commencé à vous suivre.' }
+            };
+            const { icon, color, msg } = config[notif.type] || { icon: 'fa-bell', color: 'text-slate-500', msg: 'Nouvelle interaction.' };
+
+            const bgClass = notif.is_read ? 'bg-white dark:bg-slate-900' : 'bg-indigo-50 dark:bg-slate-800 border-l-4 border-indigo-500';
+
+            return `
+            <div class="flex items-center gap-4 p-4 border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition ${bgClass}">
+                <img src="${avatar}" class="w-12 h-12 rounded-full object-cover shadow-sm">
+                <div class="flex-1">
+                    <p class="text-sm text-slate-800 dark:text-slate-200">
+                        <span class="font-bold">${name}</span> ${msg}
+                    </p>
+                    <span class="text-[10px] text-slate-400">${getTimeAgo(new Date(notif.created_at))}</span>
+                </div>
+                <i class="fas ${icon} ${color} opacity-50"></i>
+            </div>`;
+        }).join('');
+
+    } catch (err) {
+        console.error("Erreur notifs:", err);
+    }
+}
+
+// 3. Badge de Notification (Lecture rapide HEAD)
+async function updateNotificationBadge() {
+    const badge = document.getElementById('notif-badge-count');
+    if (!badge) return;
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return;
+
+    const { count } = await supabaseClient
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('recipient_id', user.id)
+        .eq('is_read', false);
+
+    if (count && count > 0) {
+        badge.innerText = count > 99 ? '99+' : count;
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
+}
+
+/* ==========================================================
+   SECTION 3 : UTILITAIRES & CONTENU
+   ========================================================== */
+
+// Validation de contenu (Version améliorée avec liste)
+function containsInappropriateContent(text) {
+    if (!text) return false;
+    const lowerText = text.toLowerCase();
+    // Liste simple (à enrichir ou utiliser une API externe pour un vrai projet)
+    const forbiddenWords = ['connard', 'merde', 'putain', 'idiot', 'bastard', 'asshole']; 
+    return forbiddenWords.some(word => lowerText.includes(word));
+}
+
+// Status Chat (Optimisé)
+async function refreshChatStatus(userId) {
+    const statusText = document.getElementById('chat-header-status-text');
+    const statusDot = document.getElementById('chat-status-dot');
+    if (!statusText) return;
+
+    const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('last_seen')
+        .eq('id', userId)
+        .maybeSingle();
+
+    if (profile) {
+        const diffSeconds = profile.last_seen ? Math.floor((new Date() - new Date(profile.last_seen)) / 1000) : 999999;
+        
+        if (diffSeconds < 120) { // Moins de 2 min = En ligne
+            statusText.innerText = "En ligne";
+            statusText.className = "text-[11px] text-emerald-100 font-bold"; // Style WhatsApp
+            statusDot.className = "absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[#00a884]";
+        } else {
+            statusText.innerText = getTimeAgoSimple(profile.last_seen);
+            statusText.className = "text-[11px] text-emerald-100 opacity-75";
+            statusDot.className = "hidden";
+        }
+    }
+}
+
+// Recherche Toggle (UX Pro)
+function toggleSearch() {
+    const searchBar = document.getElementById('feed-search-bar');
+    const searchInput = document.getElementById('feed-search-input');
+    
+    if (searchBar.classList.contains('hidden')) {
+        searchBar.classList.remove('hidden');
+        searchBar.style.opacity = '0';
+        searchBar.style.transform = 'translateY(-10px)';
+        // Animation d'apparition
+        requestAnimationFrame(() => {
+            searchBar.style.transition = 'all 0.3s ease';
+            searchBar.style.opacity = '1';
+            searchBar.style.transform = 'translateY(0)';
+            searchInput.focus();
+        });
+    } else {
+        searchBar.style.opacity = '0';
+        searchBar.style.transform = 'translateY(-10px)';
+        setTimeout(() => {
+            searchBar.classList.add('hidden');
+            searchInput.value = ''; 
+            searchFeed(''); // Reset feed
+        }, 300);
+    }
+}
+
+            /* ==========================================================
+   FONCTIONS MANQUANTES POUR LE CHAT (BADGE & LECTURE)
+   ========================================================== */
+
+// 1. Mettre à jour le badge rouge de message (Dock & Header)
 async function updateMessageBadge() {
     const badge = document.getElementById('msg-badge-count');
     if (!badge) return;
@@ -4794,409 +5298,129 @@ async function updateMessageBadge() {
     if (!user) return;
 
     try {
-        // 1. Récupérer tous les chats où je suis impliqué
+        // A. Récupérer tous mes chats
         const { data: myChats } = await supabaseClient
             .from('chats')
             .select('id')
             .or(`user_1_id.eq.${user.id},user_2_id.eq.${user.id}`);
 
         if (!myChats || myChats.length === 0) {
-            badge.classList.add('hidden'); // Cacher si pas de chats
+            badge.classList.add('hidden');
             return;
         }
 
         const myChatIds = myChats.map(c => c.id);
 
-        // 2. Compter uniquement les messages NON LUS envoyés par L'AUTRE
+        // B. Compter les messages NON LUS envoyés par les AUTRES
         const { count } = await supabaseClient
             .from('messages')
-            .select('*', { count: 'exact', head: true })
-            .in('chat_id', myChatIds)          // Dans mes chats
-            .neq('sender_id', user.id)        // Pas envoyé par moi
-            .eq('is_read', false);           // ET qui est NON LU (Ici c'est la clé)
+            .select('*', { count: 'exact', head: true }) // head: true pour perf (pas de body)
+            .in('chat_id', myChatIds)
+            .neq('sender_id', user.id) // Pas les miens
+            .eq('is_read', false);     // Non lus
 
         const unreadCount = count || 0;
 
-        // 3. Afficher ou Cacher le badge selon le résultat
-        if (unreadCount > 0) {
-            badge.innerText = unreadCount > 99 ? '99+' : unreadCount;
-            badge.classList.remove('hidden'); // Afficher
-        } else {
-            badge.classList.add('hidden');    // Cacher
-        }
-
-    } catch (err) {
-        console.error("Erreur update badge:", err);
-    }
-}
-
-// 2. Marquer une conversation comme lue
-async function markChatAsRead(chatId) {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return;
-
-    try {
-        // Mettre à jour tous les messages de ce chat envoyés par l'autre
-        await supabaseClient
-            .from('messages')
-            .update({ is_read: true })
-            .eq('chat_id', chatId)
-            .neq('sender_id', user.id); // On ne marque pas les miens comme lus
-        
-        // Mettre à jour le badge immédiatement
-        updateMessageBadge();
-    } catch (err) {
-        console.error("Erreur mark read:", err);
-    }
-}
-        /* --- LOGIQUE DE NOTIFICATION --- */
-
-async function sendNotification(targetUserId, type, postId, contentPreview = null) {
-    const { data: { user: actor } } = await supabaseClient.auth.getUser();
-    if (!actor || actor.id === targetUserId) return; // Ne pas se notifier soi-même
-
-    try {
-        await supabaseClient
-            .from('notifications')
-            .insert([{
-                recipient_id: targetUserId,
-                actor_id: actor.id,
-                type: type, // 'like' ou 'comment'
-                post_id: postId,
-                content_preview: contentPreview
-            }]);
-    } catch (err) {
-        console.error("Erreur envoi notification:", err);
-    }
-}
-        /* --- AFFICHAGE DES NOTIFICATIONS --- */
-
-// 1. Charger la liste
-async function loadNotifications() {
-    const container = document.getElementById('notifications-list-container');
-    if (!container) return;
-
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return;
-
-    try {
-        // Récupérer les notifications triées par date récente
-        const { data: notifs, error } = await supabaseClient
-            .from('notifications')
-            .select(`
-                *,
-                profiles ( full_name, avatar_url )
-            `)
-            .eq('recipient_id', user.id)
-            .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        if (!notifs || notifs.length === 0) {
-            container.innerHTML = `
-                <div class="flex flex-col items-center justify-center h-full text-slate-400">
-                    <i class="far fa-bell-slash text-4xl mb-3 opacity-20"></i>
-                    <p>Aucune notification pour le moment.</p>
-                </div>`;
-            return;
-        }
-
-        container.innerHTML = notifs.map(notif => {
-            const actor = notif.profiles || {};
-            const avatar = actor.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix';
-            const name = actor.full_name || 'Utilisateur';
-            const timeAgo = getTimeAgo(new Date(notif.created_at));
-            
-            let message = '';
-            let icon = '';
-            let color = '';
-
-            if (notif.type === 'like') {
-                message = 'a aimé votre publication.';
-                icon = 'fa-heart';
-                color = 'text-red-500';
-            } else if (notif.type === 'comment') {
-                message = `a commenté : "${notif.content_preview || '...'}"`;
-                icon = 'fa-comment';
-                color = 'text-blue-500';
-            }
-
-            // Style si non lu
-            const bgClass = notif.is_read ? 'bg-white dark:bg-slate-900' : 'bg-indigo-50 dark:bg-slate-800';
-            const fontClass = notif.is_read ? 'text-slate-800 dark:text-slate-200' : 'text-slate-900 dark:text-white font-bold';
-
-            return `
-            <div class="flex items-center gap-4 p-4 border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition ${bgClass}">
-                <img src="${avatar}" class="w-12 h-12 rounded-full object-cover">
-                <div class="flex-1">
-                    <p class="text-sm ${fontClass}">
-                        <span class="font-bold">${name}</span> ${message}
-                    </p>
-                    <span class="text-[10px] text-slate-400">${timeAgo}</span>
-                </div>
-                <i class="fas ${icon} ${color}"></i>
-            </div>
-            `;
-        }).join('');
-
-    } catch (err) {
-        console.error("Erreur notifs:", err);
-    }
-}
-
-// 2. Mettre à jour le badge rouge
-async function updateNotificationBadge() {
-    const badge = document.getElementById('notif-badge-count');
-    if (!badge) return;
-
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return;
-
-    try {
-        const { count } = await supabaseClient
-            .from('notifications')
-            .select('*', { count: 'exact', head: true })
-            .eq('recipient_id', user.id)
-            .eq('is_read', false);
-
-        const unreadCount = count || 0;
-
+        // C. Affichage du badge
         if (unreadCount > 0) {
             badge.innerText = unreadCount > 99 ? '99+' : unreadCount;
             badge.classList.remove('hidden');
         } else {
             badge.classList.add('hidden');
         }
-    } catch (err) { console.error(err); }
-}
-
-// 3. Tout marquer comme lu
-async function markAllNotificationsRead() {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if(!user) return;
-
-    await supabaseClient
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('recipient_id', user.id);
-    
-    updateNotificationBadge();
-    loadNotifications();
-}
-            // Fonction de validation (Placeholder)
-function containsInappropriateContent(text) {
-    // Ajoutez votre logique de filtrage ici si besoin
-    return false; 
-}
-        async function handleNewPost(e) {
-    if (e) e.preventDefault();
-    
-    // 1. Capture sécurisée des éléments UI
-    const form = e.target;
-    const btn = form.querySelector('button[type="submit"]');
-    const originalText = btn ? btn.innerHTML : "Publier";
-    const captionEl = document.getElementById('post-caption');
-    const typeEl = document.getElementById('current-post-type');
-
-             // --- NOUVELLE VÉRIFICATION (Point 1 : Sécurité Frontend) ---
-    // --- NOUVELLE VÉRIFICATION ---
-// On récupère d'abord le texte du champ (caption)
-const content = captionEl ? captionEl.value.trim() : ""; 
-
-if (containsInappropriateContent(content)) {
-    showToast("Votre publication contient des mots interdits ou inappropriés.", "error");
-    if(captionEl) {
-        captionEl.classList.add('ring-2', 'ring-red-500', 'bg-red-50');
-        setTimeout(() => captionEl.classList.remove('ring-2', 'ring-red-500', 'bg-red-50'), 2000);
-    }
-    return; 
-}
-            
-    // 2. Validation immédiate (Early Return)
-    if (!currentPostFile) {
-        showToast("Veuillez choisir un média avant de publier", "warning");
-        return;
-    }
-
-    // Blocage du bouton pour éviter le double-clic
-    if (btn) {
-        btn.innerHTML = `<i class="fas fa-spinner animate-spin mr-2"></i> Envoi...`;
-        btn.disabled = true;
-    }
-
-    try {
-        // 3. Identification de l'utilisateur
-        const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-        if (authError || !user) throw new Error("Session expirée. Veuillez vous reconnecter.");
-
-        const mediaType = typeEl ? typeEl.value : 'image';
-        const fileExt = currentPostFile.name.split('.').pop();
-        const fileName = `${user.id}/${Date.now()}.${fileExt}`; // Dossier par user_id pour meilleure organisation
-
-        // 4. Upload Supabase Storage
-        const { data: uploadData, error: uploadError } = await supabaseClient.storage
-            .from('posts')
-            .upload(fileName, currentPostFile, { cacheControl: '3600', upsert: false });
-
-        if (uploadError) throw new Error(`Stockage : ${uploadError.message}`);
-
-        // 5. Récupération de l'URL publique
-        const { data: publicUrlData } = supabaseClient.storage
-            .from('posts')
-            .getPublicUrl(fileName);
-
-        if (!publicUrlData || !publicUrlData.publicUrl) {
-            throw new Error("Impossible de générer l'URL publique du média.");
-        }
-
-        // 6. Préparation des données pour la table 'posts'
-        const insertData = {
-            user_id: user.id,
-            caption: captionEl ? captionEl.value.trim() : "",
-            is_short: (mediaType === 'short'),
-            created_at: new Date().toISOString()
-        };
-
-        // Attribution de l'URL selon le type
-        if (mediaType === 'short') {
-            const videoEl = document.getElementById('preview-video-el');
-            insertData.video_url = publicUrlData.publicUrl;
-            insertData.video_duration = videoEl ? Math.floor(videoEl.duration) : 0;
-            // Optionnel: On met null dans image_url si votre DB est stricte
-            insertData.image_url = null; 
-        } else {
-            insertData.image_url = publicUrlData.publicUrl;
-            insertData.video_url = null;
-        }
-
-        // 7. Insertion en Base de données
-        const { error: insertError } = await supabaseClient
-            .from('posts')
-            .insert([insertData]);
-
-        if (insertError) {
-            // Si l'erreur vient du serveur (Trigger SQL), on l'affiche
-            if (insertError.message && insertError.message.includes("contenu inapproprié")) {
-                 showToast("Publication refusée : Langage inapproprié détecté.", "danger");
-                 btn.innerHTML = btnText;
-                 btn.disabled = false;
-                 return;
-            }
-            throw insertError;
-        }
-
-        // 8. Succès : Feedback et nettoyage
-        showToast("Votre publication est en ligne !", "success");
-        closeNewPostModal();
-        
-        // Rafraîchir les flux si les fonctions existent
-        if (typeof loadGlobalFeed === 'function') loadGlobalFeed();
-        if (typeof loadSocialProfile === 'function') loadSocialProfile(user.id);
-
-    } catch (error) {
-        console.error("ERREUR PUBLICATION :", error);
-        showToast(error.message, "danger");
-    } finally {
-        // 9. Reset de l'état (TOUJOURS exécuté)
-        if (btn) {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
-        
-        // On ne reset le formulaire que si tout est fini
-        if (form) form.reset();
-        
-        // Fonctions utilitaires de votre app
-        if (typeof resetPreview === 'function') resetPreview();
-        if (typeof setPostType === 'function') setPostType('image');
-        
-        currentPostFile = null; 
-    }
-}
-            function getTimeAgoSimple(date) {
-    if (!date) return "Hors ligne";
-    const seconds = Math.floor((new Date() - new Date(date)) / 1000);
-    
-    if (seconds < 60) return "En ligne";
-    if (seconds < 3600) return `En ligne il y a ${Math.floor(seconds / 60)} min`;
-    if (seconds < 86400) return `En ligne il y a ${Math.floor(seconds / 3600)} h`;
-    if (seconds < 604800) return `En ligne il y a ${Math.floor(seconds / 86400)} j`;
-    
-    return new Date(date).toLocaleDateString(); // Affiche la date si + de 7 jours
-}
-        async function refreshChatStatus(userId) {
-    const statusText = document.getElementById('chat-header-status-text');
-    const statusDot = document.getElementById('chat-status-dot');
-    
-    if (!statusText || !userId) return;
-
-    try {
-        const { data: profile, error } = await supabaseClient
-            .from('profiles')
-            .select('last_seen')
-            .eq('id', userId)
-            .maybeSingle(); // Plus sûr que .single()
-
-        if (error || !profile) {
-            statusText.innerText = "Hors ligne";
-            return;
-        }
-
-        const lastSeen = profile.last_seen;
-        const diffInSeconds = lastSeen ? Math.floor((new Date() - new Date(lastSeen)) / 1000) : 999999;
-
-        // Logique visuelle pro
-        if (diffInSeconds < 120) { 
-            statusText.innerText = "En ligne";
-            statusText.classList.add('text-green-500'); // Si tu utilises Tailwind
-            statusDot.className = "w-3 h-3 rounded-full border-2 border-white bg-green-500 shadow-sm";
-        } else {
-            statusText.innerText = getTimeAgoSimple(lastSeen);
-            statusText.classList.remove('text-green-500');
-            statusDot.className = "w-3 h-3 rounded-full border-2 border-white bg-slate-400 shadow-sm";
-        }
 
     } catch (err) {
-        console.error("Erreur statut:", err);
+        console.error("Erreur updateMessageBadge:", err);
     }
 }
-            // Fonction pour déplier/replier le texte
-function toggleCaptionExpand(postId) {
-    const textEl = document.getElementById(`caption-${postId}`);
-    const btnEl = document.getElementById(`btn-more-${postId}`);
-    
-    if (!textEl) return;
 
-    if (textEl.classList.contains('line-clamp-2')) {
-        // On déplie
-        textEl.classList.remove('line-clamp-2');
-        btnEl.textContent = "Voir moins";
+// 2. Marquer une conversation comme lue (quand on l'ouvre)
+async function markChatAsRead(chatId) {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return;
+
+    try {
+        // Mettre à jour les messages de l'autre personne dans ce chat
+        await supabaseClient
+            .from('messages')
+            .update({ is_read: true })
+            .eq('chat_id', chatId)
+            .neq('sender_id', user.id); // Seulement ceux que je n'ai pas envoyés
+        
+        // Rafraîchir le badge global
+        updateMessageBadge();
+    } catch (err) {
+        console.error("Erreur markChatAsRead:", err);
+    }
+}
+
+// Helper Time Ago (Robuste)
+function getTimeAgoSimple(date) {
+    if (!date) return "Hors ligne";
+    const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+    if (seconds < 60) return "À l'instant";
+    if (seconds < 3600) return `il y a ${Math.floor(seconds / 60)} min`;
+    if (seconds < 86400) return `il y a ${Math.floor(seconds / 3600)} h`;
+    return `le ${new Date(date).toLocaleDateString('fr-FR')}`;
+}
+
+            /* --- FONCTION TOAST POUR MESSAGE ENTRANT (STYLE FACEBOOK) --- */
+function showIncomingMessageToast(senderName, messagePreview, avatarUrl, chatId, senderId) {
+    const container = document.getElementById('toast-container');
+    
+    // Création du toast spécial
+    const toast = document.createElement('div');
+    toast.className = 'toast incoming-message cursor-pointer hover:scale-[1.02] transition-transform';
+    toast.style.background = 'white';
+    toast.style.borderLeft = '4px solid #3b82f6'; // Bleu pour message
+    toast.style.minWidth = '280px';
+    
+    // Date formatée
+    const time = new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
+
+    // HTML interne du Toast
+    toast.innerHTML = `
+        <div class="flex items-center gap-3 p-2" onclick="handleToastClick('${chatId}', '${senderId}')">
+            <div class="relative">
+                <img src="${avatarUrl}" class="w-12 h-12 rounded-full object-cover border-2 border-slate-100 shadow-sm">
+                <div class="absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full p-1">
+                    <i class="fas fa-comment text-[8px]"></i>
+                </div>
+            </div>
+            <div class="flex-1 overflow-hidden">
+                <p class="text-sm font-bold text-slate-900 truncate">${senderName}</p>
+                <p class="text-xs text-slate-500 truncate">${messagePreview}</p>
+                <span class="text-[10px] text-slate-400">${time}</span>
+            </div>
+        </div>
+    `;
+
+    container.appendChild(toast);
+
+    // Auto-suppression après 5 secondes
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s forwards';
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+}
+
+// Fonction utilitaire pour gérer le clic sur le Toast
+async function handleToastClick(chatId, senderId) {
+    // 1. Fermer le toast cliqué
+    event.currentTarget.closest('.toast').remove();
+    
+    // 2. Ouvrir la discussion
+    // Si la fonction startChat existe (pour créer/récupérer le chat)
+    if (typeof startChat === 'function') {
+        await startChat(senderId);
     } else {
-        // On replie
-        textEl.classList.add('line-clamp-2');
-        btnEl.textContent = "Voir plus";
-        // Optionnel : scroller un peu vers le haut si le texte est long
-        textEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        // Sinon ouvrir directement la room si on a déjà l'ID
+        openChatRoom(chatId, senderId);
     }
 }
             
-        // 1. Fonction pour ouvrir/fermer la barre de recherche
-function toggleSearch() {
-    const searchBar = document.getElementById('feed-search-bar');
-    const searchInput = document.getElementById('feed-search-input');
-    
-    if (searchBar.classList.contains('hidden')) {
-        // Ouvrir
-        searchBar.classList.remove('hidden');
-        // Petit délai pour que l'animation fonctionne avant le focus
-        setTimeout(() => searchInput.focus(), 100);
-    } else {
-        // Fermer
-        searchBar.classList.add('hidden');
-        searchInput.value = ''; // Vider la recherche
-        searchFeed(''); // Réinitialiser le feed
-    }
-}
+// Initialisation à ajouter dans votre DOMContentLoaded
+// initRealtimeNotifications(); // Lancer le realtime au démarrage
 
 // 2. Fonction pour filtrer les posts en temps réel (Recherche Facebook-like)
 document.getElementById('feed-search-input')?.addEventListener('input', function(e) {
@@ -5204,22 +5428,115 @@ document.getElementById('feed-search-input')?.addEventListener('input', function
     searchFeed(query);
 });
 
-function searchFeed(query) {
+// REMPLACEZ L'ANCIENNE FONCTION PAR CECI
+async function searchFeed(query) {
     const container = document.getElementById('global-feed-container');
-    const articles = container.querySelectorAll('article'); // On cible chaque post
-
-    articles.forEach(article => {
-        // On cherche dans le texte de la légende et le nom de l'auteur
-        const caption = article.querySelector('p')?.innerText.toLowerCase() || '';
-        const author = article.querySelector('h4')?.innerText.toLowerCase() || ''; // Note: ajustez le sélecteur si besoin
-        
-        // Si la recherche est vide ou si le texte contient la recherche
-        if (query === '' || caption.includes(query) || author.includes(query)) {
-            article.style.display = 'block'; // On affiche
-        } else {
-            article.style.display = 'none'; // On cache
+    
+    // 1. Gestion du Debounce (Anti-spam)
+    // On annule la recherche précédente si l'utilisateur tape vite
+    clearTimeout(searchDebounceTimer);
+    
+    searchDebounceTimer = setTimeout(async () => {
+        // 2. Si le champ est vide, on recharge le feed normal
+        if (!query || query.trim() === '') {
+            return loadGlobalFeed('recent', 'all', false);
         }
-    });
+
+        // 3. Affichage du Loader
+        container.innerHTML = `
+            <div class="col-span-full flex justify-center py-20">
+                <div class="flex items-center gap-2 text-slate-400 text-sm font-bold">
+                    <i class="fas fa-circle-notch fa-spin text-indigo-500"></i>
+                    Recherche en cours...
+                </div>
+            </div>`;
+
+        try {
+            // 4. Requête Supabase (Recherche dans le CAPTION)
+            // Le symbole % est un joker SQL : %mot% signifie "contient mot"
+            const { data: posts, error } = await supabaseClient
+                .from('posts')
+                .select(`
+                    *,
+                    profiles ( id, full_name, username, avatar_url, is_certified ),
+                    post_likes(count),
+                    post_comments(count)
+                `)
+                .ilike('caption', `%${query}%`) // Recherche insensible à la casse
+                .order('created_at', { ascending: false })
+                .limit(30);
+
+            if (error) throw error;
+
+            // 5. Gestion "Aucun résultat"
+            if (!posts || posts.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-20 text-slate-400">
+                        <i class="fas fa-search text-4xl mb-3 opacity-20"></i>
+                        <p class="font-bold">Aucun résultat pour "<span class="text-indigo-600">${query}</span>"</p>
+                        <p class="text-xs mt-1">Essayez avec d'autres mots-clés.</p>
+                    </div>`;
+                return;
+            }
+
+            // 6. Rendu des résultats (Pro)
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            const myId = user?.id;
+
+            container.innerHTML = posts.map(post => {
+                const profile = post.profiles || {};
+                const avatarUrl = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username || 'user'}`;
+                const userName = profile.full_name || 'Utilisateur';
+                const timeAgo = typeof getTimeAgo === 'function' ? getTimeAgo(new Date(post.created_at)) : '';
+                const likeCount = post.post_likes?.[0]?.count || 0;
+                const commentCount = post.post_comments?.[0]?.count || 0;
+                
+                // Sécurité pour l'affichage du texte
+                const safeCaption = post.caption ? post.caption.replace(/</g, "&lt;").replace(/>/g, "&gt;") : '';
+
+                return `
+                <article class="bg-white dark:bg-black border border-black/5 dark:border-white/10 rounded-lg overflow-hidden mb-2 transition-all hover:shadow-xl">
+                    <!-- HEADER -->
+                    <div class="p-4 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <img src="${avatarUrl}" class="w-11 h-11 rounded-full border-2 border-indigo-50 shadow-sm">
+                            <div>
+                                <div class="flex items-center gap-1 font-bold text-sm text-slate-900 dark:text-white">
+                                    ${userName} ${profile.is_certified ? '<i class="fas fa-check-circle text-blue-500 text-[10px]"></i>' : ''}
+                                </div>
+                                <div class="text-[11px] text-slate-400 font-medium">${timeAgo}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CAPTION -->
+                    <div class="px-4 pb-2">
+                        <p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                            ${safeCaption}
+                        </p>
+                    </div>
+
+                    <!-- MEDIA -->
+                    ${post.image_url ? `<img src="${post.image_url}" class="w-full h-auto object-cover" loading="lazy">` : ''}
+
+                    <!-- ACTIONS SIMPLIFIEES (Pour un resultat de recherche, on peut simplifier) -->
+                    <div class="px-4 py-2 flex items-center justify-between border-t border-slate-50 dark:border-slate-800">
+                        <div class="flex items-center gap-4 text-slate-500 text-xs font-bold">
+                            <span><i class="far fa-heart text-red-500 mr-1"></i> ${likeCount}</span>
+                            <span><i class="far fa-comment text-blue-500 mr-1"></i> ${commentCount}</span>
+                        </div>
+                        <button onclick="openPostModal('${post.id}')" class="text-xs font-bold text-indigo-600 hover:underline">Voir détails</button>
+                    </div>
+                </article>
+                `;
+            }).join('');
+
+        } catch (err) {
+            console.error("Erreur recherche:", err);
+            container.innerHTML = `<div class="col-span-full text-center py-10 text-red-500"><p>Erreur lors de la recherche.</p></div>`;
+        }
+
+    }, 400); // Délai de 400ms avant de lancer la recherche
 }
         async function reportPost(postId) {
     const reason = prompt("Pourquoi signalez-vous cette publication ? (Haine, Arnaque, Pornographie, Autre)");
@@ -5636,6 +5953,20 @@ async function loadSidebarUser() {
         }
     } catch (e) {
         console.error("Erreur chargement sidebar user:", e);
+    }
+}
+            async function blockUser(targetUserId) {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabaseClient
+        .from('blocked_users')
+        .insert([{ blocker_id: user.id, blocked_id: targetUserId }]);
+
+    if (!error) {
+        showToast("Utilisateur bloqué", "success");
+        // Optionnel : Retirer ses posts du feed actuel
+        document.querySelectorAll(`[data-user-id="${targetUserId}"]`).forEach(el => el.remove());
     }
 }
 </script>
