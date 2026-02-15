@@ -1576,7 +1576,7 @@ body.dark-mode .market-item .bg-emerald-50 {
         <span class="text-[13px] font-semibold">Paramètres et confidentialité</span>
     </a>
 
-    <a onclick="onclick="confirmSocialLogout()" 
+    <a onclick="confirmSocialLogout()" 
        class="flex items-center gap-3 p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all cursor-pointer mt-1">
         <div class="w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center">
             <i class="fas fa-sign-out-alt text-sm"></i>
@@ -4887,13 +4887,14 @@ async function openChatRoom(chatId, targetUserId) {
     }, 30000); // Toutes les 30 secondes
 }
 
-            async function initGlobalRealtimeListeners() {
+            /* --- SERVICE GLOBAL D'ÉCOUTE (TEMPS RÉEL) --- */
+async function initGlobalRealtimeListeners() {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) return;
 
     console.log("🚀 Initialisation du service global Realtime...");
 
-    // 1. Préparer le cache des chats (pour savoir si un message nous concerne)
+    // 1. Préparer le cache des chats existants
     const { data: chats } = await supabaseClient
         .from('chats')
         .select('id')
@@ -4907,7 +4908,7 @@ async function openChatRoom(chatId, targetUserId) {
     if (globalMessageListener) await supabaseClient.removeChannel(globalMessageListener);
     if (globalNotifListener) await supabaseClient.removeChannel(globalNotifListener);
 
-    // 3. ÉCOUTEUR A : NOUVEAUX MESSAGES (Pour tous les chats)
+    // 3. ÉCOUTEUR A : NOUVEAUX MESSAGES
     globalMessageListener = supabaseClient
         .channel('global-messages-channel')
         .on('postgres_changes', {
@@ -4917,40 +4918,62 @@ async function openChatRoom(chatId, targetUserId) {
         }, async (payload) => {
             const msg = payload.new;
 
-            // Vérifier si ce message nous appartient (dans un de nos chats)
-            if (!myChatIdsCache.has(msg.chat_id)) return;
-
-            // Si c'est MOI qui envoie le message, on ne notifie pas
+            // A. Si c'est MOI qui envoie le message, on ne notifie pas
             if (msg.sender_id === user.id) return;
+
+            // B. Vérifier si ce chat nous appartient (ou si c'est un nouveau chat)
+            // Si le chat n'est pas dans le cache, on vérifie en BD (cas d'un nouveau chat créé par l'autre)
+            if (!myChatIdsCache.has(msg.chat_id)) {
+                 const { data: chatCheck } = await supabaseClient
+                    .from('chats')
+                    .select('id')
+                    .eq('id', msg.chat_id)
+                    .or(`user_1_id.eq.${user.id},user_2_id.eq.${user.id}`)
+                    .maybeSingle();
+                 
+                 if (!chatCheck) return; // Ce n'est pas mon chat
+                 
+                 // C'est un nouveau chat pour moi, on l'ajoute au cache
+                 myChatIdsCache.add(msg.chat_id);
+                 console.log("Nouveau chat détecté et ajouté au cache :", msg.chat_id);
+            }
 
             // --- LOGIQUE D'AFFICHAGE ---
             
-            // A. Si on est DÉJÀ dans ce chat spécifique -> On fait rien (géré par le listener local)
-            // currentChatId est défini dans openChatRoom
+            // 1. Si on est DÉJÀ dans ce chat spécifique -> On ne fait rien (géré par le listener local)
             if (window.currentChatId === msg.chat_id) {
                 return; 
             }
 
-            // B. Récupérer les infos de l'expéditeur pour le Toast
+            // 2. Récupérer les infos de l'expéditeur
             const { data: senderProfile } = await supabaseClient
                 .from('profiles')
                 .select('full_name, avatar_url')
                 .eq('id', msg.sender_id)
                 .single();
 
-            // C. Afficher le Toast Facebook Style
+            // 3. Afficher le Toast Facebook Style
             if (senderProfile) {
                 showIncomingMessageToast(
                     senderProfile.full_name,
-                    msg.content.substring(0, 30) + '...', // Aperçu
+                    msg.content.substring(0, 30) + '...',
                     senderProfile.avatar_url,
                     msg.chat_id,
                     msg.sender_id
                 );
             }
 
-            // D. Mettre à jour le badge rouge du Dock
+            // 4. Mettre à jour le badge rouge du Dock
             updateMessageBadge();
+
+            // 5. MISE À JOUR AUTOMATIQUE DE LA LISTE (NOUVEAU)
+            // Si l'utilisateur est sur la page "Messages", on rafraîchit la liste
+            const messagesView = document.getElementById('messages-view');
+            if (messagesView && messagesView.classList.contains('active')) {
+                console.log("Mise à jour de la liste des discussions...");
+                loadChatList(); // Recharge la liste pour montrer le nouveau message / déplacer le chat
+            }
+
         })
         .subscribe();
 
@@ -4961,15 +4984,14 @@ async function openChatRoom(chatId, targetUserId) {
             event: 'INSERT',
             schema: 'public',
             table: 'notifications',
-            filter: `recipient_id=eq.${user.id}` // Filtre précis !
+            filter: `recipient_id=eq.${user.id}`
         }, (payload) => {
             const notif = payload.new;
             
             // Mettre à jour le badge
             updateNotificationBadge();
-
             // Afficher un Toast simple
-            showToast(`🔔 Nouvelle notification !`, "success"); 
+            showToast(`🔔 Nouvelle notification !`, "success");
         })
         .subscribe();
 }
