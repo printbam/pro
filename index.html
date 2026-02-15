@@ -1966,24 +1966,43 @@ body.dark-mode .market-item .bg-emerald-50 {
         </div>
 
         <!-- ZONE DE SAISIE -->
-        <div class="p-2 bg-[#f0f2f5] flex items-end gap-2 z-20">
-            <!-- Boutons Annexes -->
-            <div class="flex gap-1 text-slate-500">
-                <button class="p-2 hover:bg-slate-200 rounded-full transition"><i class="far fa-smile text-xl"></i></button>
-                <button class="p-2 hover:bg-slate-200 rounded-full transition"><i class="fas fa-paperclip text-xl"></i></button>
-            </div>
-            
-            <!-- Input -->
-            <form id="chat-form" onsubmit="sendChatMessage(event)" class="flex-1 relative bg-white border border-gray-300 rounded-xl items-center px-4 py-2 shadow-sm focus-within:shadow-md focus-within:border-emerald-500 transition-all">
-                <input type="text" id="chat-input" placeholder="Écrivez un message..." autocomplete="off"
-                       class="w-full bg-transparent border-none focus:outline-none text-sm text-slate-800">
-            </form>
-            
-            <!-- Bouton Micro/Vocal -->
-            <button class="p-2 bg-[#00a884] text-white rounded-full shadow-md hover:bg-[#008f6f] transition">
-                <i class="fas fa-microphone"></i>
-            </button>
-        </div>
+        <!-- ZONE DE SAISIE (À coller dans #chat-view, à la place de l'ancien formulaire) -->
+<div class="p-2 bg-[#f0f2f5] dark:bg-slate-800 flex items-end gap-2 z-20 border-t border-slate-200 dark:border-slate-700">
+    
+    <!-- Boutons Gauche (Smileys / Fichier) -->
+    <div class="flex gap-1 text-slate-500">
+        <button type="button" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition">
+            <i class="far fa-smile text-xl"></i>
+        </button>
+        <button type="button" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition">
+            <i class="fas fa-paperclip text-xl"></i>
+        </button>
+    </div>
+    
+    <!-- Formulaire de saisie -->
+    <form id="chat-form" onsubmit="sendChatMessage(event)" class="flex-1 relative">
+        <input type="text" id="chat-input" placeholder="Écrivez un message..." autocomplete="off"
+               oninput="toggleChatSendButton()" 
+               class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+    </form>
+
+    <!-- CONTENEUR DU BOUTON DYNAMIQUE -->
+    <div id="chat-action-btn-wrapper">
+        <!-- BOUTON VOCAL (Par défaut) -->
+        <button type="button" id="voice-btn" 
+                class="w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-all duration-300 btn-sky-yellow"
+                style="color: white !important;"> 
+            <i class="fas fa-microphone text-lg"></i>
+        </button>
+        
+        <!-- BOUTON ENVOYER (Caché par défaut) -->
+        <button type="submit" form="chat-form" id="send-btn" 
+                class="w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-all duration-300 btn-sky-yellow hidden"
+                style="color: white !important;">
+            <i class="fas fa-paper-plane text-lg"></i>
+        </button>
+    </div>
+</div>
     </section>
 </div>
     <!-- deuxième donné en haut -->
@@ -4702,6 +4721,7 @@ async function startChat(targetUserId) {
 }
 
 /* --- CHARGEMENT DE LA LISTE DES DISCUSSIONS (VERSION PRO AVEC NON-LUS) --- */
+/* --- CHARGEMENT DE LA LISTE DES DISCUSSIONS (VERSION CORRIGÉE) --- */
 async function loadChatList() {
     const container = document.getElementById('chat-list-container');
     if (!container) return;
@@ -4710,12 +4730,12 @@ async function loadChatList() {
     if (!user) return;
 
     try {
-        // 1. Récupérer TOUTES mes discussions
+        // 1. Récupérer les discussions
         const { data: chats, error } = await supabaseClient
             .from('chats')
             .select('*')
             .or(`user_1_id.eq.${user.id},user_2_id.eq.${user.id}`)
-            .order('updated_at', { ascending: false }); // Trie par la date du chat (nécessite une maj de la colonne updated_at)
+            .order('updated_at', { ascending: false });
 
         if (error) throw error;
 
@@ -4724,26 +4744,25 @@ async function loadChatList() {
             return;
         }
 
-        // 2. Préparer les listes d'IDs pour les requêtes groupées (Optimisation)
+        // 2. Préparer les données groupées
         const chatIds = chats.map(c => c.id);
         const otherUserIds = chats.map(c => c.user_1_id === user.id ? c.user_2_id : c.user_1_id);
 
-        // A. Récupérer les profils des autres utilisateurs
+        // A. Profils
         const { data: profiles } = await supabaseClient
             .from('profiles')
             .select('id, full_name, avatar_url, is_certified')
             .in('id', otherUserIds);
         const profileMap = new Map(profiles?.map(p => [p.id, p]));
 
-        // B. Récupérer le dernier message de chaque discussion (pour l'aperçu)
-        // Note: Supabase ne permet pas facilement "LIMIT 1 par groupe", on récupère les derniers globaux et on map
+        // B. Derniers messages (On sélectionne bien is_read)
         const { data: lastMessages } = await supabaseClient
             .from('messages')
-            .select('*')
+            .select('*') // Important : inclut is_read
             .in('chat_id', chatIds)
             .order('created_at', { ascending: false });
 
-        // On garde uniquement le dernier message par chat_id
+        // On garde le dernier par chat
         const latestMessagesMap = new Map();
         lastMessages?.forEach(msg => {
             if (!latestMessagesMap.has(msg.chat_id)) {
@@ -4751,21 +4770,20 @@ async function loadChatList() {
             }
         });
 
-        // C. Compter les messages NON LUS (C'est la clé de la fonctionnalité)
+        // C. Comptage des non-lus
         const { data: unreadData } = await supabaseClient
             .from('messages')
             .select('chat_id')
             .in('chat_id', chatIds)
-            .eq('is_read', false)       // Non lu
-            .neq('sender_id', user.id); // Pas envoyé par moi
+            .eq('is_read', false)
+            .neq('sender_id', user.id);
 
-        // On compte combien de non-lus par chat_id
         const unreadCountsMap = new Map();
         unreadData?.forEach(msg => {
             unreadCountsMap.set(msg.chat_id, (unreadCountsMap.get(msg.chat_id) || 0) + 1);
         });
 
-        // 3. Génération du HTML (Rendu)
+        // 3. Rendu HTML
         container.innerHTML = chats.map(chat => {
             const otherUserId = chat.user_1_id === user.id ? chat.user_2_id : chat.user_1_id;
             const profile = profileMap.get(otherUserId) || { full_name: 'Utilisateur', avatar_url: '' };
@@ -4773,20 +4791,39 @@ async function loadChatList() {
             const lastMsg = latestMessagesMap.get(chat.id);
             const unreadCount = unreadCountsMap.get(chat.id) || 0;
             
-            // Style conditionnel (Pro Style)
             const isUnread = unreadCount > 0;
+            const isMyLastMsg = lastMsg?.sender_id === user.id;
+
+            // Styles
             const textBoldClass = isUnread ? 'font-bold text-slate-900 dark:text-white' : 'font-medium text-slate-600 dark:text-slate-300';
             const subBoldClass = isUnread ? 'font-semibold text-slate-800 dark:text-slate-200' : 'text-slate-500 dark:text-slate-400';
             
-            // Badge HTML (Style WhatsApp / Facebook)
+            // Badge non-lus (pour les messages reçus)
             let badgeHtml = '';
             if (isUnread) {
                 badgeHtml = `<span class="bg-blue-600 text-white text-[10px] font-bold rounded-full px-2 py-0.5 ml-2">${unreadCount}</span>`;
             }
 
+            // --- LOGIQUE DES COCHES CORRIGÉE ---
+            let statusIconHtml = '';
+            if (isMyLastMsg && lastMsg) {
+                if (lastMsg.is_read) {
+                    // Lu : 2 coches BLEUES
+                    statusIconHtml = '<i class="fas fa-check-double text-blue-500 mr-1 text-[10px]"></i>';
+                } else {
+                    // Non lu : 1 coche GRISE
+                    statusIconHtml = '<i class="fas fa-check text-slate-400 mr-1 text-[10px]"></i>';
+                }
+            }
+
             const time = lastMsg ? getTimeAgo(new Date(lastMsg.created_at)) : '';
-            const previewText = lastMsg?.content || 'Aucun message';
-            const isMyLastMsg = lastMsg?.sender_id === user.id;
+            
+            let previewText = lastMsg?.content || 'Aucun message';
+            
+            // Si c'est MOI qui ai envoyé le dernier message, on ajoute "Moi: "
+            if (isMyLastMsg) {
+                previewText = `Moi: ${previewText}`;
+            }
 
             return `
             <div onclick="startChat('${otherUserId}')" 
@@ -4807,8 +4844,7 @@ async function loadChatList() {
                     </div>
                     <div class="flex justify-between items-center">
                         <p class="truncate text-sm ${subBoldClass}">
-                            ${isMyLastMsg ? '<i class="fas fa-check-double text-blue-500 mr-1 text-[10px]"></i>' : ''}
-                            ${previewText}
+                            ${statusIconHtml} ${previewText}
                         </p>
                         ${badgeHtml}
                     </div>
@@ -4818,20 +4854,24 @@ async function loadChatList() {
 
     } catch (err) {
         console.error("Erreur liste chat:", err);
-        container.innerHTML = `<div class="p-4 text-center text-red-500">Erreur de chargement</div>`;
     }
 }
+            
 /* --- GESTION DU CHAT TEMPS RÉEL (VERSION ULTRA PRO) --- */
 
-/* --- OUVERTURE D'UNE DISCUSSION (VERSION FINALE CORRIGÉE) --- */
+/* --- OUVERTURE D'UNE DISCUSSION (VERSION CORRIGÉE) --- */
 async function openChatRoom(chatId, targetUserId) {
+    // 1. Récupérer l'utilisateur UNE SEULE FOIS au début (CORRECTION CRITIQUE)
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return; // Sécurité
+
     currentChatId = chatId;
     currentTargetUserId = targetUserId;
 
-    // 1. Changement de page et Nettoyage UI
+    // 2. Changement de page
     switchPage('chat');
 
-    // 2. Charger les infos du header (Avatar, Nom, Certification)
+    // 3. Charger le Header
     const { data: profile } = await supabaseClient
         .from('profiles')
         .select('full_name, avatar_url, is_certified')
@@ -4848,20 +4888,20 @@ async function openChatRoom(chatId, targetUserId) {
         avatarEl.src = profile.avatar_url || defaultAvatar;
     }
 
-    // 3. Charger l'historique initial (Messages passés)
+    // 4. Charger les messages et marquer comme lu
     await loadChatMessages(chatId);
-    
-    // Marquer les messages comme lus immédiatement
     markChatAsRead(chatId);
 
-    // 4. NETTOYAGE DE L'ANCIEN CHANNEL WEBSOCKET
+    // 5. Nettoyer l'ancien channel
     if (window.currentChatChannel) {
         await supabaseClient.removeChannel(window.currentChatChannel);
     }
 
-    // 5. CONNEXION WEBSOCKET (REALTIME)
+    // 6. CRÉATION DU CHANNEL (Utilise la variable 'user' du début de la fonction)
     window.currentChatChannel = supabaseClient
         .channel(`realtime:chat:${chatId}`)
+        
+        // ÉCOUTEUR A : Nouveaux Messages
         .on('postgres_changes', {
             event: 'INSERT',
             schema: 'public',
@@ -4870,23 +4910,55 @@ async function openChatRoom(chatId, targetUserId) {
         }, (payload) => {
             handleRealtimeMessage(payload.new);
         })
+        
+        // ÉCOUTEUR B : Statut "Lu" (UPDATE)
+        .on('postgres_changes', {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'messages',
+            filter: `chat_id=eq.${chatId}`
+        }, (payload) => {
+            const msg = payload.new;
+            
+            // On vérifie si c'est MON message qui vient d'être lu
+            // 'user' est accessible ici car on est dans la même portée (closure)
+            if (user && msg.sender_id === user.id && msg.is_read === true) {
+                updateMessageReadStatusUI(msg.id, true);
+            }
+        })
         .subscribe();
 
-    // 6. Rafraîchir le statut "En ligne" (Interval corrigé)
-    // On utilise la variable globale 'chatStatusInterval' déclarée plus haut
+    // 7. Gestion du statut "En ligne"
     if (chatStatusInterval) clearInterval(chatStatusInterval);
-    
-    refreshChatStatus(targetUserId); // Appel immédiat
+    refreshChatStatus(targetUserId);
     chatStatusInterval = setInterval(() => {
-        // On vérifie si on est toujours sur ce chat avant de rafraîchir
         if (currentTargetUserId === targetUserId) {
             refreshChatStatus(targetUserId);
         } else {
             clearInterval(chatStatusInterval);
         }
-    }, 30000); // Toutes les 30 secondes
+    }, 30000);
 }
 
+            /* --- MISE À JOUR VISUELLE DE L'ÉTAT "LU" --- */
+function updateMessageReadStatusUI(msgId, isRead) {
+    // On cherche la bulle par son ID réel
+    const msgElement = document.querySelector(`[data-msg-id="${msgId}"]`);
+    if (!msgElement) return;
+
+    // On cherche l'icône dans la bulle
+    const icon = msgElement.querySelector('.fa-check'); // Cible la coche simple
+    
+    if (icon && isRead) {
+        // TRANSFORMATION : 1 coche -> 2 coches bleues
+        icon.classList.remove('fa-check');        // Retire 1 coche
+        icon.classList.add('fa-check-double');    // Ajoute 2 coches
+        
+        icon.classList.remove('text-white/60');   // Retire gris
+        icon.classList.add('text-blue-300');      // Met en bleu
+    }
+}
+            
             /* --- SERVICE GLOBAL D'ÉCOUTE (TEMPS RÉEL) --- */
 async function initGlobalRealtimeListeners() {
     const { data: { user } } = await supabaseClient.auth.getUser();
@@ -4997,7 +5069,6 @@ async function initGlobalRealtimeListeners() {
 }
             
 // --- FONCTION HELPER POUR L'INJECTION DIRECTE ---
-// Cette fonction gère l'arrivée d'un NOUVEAU message sans recharger tout le DOM
 async function handleRealtimeMessage(newMessage) {
     const container = document.getElementById('chat-messages-container');
     const { data: { user } } = await supabaseClient.auth.getUser();
@@ -5005,18 +5076,37 @@ async function handleRealtimeMessage(newMessage) {
 
     const isMe = newMessage.sender_id === user.id;
 
-    // 1. Si le message est de MOI, on ne fait rien.
-    // Pourquoi ? Car notre fonction 'sendChatMessage' a déjà optimistement ajouté le message à l'écran
-    // ou le trigger DB va le renvoyer. Pour éviter les doublons, on gère ça intelligemment.
-    // ASTUCE PRO : Si on veut gérer la confirmation d'envoi (double coche), c'est ici qu'on peut update l'ID temporaire.
-    // Pour simplifier, on ignore si c'est moi pour éviter le doublon visuel instantané.
-    if (isMe) return;
+    // --- CAS 1 : C'est mon message (Confirmation serveur) ---
+    if (isMe) {
+        // On cherche si on a déjà affiché ce message avec un ID temporaire (optimiste)
+        // On cherche par contenu ou par un marqueur temporaire
+        // Note: Pour être propre, on va chercher le dernier message envoyé qui a une classe 'pending'
+        const pendingMsg = container.querySelector('.message-row-pending');
 
-    // 2. Construction HTML de la bulle (Style WhatsApp)
+        if (pendingMsg) {
+            // 1. On met à jour l'ID de l'élément DOM pour qu'il corresponde au vrai ID
+            pendingMsg.setAttribute('data-msg-id', newMessage.id);
+            
+            // 2. On enlève le style "en cours" et on met le style définitif
+            pendingMsg.classList.remove('message-row-pending', 'opacity-75');
+            
+            // 3. On met à jour l'icône d'horloge par des coches (envoyé)
+            const statusIcon = pendingMsg.querySelector('.status-icon');
+            if (statusIcon) {
+                statusIcon.className = 'fas fa-check-double text-[8px] ml-1 text-white/50 status-icon status-sent';
+            }
+        }
+        return; // On s'arrête ici pour éviter les doublons visuels
+    }
+
+    // --- CAS 2 : C'est un message de l'autre (Nouveau message) ---
+    
     const bubbleClass = 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-2xl rounded-tl-sm shadow-sm border border-slate-100 dark:border-slate-700';
     
     const row = document.createElement('div');
-    row.className = 'flex w-full mb-4 justify-start animate-fade-in'; // Animation d'apparition
+    // On ajoute l'attribut data-msg-id pour le suivi
+    row.setAttribute('data-msg-id', newMessage.id);
+    row.className = 'flex w-full mb-4 justify-start animate-fade-in'; 
     row.innerHTML = `
         <div class="flex flex-col items-start max-w-[75%]">
             <div class="${bubbleClass} px-4 py-2 text-sm leading-relaxed break-words">
@@ -5028,16 +5118,12 @@ async function handleRealtimeMessage(newMessage) {
         </div>
     `;
 
-    // 3. Injection dans le DOM
     container.appendChild(row);
-
-    // 4. Scroll automatique vers le bas
     container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
-
-    // 5. Notification Légère (Vibration ou Son) si l'app est en arrière-plan (Optionnel)
+    
+    // Petite vibration
     if (document.hidden && navigator.vibrate) navigator.vibrate(200);
-
-    // 6. Mettre à jour le badge de notification (puisque j'ai reçu un message)
+    
     updateMessageBadge();
 }
 
@@ -5105,11 +5191,11 @@ async function loadChatMessages(chatId) {
     }
 }
 
-// Helper pour créer une bulle (Code plus propre)
+// Helper pour créer une bulle de message (À placer en dehors des autres fonctions)
 function createMessageBubble(msg, isMe) {
     const row = document.createElement('div');
     row.className = `flex w-full mb-3 ${isMe ? 'justify-end' : 'justify-start'}`;
-    row.setAttribute('data-msg-id', msg.id); // Pour le tracking
+    row.setAttribute('data-msg-id', msg.id); // Crucial pour la mise à jour temps réel
 
     const bubbleClass = isMe 
         ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-2xl rounded-br-sm shadow-md' 
@@ -5117,16 +5203,25 @@ function createMessageBubble(msg, isMe) {
 
     const time = new Date(msg.created_at).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
     
-    // Gestion des ticks (Envoyé/Lu) - nécessite un champ 'is_read' dans la DB pour être complet
-    const statusIcon = isMe ? `<i class="fas fa-check-double text-[8px] ml-1 ${msg.is_read ? 'text-blue-300' : 'text-white/50'}"></i>` : '';
+    // --- LOGIQUE DES COCHES ---
+    let statusIconHtml = '';
+    if (isMe) {
+        if (msg.is_read) {
+            // LU : 2 coches BLEUES
+            statusIconHtml = '<i class="fas fa-check-double text-[10px] ml-1 text-blue-300"></i>';
+        } else {
+            // ENVOYÉ : 1 coche GRISE/BLANCHE
+            statusIconHtml = '<i class="fas fa-check text-[10px] ml-1 text-white/60"></i>';
+        }
+    }
 
     row.innerHTML = `
         <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%]">
             <div class="${bubbleClass} px-4 py-2 text-sm leading-relaxed break-words">
                 ${msg.content}
             </div>
-            <span class="text-[10px] text-slate-400 mt-1 mx-2 flex items-center gap-1">
-                ${time} ${statusIcon}
+            <span class="text-[10px] text-slate-400 mt-1 mx-2 flex items-center">
+                ${time} ${statusIconHtml}
             </span>
         </div>
     `;
@@ -5144,46 +5239,44 @@ async function sendChatMessage(e) {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) return;
 
-    // A. Vider l'input immédiatement (UX Rapide)
-    input.value = '';
+    input.value = ''; 
 
-    // B. Créer un message temporaire pour l'affichage immédiat
     const tempId = 'temp-' + Date.now();
+    
+    // Création du message optimiste
     const tempMsg = {
         id: tempId,
-        sender_id: user.id,
         content: content,
         created_at: new Date().toISOString(),
-        is_read: false
+        is_read: false // Forcé à false
     };
 
-    // C. Injection Optimiste (On affiche direct sans attendre le serveur)
     const container = document.getElementById('chat-messages-container');
-    const row = createMessageBubble(tempMsg, true);
-    row.classList.add('opacity-75'); // Légèrement transparent pour indiquer "envoi en cours"
+    
+    // On utilise createMessageBubble, mais on ajoute une classe spéciale pour le retrouver
+    const row = createMessageBubble(tempMsg, true); 
+    row.classList.add('opacity-70'); // Légèrement transparent (envoi en cours)
+    row.setAttribute('data-temp-id', tempId); // Marqueur temporaire
+    
     container.appendChild(row);
-    container.scrollTop = container.scrollHeight; // Force scroll pour le message qu'on envoie
+    container.scrollTop = container.scrollHeight;
 
-    // D. Envoi Serveur
-    try {
-        const { error } = await supabaseClient
-            .from('messages')
-            .insert([{
-                chat_id: currentChatId,
-                sender_id: user.id,
-                content: content
-            }]);
+    // Envoi réel
+    const { error } = await supabaseClient
+        .from('messages')
+        .insert([{
+            chat_id: currentChatId,
+            sender_id: user.id,
+            content: content
+        }]);
 
-        if (error) throw error;
-        
-        // Succès : Le message est envoyé. Le WebSocket va recevoir le message "réel" de la DB.
-        // On peut soit supprimer le temporaire et laisser le WebSocket ajouter le vrai, 
-        // soit mettre à jour l'opacité à 1.
-        row.classList.remove('opacity-75'); 
-
-    } catch (err) {
+    if (error) {
         showToast("Erreur d'envoi", "error");
-        row.innerHTML += '<span class="text-red-500 text-[10px] block text-right">Échec de l\'envoi</span>';
+        row.classList.add('bg-red-50'); // Erreur visuelle
+    } else {
+        // Succès : on enlève la transparence.
+        // Note: Le listener Realtime (INSERT) va remplacer cette bulle par la version définitive.
+        row.classList.remove('opacity-70');
     }
 }
 
@@ -6035,6 +6128,23 @@ async function loadSidebarUser() {
         showToast("Utilisateur bloqué", "success");
         // Optionnel : Retirer ses posts du feed actuel
         document.querySelectorAll(`[data-user-id="${targetUserId}"]`).forEach(el => el.remove());
+    }
+}
+            /* --- GESTION DU BOUTON DYNAMIQUE (VOIX / ENVOI) --- */
+function toggleChatSendButton() {
+    const input = document.getElementById('chat-input');
+    const voiceBtn = document.getElementById('voice-btn');
+    const sendBtn = document.getElementById('send-btn');
+
+    if (!input || !voiceBtn || !sendBtn) return;
+
+    // Si du texte est tapé (longueur > 0)
+    if (input.value.trim().length > 0) {
+        voiceBtn.classList.add('hidden');      // Cache Micro
+        sendBtn.classList.remove('hidden');    // Affiche Envoi
+    } else {
+        voiceBtn.classList.remove('hidden');   // Affiche Micro
+        sendBtn.classList.add('hidden');       // Cache Envoi
     }
 }
 </script>
