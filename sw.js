@@ -2,8 +2,27 @@ const CACHE_NAME = 'app-pro-v4';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/style.css', // Ajoute tes vrais fichiers ici
-  '/app.js'
+  '/css/ui.css', // Ajoute tes vrais fichiers ici
+  '/js/app.js'
+];
+
+// Installation : Mise en cache des fichiers de base
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+  );
+});
+
+// Stratégie de fetch : Cache First, puis Network
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request).then((response) => {
+      // Si le const CACHE_NAME = 'app-pro-v4';
+const STATIC_ASSETS = [
+  '/',
+  '/index.html',
+  '/css/ui.css', // Ajoute tes vrais fichiers ici
+  '/js/app.js'
 ];
 
 // 1. Installation : On met en cache les fichiers de base
@@ -53,6 +72,25 @@ self.addEventListener('fetch', (event) => {
         // Si elle n'existe pas, on renvoie la promesse du réseau.
         return cachedResponse || fetchPromise;
       });
+    })
+  );
+});fichier est dans le cache, on le sert
+      if (response) return response;
+      
+      // Sinon, on va le chercher sur le réseau
+      return fetch(event.request).then((networkResponse) => {
+        // On met en cache la nouvelle réponse pour la prochaine fois
+        if (networkResponse && networkResponse.status === 200) {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
+        }
+        return networkResponse;
+      });
+    }).catch(() => {
+      // Si offline et pas dans le cache, on peut renvoyer une page offline par défaut
+      // return caches.match('/offline.html'); 
     })
   );
 });
