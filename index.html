@@ -1593,6 +1593,42 @@ body.dark-mode #chat-messages-container {
 #chat-messages-container {
     background-color: var(--chat-conversation-bg) !important;
 }
+
+        /* =========================================== */
+/* FORCAGE SUPPRESSION FOND BARRE DE SAISIE    */
+/* =========================================== */
+
+/* 1. Cible le conteneur parent (La barre entière) */
+#chat-view > section > div:last-child {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* 2. Cible spécifiquement la classe de fond clair (Tailwind) */
+.bg-\[\#f0f2f5\] {
+    background-color: transparent !important;
+}
+
+/* 3. Cible spécifiquement la classe de fond sombre (Tailwind) */
+.dark\:bg-slate-800 {
+    background-color: transparent !important;
+}
+
+/* 4. Style de l'INPUT pour qu'il reste visible (Flottant) */
+#chat-input {
+    background-color: rgba(255, 255, 255, 0.90) !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05) !important;
+    border-radius: 24px !important;
+}
+
+/* 5. Style Input Mode Sombre */
+body.dark-mode #chat-input {
+    background-color: rgba(30, 41, 59, 0.90) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
+}
     </style>
 </head>
 <body>
@@ -2083,9 +2119,9 @@ body.dark-mode #chat-messages-container {
     <section class="fixed inset-0 z-50 max-w-2xl mx-auto h-screen flex flex-col translate-y-12">
         
         <!-- Header -->
-        <div class="p-4 border-b border-slate-200 flex justify-between items-center sticky top-0 z-10">
+        <div class="py-1 px-4 border-b border-slate-200 flex justify-between items-center sticky top-0 z-10">
             <h2 class="text-xl font-bold text-slate-900">Discussions</h2>
-            <button class="text-indigo-600"><i class="far fa-edit text-lg"></i></button>
+            <button onclick="openNewChatModal()" class="text-indigo-600"><i class="far fa-edit text-lg"></i></button>
         </div>
 
         <!-- Liste des conversations -->
@@ -2122,7 +2158,7 @@ body.dark-mode #chat-messages-container {
     <section class="fixed inset-0 max-w-2xl mx-auto w-full flex flex-col z-[10000] shadow-2xl">
         
         <!-- HEADER FIXE -->
-        <div class="wa-header p-3 flex items-center gap-3 shadow-sm z-20 flex-shrink-0 border-b border-slate-700">
+        <div class="wa-header p-3 flex items-center gap-3 shadow-sm z-10000 flex-shrink-0 border-b border-slate-700">
             <button onclick="switchPage('messages')" class="text-white/80 hover:text-white">
                 <i class="fas fa-arrow-left text-lg"></i>
             </button>
@@ -2161,7 +2197,7 @@ body.dark-mode #chat-messages-container {
         </div>
 
         <!-- ZONE DE SAISIE -->
-<div class="p-2 bg-[#f0f2f5] flex items-end gap-2 z-20 border-t border-slate-200">
+<div class="p-2 flex items-end gap-2 z-20">
     
     <!-- Boutons Gauche (Smileys / Fichier) -->
     <div class="flex gap-1 text-slate-500">
@@ -2200,6 +2236,23 @@ body.dark-mode #chat-messages-container {
     </section>
 </div>
     <!-- deuxième donné en haut -->
+
+   <!-- MODALE NOUVELLE DISCUSSION -->
+<div id="new-chat-modal" class="fixed inset-0 z-[10000] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 w-full max-w-md h-[80vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+        
+        <!-- Header -->
+        <div class="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+            <h3 class="font-bold text-lg">Nouvelle discussion</h3>
+            <button onclick="closeNewChatModal()" class="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+        </div>
+
+        <!-- Liste des contacts -->
+        <div id="new-chat-list" class="flex-1 overflow-y-auto p-2">
+            <!-- Les contacts seront injectés ici -->
+        </div>
+    </div>
+</div> 
 
         <!-- MODAL MODE ZEN -->
 <div id="zen-mode-modal">
@@ -4762,7 +4815,7 @@ async function startChat(targetUserId) {
     }
 }
 
-/* --- CHARGEMENT LISTE CHAT (AVEC COMPTEUR PRÉCIS) --- */
+/* --- CHARGEMENT LISTE CHAT (AVEC STATUT & LECTURE) --- */
 async function loadChatList() {
     const container = document.getElementById('chat-list-container');
     if (!container) return;
@@ -4788,30 +4841,27 @@ async function loadChatList() {
         const otherUserIds = chats.map(c => c.user_1_id === user.id ? c.user_2_id : c.user_1_id);
         const chatIds = chats.map(c => c.id);
 
-        // 2. Requêtes Parallèles (Profils + Derniers Messages + Comptage Non-Lus)
+        // 2. Requêtes Parallèles (Ajout de last_seen pour le statut)
         const [profilesRes, messagesRes, unreadRes] = await Promise.all([
             supabaseClient.from('profiles')
-                .select('id, full_name, avatar_url, is_certified')
+                .select('id, full_name, avatar_url, is_certified, last_seen') // <-- Ajout last_seen
                 .in('id', otherUserIds),
             
-            // Pour la prévisualisation du texte
             supabaseClient.from('messages')
-                .select('chat_id, content, sender_id, created_at')
+                .select('chat_id, content, sender_id, created_at, is_read') // <-- Ajout is_read
                 .in('chat_id', chatIds)
                 .order('created_at', { ascending: false })
                 .limit(50),
             
-            // POUR LE COMPTEUR : On récupère tous les messages non lus
             supabaseClient.from('messages')
                 .select('chat_id')
                 .eq('is_read', false)
-                .neq('sender_id', user.id) // Ceux que je n'ai PAS envoyés
+                .neq('sender_id', user.id)
                 .in('chat_id', chatIds)
         ]);
 
         const profilesMap = new Map(profilesRes.data?.map(p => [p.id, p]));
         
-        // Map pour le dernier message (Preview)
         const latestMessagesMap = new Map();
         messagesRes.data?.forEach(msg => {
             if (!latestMessagesMap.has(msg.chat_id)) {
@@ -4819,7 +4869,6 @@ async function loadChatList() {
             }
         });
 
-        // Map pour le COMPTE des non-lus (Compteur)
         const unreadCountsMap = new Map();
         unreadRes.data?.forEach(msg => {
             unreadCountsMap.set(msg.chat_id, (unreadCountsMap.get(msg.chat_id) || 0) + 1);
@@ -4832,31 +4881,48 @@ async function loadChatList() {
             const otherId = chat.user_1_id === user.id ? chat.user_2_id : chat.user_1_id;
             const profile = profilesMap.get(otherId) || { full_name: 'Utilisateur' };
             const lastMsg = latestMessagesMap.get(chat.id);
-            const unreadCount = unreadCountsMap.get(chat.id) || 0; // Récupération du compte
+            const unreadCount = unreadCountsMap.get(chat.id) || 0;
             
             let previewText = "Aucun message";
             let timeText = "";
             let textClass = "text-slate-500 truncate"; 
-            let badgeHtml = ""; 
+            let badgeHtml = "";
+            
+            // --- NOUVEAU : LOGIQUE STATUT EN LIGNE ---
+            let onlineDot = "";
+            if (profile.last_seen) {
+                const lastSeenDate = new Date(profile.last_seen);
+                const now = new Date();
+                const diffSeconds = (now - lastSeenDate) / 1000;
+                
+                // Si en ligne il y a moins de 2 min
+                if (diffSeconds < 120) {
+                    onlineDot = `<span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse"></span>`;
+                }
+            }
 
             if (lastMsg) {
                 previewText = lastMsg.content;
-                if (lastMsg.sender_id === user.id) {
-                    previewText = `Moi: ${previewText}`;
-                }
                 timeText = getTimeAgoSimple(new Date(lastMsg.created_at));
+                
+                // --- NOUVEAU : LOGIQUE CHECKS (Lecture) ---
+                if (lastMsg.sender_id === user.id) {
+                    // C'est MON message
+                    if (lastMsg.is_read) {
+                        // Lu : 2 checks bleus
+                        previewText += ` <i class="fas fa-check-double text-blue-500 ml-1 text-[10px]"></i>`;
+                    } else {
+                        // Envoyé : 1 check gris
+                        previewText += ` <i class="fas fa-check text-slate-400 ml-1 text-[10px]"></i>`;
+                    }
+                }
             }
 
-            // LOGIQUE BADGE AVEC COMPTEUR
+            // Logique Badge Non-Lu (Reçus)
             if (unreadCount > 0) {
-                textClass = "text-gradient-unread truncate"; // Texte en dégradé
-                
-                // Formatage du texte : "1 message" ou "2 messages"
+                textClass = "text-gradient-unread truncate"; 
                 const plural = unreadCount > 1 ? 's' : '';
-                const countText = `${unreadCount} nouveau${plural} message${plural}`;
-                
-                // Application du badge compact
-                badgeHtml = `<span class="badge-unread-count">${countText}</span>`;
+                badgeHtml = `<span class="badge-unread-count">${unreadCount} nouveau${plural} message${plural}</span>`;
             }
 
             const div = document.createElement('div');
@@ -4866,7 +4932,8 @@ async function loadChatList() {
             div.innerHTML = `
                 <div class="relative flex-shrink-0">
                     <img src="${profile.avatar_url || `https://ui-avatars.com/api/?name=${profile.full_name}`}" class="w-12 h-12 rounded-full object-cover bg-slate-200 shadow-sm">
-                    ${profile.is_certified ? '<i class="fas fa-check-circle text-blue-500 text-[10px] absolute bottom-0 right-0 bg-white rounded-full"></i>' : ''}
+                    ${onlineDot}
+                    ${profile.is_certified ? '<i class="fas fa-check-circle text-blue-500 text-[10px] absolute top-0 right-0 bg-white rounded-full"></i>' : ''}
                 </div>
                 <div class="flex-1 min-w-0">
                     <div class="flex justify-between items-baseline mb-0.5">
@@ -4876,7 +4943,6 @@ async function loadChatList() {
                     <div class="flex items-center gap-1">
                          <p class="text-sm ${textClass}">${previewText}</p>
                     </div>
-                    <!-- Badge placé en dessous pour l'élégance -->
                     <div class="mt-1">${badgeHtml}</div>
                 </div>
             `;
@@ -6650,6 +6716,102 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
 });
+            // Ouvrir la modale
+function openNewChatModal() {
+    const modal = document.getElementById('new-chat-modal');
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    loadPotentialContacts(); // Charger la liste
+}
+
+// Fermer la modale
+function closeNewChatModal() {
+    const modal = document.getElementById('new-chat-modal');
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+}
+
+// Charger les abonnés et suivis
+async function loadPotentialContacts() {
+    const container = document.getElementById('new-chat-list');
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return;
+
+    container.innerHTML = `<div class="text-center py-10 text-slate-400"><i class="fas fa-spinner fa-spin"></i></div>`;
+
+    try {
+        // 1. Récupérer les gens que je suis (followings)
+        const { data: followings } = await supabaseClient
+            .from('follows')
+            .select('following_id')
+            .eq('follower_id', user.id);
+
+        // 2. Récupérer mes abonnés (followers)
+        const { data: followers } = await supabaseClient
+            .from('follows')
+            .select('follower_id')
+            .eq('following_id', user.id);
+
+        // Fusionner les IDs uniques
+        const ids = new Set();
+        followings?.forEach(f => ids.add(f.following_id));
+        followers?.forEach(f => ids.add(f.follower_id));
+        
+        // Enlever mon propre ID
+        ids.delete(user.id);
+
+        if (ids.size === 0) {
+            container.innerHTML = `<div class="text-center py-10 text-slate-400">Vous n'avez pas encore d'abonnés.</div>`;
+            return;
+        }
+
+        // 3. Récupérer les profils
+        const idsArray = Array.from(ids);
+        const { data: profiles } = await supabaseClient
+            .from('profiles')
+            .select('id, full_name, avatar_url, is_certified')
+            .in('id', idsArray);
+
+        // 4. Afficher
+        container.innerHTML = profiles.map(p => {
+    // Protection contre les caractères spéciaux dans le nom
+    const safeName = p.full_name.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const avatarUrl = p.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.full_name)}&background=random`;
+
+    return `
+    <div class="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition group">
+        <div class="flex items-center gap-3 cursor-pointer flex-1" onclick="viewUserProfile('${p.id}')">
+            <div class="relative">
+                <img src="${avatarUrl}" 
+                     onerror="this.src='https://ui-avatars.com/api/?name=?';" 
+                     class="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700"
+                     alt="${safeName}">
+                ${p.is_online ? '<span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full"></span>' : ''}
+            </div>
+            <div class="flex flex-col">
+                <div class="flex items-center gap-1">
+                    <span class="font-semibold text-sm text-slate-900 dark:text-slate-100">${safeName}</span>
+                    ${p.is_certified ? '<i class="fas fa-check-circle text-blue-500 text-[10px]" title="Compte certifié"></i>' : ''}
+                </div>
+                <span class="text-[10px] text-slate-500 truncate max-w-[120px]">Membre vérifié</span>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-2">
+            <button onclick="closeNewChatModal(); startChat('${p.id}')" 
+                    class="btn-sky-yellow px-4 py-1.5 rounded-full text-xs font-bold transform active:scale-95 transition-transform shadow-sm"
+                    aria-label="Envoyer un message à ${safeName}">
+                Message
+            </button>
+        </div>
+    </div>
+    `;
+}).join('');
+    } catch (err) {
+        console.error("Erreur chargement contacts:", err);
+    }
+}
+            
             // --- ENREGISTREMENT PWA ---
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
