@@ -1446,6 +1446,34 @@ body.dark-mode .market-item .bg-emerald-50 {
 button {
     touch-action: manipulation; /* Supprime le délai de 300ms */
 }
+        /* --- STYLE MESSAGE NON LU (DÉGRADÉ BLEU-JAUNE) --- */
+
+/* 1. Le texte du message devient dégradé */
+.text-gradient-unread {
+    background: linear-gradient(to right, #38bdf8, #facc15);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800 !important; /* Plus gras pour que le dégradé se voie bien */
+}
+
+/* 2. Le badge "Nouveau" ou le point */
+.badge-gradient-live {
+    background: linear-gradient(to right, #38bdf8, #facc15);
+    color: black !important; /* Texte noir pour le contraste sur le fond jaune/bleu */
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 20px;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.4); /* Halo bleu */
+    animation: pulse-badge 2s infinite;
+}
+
+/* Animation subtile pour attirer l'oeil */
+@keyframes pulse-badge {
+    0% { box-shadow: 0 0 5px rgba(56, 189, 248, 0.4); }
+    50% { box-shadow: 0 0 15px rgba(250, 204, 21, 0.6); }
+    100% { box-shadow: 0 0 5px rgba(56, 189, 248, 0.4); }
+}
     </style>
 </head>
 <body>
@@ -4615,7 +4643,7 @@ async function startChat(targetUserId) {
     }
 }
 
-/* --- CHARGEMENT LISTE CHAT (OPTIMISÉ 1 REQUÊTE) --- */
+/* --- CHARGEMENT LISTE CHAT (VERSION FINALE OPTIMISÉE) --- */
 async function loadChatList() {
     const container = document.getElementById('chat-list-container');
     if (!container) return;
@@ -4624,56 +4652,109 @@ async function loadChatList() {
     if (!user) return;
 
     try {
-        // 1. UNE SEULE requête pour tout récupérer (Chats + Profils des autres)
-        // On suppose que vous avez une vue ou une Foreign Key configurée.
-        // Sinon, on fait 2 requêtes parallèles optimisées :
-        
-        const [chatsRes, profilesRes] = await Promise.all([
-            supabaseClient.from('chats')
-                .select('*')
-                .or(`user_1_id.eq.${user.id},user_2_id.eq.${user.id}`)
-                .order('updated_at', { ascending: false }),
-            supabaseClient.from('profiles').select('id, full_name, avatar_url, is_certified')
-        ]);
+        // 1. Récupérer les discussions
+        const { data: chats, error } = await supabaseClient
+            .from('chats')
+            .select('*')
+            .or(`user_1_id.eq.${user.id},user_2_id.eq.${user.id}`)
+            .order('updated_at', { ascending: false });
 
-        const chats = chatsRes.data;
-        const profilesMap = new Map(profilesRes.data.map(p => [p.id, p]));
+        if (error) throw error;
 
         if (!chats || chats.length === 0) {
-             container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-slate-400 p-8 text-center"><i class="fas fa-comments text-4xl mb-3 opacity-20"></i><p>Aucune discussion.</p></div>`;
-             return;
+            container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-slate-400 p-8 text-center"><i class="fas fa-comments text-4xl mb-3 opacity-20"></i><p>Aucune discussion pour le moment.</p></div>`;
+            return;
         }
 
-        // 2. Récupération des derniers messages en 1 batch (au lieu de 1 par chat)
+        // 2. Préparer les listes d'IDs pour les requêtes groupées (Batching)
+        const otherUserIds = chats.map(c => c.user_1_id === user.id ? c.user_2_id : c.user_1_id);
         const chatIds = chats.map(c => c.id);
-        // Utilisation d'une fonction RPC optimisée ou d'une requête simple groupée
-        // Ici, on simplifie pour la démo : on charge les derniers messages visibles
-        // Pour une vraie app, créez une fonction SQL `get_last_messages` dans Supabase.
+
+        // 3. Lancer les 3 requêtes en parallèle (Profil + Messages + Non-lus)
+        const [profilesRes, messagesRes] = await Promise.all([
+            // A. Récupérer les profils des autres
+            supabaseClient.from('profiles')
+                .select('id, full_name, avatar_url, is_certified')
+                .in('id', otherUserIds),
+            
+            // B. Récupérer les DERNIERS messages (Optimisé)
+            // On récupère les 50 derniers messages récents et on mappe en JS
+            supabaseClient.from('messages')
+                .select('chat_id, content, sender_id, created_at, is_read')
+                .in('chat_id', chatIds)
+                .order('created_at', { ascending: false })
+                .limit(50) 
+        ]);
+
+        const profilesMap = new Map(profilesRes.data?.map(p => [p.id, p]));
         
-        // Rendu optimisé avec DocumentFragment
+        // C. Map des derniers messages (chatId -> message)
+        const latestMessagesMap = new Map();
+        messagesRes.data?.forEach(msg => {
+            // On ne garde que le premier (le plus récent) pour chaque chat
+            if (!latestMessagesMap.has(msg.chat_id)) {
+                latestMessagesMap.set(msg.chat_id, msg);
+            }
+        });
+
+        // 4. Rendu DOM avec DocumentFragment
         const fragment = document.createDocumentFragment();
 
         chats.forEach(chat => {
             const otherId = chat.user_1_id === user.id ? chat.user_2_id : chat.user_1_id;
-            const profile = profilesMap.get(otherId) || { full_name: 'Inconnu' };
+            const profile = profilesMap.get(otherId) || { full_name: 'Utilisateur' };
+            const lastMsg = latestMessagesMap.get(chat.id);
             
-            // Création d'éléments via JS (Plus rapide que innerHTML +=)
+            // --- DÉBUT DU BLOC CORRIGÉ ---
+            
+            // 1. Déclaration des variables (CORRECTION DE L'ERREUR ICI)
+            let previewText = "Aucun message";
+            let timeText = ""; // Initialisé vide pour éviter l'erreur
+            let textClass = "text-slate-500 truncate"; // Classe par défaut (gris)
+            let badgeHtml = ""; // Badge vide par défaut
+
+            if (lastMsg) {
+                // 2. Texte de prévisualisation
+                previewText = lastMsg.content;
+                if (lastMsg.sender_id === user.id) {
+                    previewText = `Moi: ${previewText}`;
+                }
+                
+                // 3. Heure
+                timeText = getTimeAgoSimple(new Date(lastMsg.created_at));
+                
+                // 4. Style "Non Lu" (Dégradé Bleu-Jaune)
+                if (!lastMsg.is_read && lastMsg.sender_id !== user.id) {
+                    textClass = "text-gradient-unread truncate"; // Texte en dégradé
+                    badgeHtml = `<span class="badge-gradient-live ml-2">Nouveau</span>`; // Badge
+                }
+            }
+            
+            // --- FIN DU BLOC CORRIGÉ ---
+
             const div = document.createElement('div');
-            div.className = 'flex items-center gap-4 p-4 hover:bg-slate-50 cursor-pointer border-b border-slate-100 transition';
+            div.className = 'flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer border-b border-slate-100 dark:border-slate-700 transition';
             div.onclick = () => startChat(otherId);
             
+            // HTML mis à jour avec les bonnes variables
             div.innerHTML = `
-                <img src="${profile.avatar_url || `https://ui-avatars.com/api/?name=${profile.full_name}`}" class="w-12 h-12 rounded-full object-cover bg-slate-200">
+                <div class="relative">
+                    <img src="${profile.avatar_url || `https://ui-avatars.com/api/?name=${profile.full_name}`}" class="w-12 h-12 rounded-full object-cover bg-slate-200 shadow-sm">
+                    ${profile.is_certified ? '<i class="fas fa-check-circle text-blue-500 text-[10px] absolute bottom-0 right-0 bg-white rounded-full"></i>' : ''}
+                </div>
                 <div class="flex-1 min-w-0">
-                    <h4 class="font-semibold text-slate-900 truncate">${profile.full_name}</h4>
-                    <p class="truncate text-sm text-slate-500">Appuyez pour voir les messages...</p>
+                    <div class="flex justify-between items-baseline mb-0.5">
+                         <h4 class="font-semibold text-slate-900 dark:text-white truncate">${profile.full_name}</h4>
+                         <span class="text-[10px] text-slate-400 flex-shrink-0 ml-2">${timeText}</span>
+                    </div>
+                    <p class="text-sm ${textClass}">${previewText}</p> ${badgeHtml}
                 </div>
             `;
             fragment.appendChild(div);
         });
         
-        container.innerHTML = ''; // Vider une seule fois
-        container.appendChild(fragment); // Injecter une seule fois
+        container.innerHTML = ''; // Vider
+        container.appendChild(fragment); // Injecter
 
     } catch (err) {
         console.error("Erreur loadChatList:", err);
