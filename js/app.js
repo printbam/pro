@@ -4501,3 +4501,36 @@ document.addEventListener('visibilitychange', () => {
         }
     }
 });
+async function chargerPosts() {
+    const container = document.getElementById('posts-container');
+
+    // 1. Tenter de charger depuis le stockage local (Cache Immédiat)
+    const localData = localStorage.getItem('cached_posts');
+    if (localData) {
+        renderPosts(JSON.parse(localData)); // On affiche tout de suite les vieux posts
+        console.log("Mode Pro : Affichage des données locales en attendant le réseau...");
+    }
+
+    try {
+        // 2. Aller chercher les données fraîches sur Supabase
+        const { data: freshPosts, error } = await supabaseClient
+            .from('posts')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        // 3. Mettre à jour le stockage local pour la prochaine fois
+        localStorage.setItem('cached_posts', JSON.stringify(freshPosts));
+
+        // 4. Mettre à jour l'écran avec les nouvelles données
+        renderPosts(freshPosts);
+        console.log("Mode Pro : Données synchronisées avec le serveur.");
+
+    } catch (err) {
+        console.error("Erreur de synchro :", err);
+        if (!localData) {
+            container.innerHTML = "<p>Erreur de connexion et aucune donnée en cache.</p>";
+        }
+    }
+}
