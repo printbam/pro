@@ -74,7 +74,7 @@ self.addEventListener('fetch', (event) => {
       });
     })
   );
-});fichier est dans le cache, on le sert
+});
       if (response) return response;
       
       // Sinon, on va le chercher sur le réseau
