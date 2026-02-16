@@ -1516,36 +1516,11 @@ button {
     border-bottom: 1px solid var(--glass-border);
 }
 
-/* --- 2. ÉCRAN DE DISCUSSION (#chat-view) --- */
-#chat-view,
-#chat-view > section {
-    background-color: var(--chat-list-bg) !important;
-}
-
-/* Header de la discussion (Barre bleu/vert dans votre code) */
-#chat-view .wa-header {
-    background-color: var(--accent-blue) !important; /* Utilise votre bleu ciel */
-    /* Si vous voulez que le header change aussi en dark mode, utilisez une variable */
-}
-
-/* Zone des messages (Le fond derrière les bulles) */
-#chat-messages-container {
-    background-color: var(--chat-conversation-bg) !important;
-    /* On retire le vieux motif SVG pour utiliser les variables */
-    background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0);
-    background-size: 20px 20px;
-}
-
 /* Adaptation du motif pour le mode Sombre */
 body.dark-mode #chat-messages-container {
     background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.03) 1px, transparent 0);
 }
 
-/* Zone de saisie du texte */
-#chat-view .p-2.bg-\[#f0f2f5\] {
-    background-color: var(--chat-input-bg) !important;
-    border-top: 1px solid var(--glass-border);
-}
         /* --- ADAPTATION TEXTES SELON THÈME --- */
 
 /* 1. Liste des discussions */
@@ -1575,13 +1550,6 @@ body.dark-mode #chat-messages-container {
     color: var(--text-secondary) !important;
 }
 
-/* 3. Zone de Saisie (Barre du bas) */
-#chat-view .p-2.bg-\[\#f0f2f5\], /* Cible la barre claire */
-#chat-view .p-2.dark\:bg-slate-800 { /* Cible la barre sombre */
-    background-color: var(--chat-input-bg) !important; /* Fond transparent/blanc/noir selon variable */
-    border-top: 1px solid rgba(255,255,255,0.1); /* Ligne de séparation */
-    box-shadow: none !important; /* Enlève l'ombre portée si présente */
-}
 
 /* Fond de l'input de texte lui-même */
 #chat-input {
@@ -4014,17 +3982,7 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
         // --- 2. AUTHENTIFICATION & DATA INIT ---
         const { data: userData } = await supabaseClient.auth.getUser();
         const myId = userData?.user?.id || null;
-
-        // A. Récupération des utilisateurs bloqués
-        let blockedIds = [];
-        if (myId) {
-            const { data: blocked } = await supabaseClient
-                .from('blocked_users')
-                .select('blocked_id')
-                .eq('blocker_id', myId);
-            blockedIds = blocked ? blocked.map(b => b.blocked_id) : [];
-        }
-
+        
         // B. Récupération de mes abonnements (Pour la confidentialité "Friends")
         let myFollowingSet = new Set();
         if (myId) {
@@ -4061,7 +4019,6 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
 
         // --- 4. FILTRAGE CÔTÉ CLIENT (Confidentialité & Blocage) ---
         const visiblePosts = posts.filter(post => {
-            if (blockedIds.includes(post.user_id)) return false;
             if (post.user_id === myId) return true;
 
             const visibility = post.visibility || 'public';
@@ -6820,6 +6777,24 @@ if ('serviceWorker' in navigator) {
             .catch(err => console.error('❌ Erreur SW', err));
     });
 }
+            // --- GESTION RECONNEXION REALTIME ---
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        console.log("App active : Re-synchronisation...");
+        
+        // 1. Relancer la présence
+        if (typeof updateMyPresence === 'function') updateMyPresence();
+        
+        // 2. Rafraîchir les badges et listes
+        if (typeof updateMessageBadge === 'function') updateMessageBadge();
+        
+        // 3. Forcer le rechargement de la liste des messages si on est sur la page chat
+        const chatView = document.getElementById('chat-view');
+        if (chatView && chatView.classList.contains('active')) {
+            if (typeof loadChatList === 'function') loadChatList();
+        }
+    }
+});
 </script>
 </body>
 </html>
