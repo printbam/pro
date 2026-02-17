@@ -2,33 +2,23 @@ const CACHE_NAME = 'app-pro-v4';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/css/ui.css', // Ajoute tes vrais fichiers ici
-  '/js/app.js'
-];
-
-// Installation : Mise en cache des fichiers de base
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
-  );
-});
-
-// Stratégie de fetch : Cache First, puis Network
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      // Si le const CACHE_NAME = 'app-pro-v4';
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/css/ui.css', // Ajoute tes vrais fichiers ici
+  '/css/ui.css',
   '/js/app.js'
 ];
 
 // 1. Installation : On met en cache les fichiers de base
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_NAME).then(async (cache) => {
+      // On utilise une boucle pour éviter que tout plante si un fichier manque
+      for (const asset of STATIC_ASSETS) {
+        try {
+          await cache.add(asset);
+        } catch (err) {
+          console.warn(`Fichier ignoré au cache: ${asset}`);
+        }
+      }
+    })
   );
   self.skipWaiting();
 });
@@ -42,55 +32,42 @@ self.addEventListener('activate', (event) => {
       })
     ))
   );
+  return self.clients.claim();
 });
 
-// 3. Le Coeur du système : Stale-While-Revalidate
+// 3. Le Coeur : Stratégie Stale-While-Revalidate + Filtres de sécurité
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // EXCLUSION : Ne pas mettre en cache Supabase en mode fichier
-  // Le temps réel (Realtime) de Supabase utilise des WebSockets ou SSE, 
-  // le Service Worker ne doit pas y toucher.
-  if (url.hostname.includes('supabase.co')) return;
+  // --- FILTRE 1 : Uniquement les requêtes GET ---
+  // Cela corrige l'erreur "HEAD is unsupported" et les problèmes avec les POST
+  if (event.request.method !== 'GET') return;
+
+  // --- FILTRE 2 : Ignorer Supabase et les appels d'Auth ---
+  if (url.hostname.includes('supabase.co') || url.pathname.includes('/auth/')) return;
+
+  // --- FILTRE 3 : Ignorer les extensions chrome ou protocoles bizarres ---
+  if (!url.protocol.startsWith('http')) return;
 
   event.respondWith(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.match(event.request).then((cachedResponse) => {
         
-        // On lance la requête réseau quoi qu'il arrive
+        // On lance la requête réseau en arrière-plan
         const fetchPromise = fetch(event.request).then((networkResponse) => {
-          // Si la réponse est valide, on met à jour le cache en secret
-          if (networkResponse.ok) {
+          // On ne met en cache que les réponses valides
+          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
             cache.put(event.request, networkResponse.clone());
           }
           return networkResponse;
         }).catch(() => {
-          // Optionnel : Gestion d'erreur réseau silencieuse
+          // Si le réseau échoue et qu'on n'a rien en cache, on peut gérer ici
+          console.log("Mode hors-ligne actif pour:", url.pathname);
         });
 
-        // STRATÉGIE : On renvoie la réponse cachée IMMEDIATEMENT. 
-        // Si elle n'existe pas, on renvoie la promesse du réseau.
+        // On renvoie le cache s'il existe, sinon on attend le réseau
         return cachedResponse || fetchPromise;
       });
-    })
-  );
-});
-      if (response) return response;
-      
-      // Sinon, on va le chercher sur le réseau
-      return fetch(event.request).then((networkResponse) => {
-        // On met en cache la nouvelle réponse pour la prochaine fois
-        if (networkResponse && networkResponse.status === 200) {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
-        }
-        return networkResponse;
-      });
-    }).catch(() => {
-      // Si offline et pas dans le cache, on peut renvoyer une page offline par défaut
-      // return caches.match('/offline.html'); 
     })
   );
 });
