@@ -235,35 +235,47 @@
     </div>
 
     <!-- MOBILE DOCK -->
-    <div class="mobile-dock md:hidden fixed bottom-0 left-0 w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 h-[47px] flex items-center justify-around z-[9999] m-0 p-0">
+  <!-- MOBILE DOCK -->
+<div class="mobile-dock md:hidden fixed bottom-0 left-0 w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 h-[65px] flex items-center justify-around z-[9999] m-0 p-0">
     
-    <a onclick="switchPage('home')" class="flex flex-col items-center justify-center w-full h-full cursor-pointer">
-        <i class="fas fa-house text-[20px] text-slate-900 dark:text-white"></i>
+    <!-- 1. EXPLORER (Accueil) -->
+    <a onclick="switchPage('home')" class="flex flex-col items-center justify-center w-full h-full cursor-pointer py-1">
+        <i class="fas fa-house text-[22px] text-slate-900 dark:text-white"></i>
+        <span class="text-[10px] font-semibold text-slate-900 dark:text-white mt-1">Explorer</span>
     </a>
 
-    <a onclick="switchPage('marketplace')" class="flex flex-col items-center justify-center w-full h-full cursor-pointer">
-        <i class="far fa-compass text-[20px] text-slate-500"></i>
+    <!-- 2. MARKETPLACE -->
+    <a onclick="switchPage('marketplace')" class="flex flex-col items-center justify-center w-full h-full cursor-pointer py-1">
+        <i class="far fa-compass text-[22px] text-slate-500"></i>
+        <span class="text-[10px] font-medium text-slate-500 mt-1">Marketplace</span>
     </a>
 
-    <div class="flex items-center justify-center w-full h-full">
-        <a href="javascript:void(0)" onclick="openNewPostModal()" class="flex items-center justify-center border-2 border-slate-900 dark:border-white rounded-[8px] w-[22px] h-[22px]">
-            <i class="fas fa-plus text-slate-900 dark:text-white text-[10px]"></i>
+    <!-- 3. PUBLIER -->
+    <div class="flex items-center justify-center w-full h-full py-1">
+        <a href="javascript:void(0)" onclick="openNewPostModal()" class="flex flex-col items-center justify-center cursor-pointer">
+            <div class="border-2 border-slate-900 dark:border-white rounded-[8px] w-[40px] h-[28px] flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+                <i class="fas fa-plus text-slate-900 dark:text-white text-[14px]"></i>
+            </div>
+            <span class="text-[10px] font-medium text-slate-500 mt-1"></span>
         </a>
     </div>
 
-    <a href="javascript:void(0)" onclick="switchPage('messages')" class="flex flex-col items-center justify-center w-full h-full cursor-pointer relative">
-        <i class="far fa-paper-plane text-[20px] text-slate-500"></i>
-        <span id="msg-badge-count" class="hidden absolute top-1 right-4 bg-red-500 text-white text-[10px] font-bold px-1 rounded-full min-w-[15px] h-4 border-2 border-white dark:border-slate-900">0</span>
+    <!-- 4. MESSAGE -->
+    <a href="javascript:void(0)" onclick="switchPage('messages')" class="flex flex-col items-center justify-center w-full h-full cursor-pointer py-1 relative">
+        <i class="far fa-paper-plane text-[22px] text-slate-500"></i>
+        <span class="text-[10px] font-medium text-slate-500 mt-1">Message</span>
+        <span id="msg-badge-count" class="hidden absolute top-0 right-4 bg-red-500 text-white text-[10px] font-bold px-1 rounded-full min-w-[15px] h-4 border-2 border-white dark:border-slate-900">0</span>
     </a>
 
-    <a href="javascript:void(0)" onclick="switchPage('profile-social')" class="flex flex-col items-center justify-center w-full h-full cursor-pointer">
+    <!-- 5. PROFIL -->
+    <a href="javascript:void(0)" onclick="switchPage('profile-social')" class="flex flex-col items-center justify-center w-full h-full cursor-pointer py-1">
         <div class="w-6 h-6 rounded-full border border-slate-300 overflow-hidden">
             <img id="dock-avatar-img" src="" alt="" class="w-full h-full object-cover hidden">
             <i id="dock-avatar-icon" class="fas fa-user text-slate-500 flex items-center justify-center h-full text-xs"></i>
         </div>
+        <span class="text-[10px] font-medium text-slate-500 mt-1">Profil</span>
     </a>
 </div>
-
     <!-- MAIN CONTENT WRAPPER -->
    <!-- PAGE 1: ACCUEIL (FEED GLOBAL) -->
 <div id="home-view" class="page-view">
