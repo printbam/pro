@@ -2496,7 +2496,7 @@ async function loadChatList() {
     if (!user) return;
 
     try {
-        // 1. Récupération des données (inchangé)
+        // 1. Récupérer les discussions
         const { data: chats, error } = await supabaseClient
             .from('chats')
             .select('*')
@@ -2513,21 +2513,40 @@ async function loadChatList() {
         const otherUserIds = chats.map(c => c.user_1_id === user.id ? c.user_2_id : c.user_1_id);
         const chatIds = chats.map(c => c.id);
 
+        // 2. Requêtes Parallèles (Ajout de last_seen pour le statut)
         const [profilesRes, messagesRes, unreadRes] = await Promise.all([
-            supabaseClient.from('profiles').select('id, full_name, avatar_url, is_certified, last_seen').in('id', otherUserIds),
-            supabaseClient.from('messages').select('chat_id, content, sender_id, created_at, is_read').in('chat_id', chatIds).order('created_at', { ascending: false }).limit(50),
-            supabaseClient.from('messages').select('chat_id').eq('is_read', false).neq('sender_id', user.id).in('chat_id', chatIds)
+            supabaseClient.from('profiles')
+                .select('id, full_name, avatar_url, is_certified, last_seen') // <-- Ajout last_seen
+                .in('id', otherUserIds),
+            
+            supabaseClient.from('messages')
+                .select('chat_id, content, sender_id, created_at, is_read') // <-- Ajout is_read
+                .in('chat_id', chatIds)
+                .order('created_at', { ascending: false })
+                .limit(50),
+            
+            supabaseClient.from('messages')
+                .select('chat_id')
+                .eq('is_read', false)
+                .neq('sender_id', user.id)
+                .in('chat_id', chatIds)
         ]);
 
         const profilesMap = new Map(profilesRes.data?.map(p => [p.id, p]));
+        
         const latestMessagesMap = new Map();
         messagesRes.data?.forEach(msg => {
-            if (!latestMessagesMap.has(msg.chat_id)) latestMessagesMap.set(msg.chat_id, msg);
+            if (!latestMessagesMap.has(msg.chat_id)) {
+                latestMessagesMap.set(msg.chat_id, msg);
+            }
         });
-        const unreadCountsMap = new Map();
-        unreadRes.data?.forEach(msg => unreadCountsMap.set(msg.chat_id, (unreadCountsMap.get(msg.chat_id) || 0) + 1));
 
-        // 2. CRÉATION DU FRAGMENT POUR RÉORGANISATION
+        const unreadCountsMap = new Map();
+        unreadRes.data?.forEach(msg => {
+            unreadCountsMap.set(msg.chat_id, (unreadCountsMap.get(msg.chat_id) || 0) + 1);
+        });
+
+        // 3. Rendu
         const fragment = document.createDocumentFragment();
 
         chats.forEach(chat => {
@@ -2536,97 +2555,80 @@ async function loadChatList() {
             const lastMsg = latestMessagesMap.get(chat.id);
             const unreadCount = unreadCountsMap.get(chat.id) || 0;
             
-            // --- Calcul des données d'affichage ---
             let previewText = "Aucun message";
             let timeText = "";
-            if (lastMsg) {
-                previewText = lastMsg.content;
-                if (lastMsg.sender_id === user.id) previewText = `Moi: ${previewText}`;
-                timeText = getTimeAgoSimple(new Date(lastMsg.created_at));
+            let textClass = "text-slate-500 truncate"; 
+            let badgeHtml = "";
+            
+            // --- NOUVEAU : LOGIQUE STATUT EN LIGNE ---
+            let onlineDot = "";
+            if (profile.last_seen) {
+                const lastSeenDate = new Date(profile.last_seen);
+                const now = new Date();
+                const diffSeconds = (now - lastSeenDate) / 1000;
                 
-                if (lastMsg.sender_id === user.id) {
-                    previewText += lastMsg.is_read 
-                        ? ` <i class="fas fa-check-double text-blue-500 ml-1 text-[10px]"></i>` 
-                        : ` <i class="fas fa-check text-slate-400 ml-1 text-[10px]"></i>`;
+                // Si en ligne il y a moins de 2 min
+                if (diffSeconds < 120) {
+                    onlineDot = `<span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse"></span>`;
                 }
             }
 
-            // Logique Badge
-            let badgeHtml = "";
+            if (lastMsg) {
+                previewText = lastMsg.content;
+                timeText = getTimeAgoSimple(new Date(lastMsg.created_at));
+                
+                // --- NOUVEAU : LOGIQUE CHECKS (Lecture) ---
+                if (lastMsg.sender_id === user.id) {
+                    // C'est MON message
+                    if (lastMsg.is_read) {
+                        // Lu : 2 checks bleus
+                        previewText += ` <i class="fas fa-check-double text-blue-500 ml-1 text-[10px]"></i>`;
+                    } else {
+                        // Envoyé : 1 check gris
+                        previewText += ` <i class="fas fa-check text-slate-400 ml-1 text-[10px]"></i>`;
+                    }
+                }
+            }
+
+            // Logique Badge Non-Lu (Reçus)
             if (unreadCount > 0) {
+                textClass = "text-gradient-unread truncate"; 
                 const plural = unreadCount > 1 ? 's' : '';
                 badgeHtml = `<span class="badge-unread-count">${unreadCount} nouveau${plural} message${plural}</span>`;
             }
 
-            // Logique Statut En Ligne
-            let onlineDot = "";
-            if (profile.last_seen) {
-                const diffSeconds = (new Date() - new Date(profile.last_seen)) / 1000;
-                if (diffSeconds < 120) onlineDot = `<span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse"></span>`;
-            }
-
-            // 3. TENTATIVE DE RÉUTILISATION DE L'ÉLÉMENT EXISTANT
-            let div = container.querySelector(`[data-chat-id="${chat.id}"]`);
-
-            if (div) {
-                // MISE À JOUR PARTICULIÈRE (Pas de destruction totale)
-                // On met à jour le texte et les badges sans toucher à l'image ou au layout
-                const timeEl = div.querySelector('.chat-time-text');
-                const previewEl = div.querySelector('.chat-preview-text');
-                const badgeEl = div.querySelector('.chat-badge-wrapper');
-                const dotEl = div.querySelector('.online-dot-indicator');
-
-                if (timeEl) timeEl.textContent = timeText;
-                if (previewEl) previewEl.innerHTML = previewText; // innerHTML pour les icônes check
-                if (badgeEl) badgeEl.innerHTML = badgeHtml;
-                
-                // Gestion du point vert (on ajoute/supprime proprement)
-                if (dotEl) dotEl.remove(); // On l'enlève d'abord
-                if (onlineDot) {
-                    // On l'insère après l'avatar si besoin
-                    const avatarContainer = div.querySelector('.relative');
-                    if (avatarContainer) avatarContainer.insertAdjacentHTML('beforeend', onlineDot);
-                }
-
-                // On déplace l'élément existant dans le fragment (pour réordonner)
-                fragment.appendChild(div);
-            } else {
-                // CRÉATION NOUVEAU ELEMENT (Design inchangé)
-                div = document.createElement('div');
-                div.className = 'flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer border-b border-slate-100 dark:border-slate-700 transition';
-                div.setAttribute('data-chat-id', chat.id); // Identifiant crucial pour le diffing
-                div.onclick = () => startChat(otherId);
-                
-                div.innerHTML = `
-                    <div class="relative flex-shrink-0">
-                        <img src="${profile.avatar_url || `https://ui-avatars.com/api/?name=${profile.full_name}`}" class="w-12 h-12 rounded-full object-cover bg-slate-200 shadow-sm">
-                        ${onlineDot ? `<span class="online-dot-indicator absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse"></span>` : ''}
-                        ${profile.is_certified ? '<i class="fas fa-check-circle text-blue-500 text-[10px] absolute top-0 right-0 bg-white rounded-full"></i>' : ''}
+            const div = document.createElement('div');
+            div.className = 'flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer border-b border-slate-100 dark:border-slate-700 transition';
+            div.onclick = () => startChat(otherId);
+            
+            div.innerHTML = `
+                <div class="relative flex-shrink-0">
+                    <img src="${profile.avatar_url || `https://ui-avatars.com/api/?name=${profile.full_name}`}" class="w-12 h-12 rounded-full object-cover bg-slate-200 shadow-sm">
+                    ${onlineDot}
+                    ${profile.is_certified ? '<i class="fas fa-check-circle text-blue-500 text-[10px] absolute top-0 right-0 bg-white rounded-full"></i>' : ''}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex justify-between items-baseline mb-0.5">
+                         <h4 class="font-semibold text-slate-900 dark:text-white truncate">${profile.full_name}</h4>
+                         <span class="text-[10px] text-slate-400 flex-shrink-0 ml-2">${timeText}</span>
                     </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex justify-between items-baseline mb-0.5">
-                             <h4 class="font-semibold text-slate-900 dark:text-white truncate">${profile.full_name}</h4>
-                             <span class="chat-time-text text-[10px] text-slate-400 flex-shrink-0 ml-2">${timeText}</span>
-                        </div>
-                        <div class="flex items-center gap-1">
-                             <p class="chat-preview-text text-sm text-slate-500 truncate">${previewText}</p>
-                        </div>
-                        <div class="chat-badge-wrapper mt-1">${badgeHtml}</div>
+                    <div class="flex items-center gap-1">
+                         <p class="text-sm ${textClass}">${previewText}</p>
                     </div>
-                `;
-                fragment.appendChild(div);
-            }
+                    <div class="mt-1">${badgeHtml}</div>
+                </div>
+            `;
+            fragment.appendChild(div);
         });
-
-        // 4. INJECTION FINALE
-        // On vide le container UNE SEULE fois à la fin
+        
         container.innerHTML = ''; 
-        container.appendChild(fragment);
+        container.appendChild(fragment); 
 
     } catch (err) {
         console.error("Erreur loadChatList:", err);
     }
 }
+
 /* --- OUVERTURE D'UNE DISCUSSION (VERSION CORRIGÉE) --- */
 async function openChatRoom(chatId, targetUserId) {
     currentChatId = chatId;
@@ -4331,7 +4333,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const explorerBar = document.querySelector('.feed-sticky-header');
         const dock = document.querySelector('.mobile-dock');
 
-        if (currentScrollY <= 10) return;
+        if (currentScrollY <= 7) return;
 
         if (currentScrollY > lastScrollY && currentScrollY > 50) {
             if (explorerBar) explorerBar.classList.add('nav-hidden');
@@ -4480,7 +4482,93 @@ async function loadPotentialContacts() {
     } catch (err) {
         console.error("Erreur chargement contacts:", err);
     }
-}         
+}
+
+// --- FONCTION PUBLICATION (CORRIGÉE) ---
+async function handleNewPost(e) {
+    // 1. C'est LA ligne manquante qui empêche le rechargement
+    e.preventDefault(); 
+
+    const btn = e.target.querySelector('button[type="submit"]');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Publication...';
+
+    try {
+        // Récupération des valeurs
+        const caption = document.getElementById('post-caption').value;
+        const visibility = document.getElementById('post-visibility').value;
+        const postType = document.getElementById('current-post-type').value;
+        
+        // Récupérer le fichier (image ou vidéo)
+        let fileInput = postType === 'short' 
+            ? document.getElementById('post-video-input') 
+            : document.getElementById('post-file-input');
+        
+        const file = fileInput?.files[0];
+
+        if (!file) {
+            showToast("Veuillez sélectionner un fichier", "error");
+            throw new Error("No file");
+        }
+
+        // Vérification utilisateur
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error("Non connecté");
+
+        // 2. Upload du fichier dans Supabase Storage
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+        const bucket = postType === 'posts'; // Assurez-vous d'avoir ces buckets dans Supabase
+
+        const { data: uploadData, error: uploadError } = await supabaseClient.storage
+            .from(bucket) 
+            .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        // Récupérer l'URL publique
+        const { data: urlData } = supabaseClient.storage.from(bucket).getPublicUrl(fileName);
+        const publicUrl = urlData.publicUrl;
+
+        // 3. Insertion dans la table 'posts'
+        const newPost = {
+            user_id: user.id,
+            caption: caption,
+            visibility: visibility,
+            is_short: postType === 'posts'
+        };
+
+        if (postType === 'posts') {
+            newPost.video_url = publicUrl;
+        } else {
+            newPost.image_url = publicUrl;
+        }
+
+        const { error: insertError } = await supabaseClient.from('posts').insert([newPost]);
+
+        if (insertError) throw insertError;
+
+        // Succès
+        showToast("Publication réussie ! 🎉", "success");
+        closeNewPostModal();
+        
+        // Vider le formulaire
+        document.getElementById('new-post-form').reset();
+        resetPreview(); 
+        
+        // Rafraîchir le feed
+        if (typeof loadGlobalFeed === 'function') loadGlobalFeed();
+
+    } catch (err) {
+        console.error(err);
+        if(err.message !== "No file") showToast("Erreur : " + err.message, "error");
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+            
          // --- GESTION RECONNEXION REALTIME ---
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
@@ -4499,43 +4587,3 @@ document.addEventListener('visibilitychange', () => {
         }
     }
 });
-async function chargerPosts() {
-    const container = document.getElementById('posts-container');
-
-    // 1. Tenter de charger depuis le stockage local (Cache Immédiat)
-    const localData = localStorage.getItem('cached_posts');
-    if (localData) {
-        renderPosts(JSON.parse(localData)); // On affiche tout de suite les vieux posts
-        console.log("Mode Pro : Affichage des données locales en attendant le réseau...");
-    }
-
-    try {
-        // 2. Aller chercher les données fraîches sur Supabase
-        const { data: freshPosts, error } = await supabaseClient
-            .from('posts')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        // 3. Mettre à jour le stockage local pour la prochaine fois
-        localStorage.setItem('cached_posts', JSON.stringify(freshPosts));
-
-        // 4. Mettre à jour l'écran avec les nouvelles données
-        renderPosts(freshPosts);
-        console.log("Mode Pro : Données synchronisées avec le serveur.");
-
-    } catch (err) {
-        console.error("Erreur de synchro :", err);
-        if (!localData) {
-            container.innerHTML = "<p>Erreur de connexion et aucune donnée en cache.</p>";
-        }
-    }
-}
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('✅ Service Worker enregistré', reg))
-            .catch(err => console.error('❌ Erreur SW', err));
-    });
-}
