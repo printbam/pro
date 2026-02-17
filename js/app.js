@@ -2496,7 +2496,7 @@ async function loadChatList() {
     if (!user) return;
 
     try {
-        // 1. Récupérer les discussions
+        // 1. Récupération des données (inchangé)
         const { data: chats, error } = await supabaseClient
             .from('chats')
             .select('*')
@@ -2513,40 +2513,21 @@ async function loadChatList() {
         const otherUserIds = chats.map(c => c.user_1_id === user.id ? c.user_2_id : c.user_1_id);
         const chatIds = chats.map(c => c.id);
 
-        // 2. Requêtes Parallèles (Ajout de last_seen pour le statut)
         const [profilesRes, messagesRes, unreadRes] = await Promise.all([
-            supabaseClient.from('profiles')
-                .select('id, full_name, avatar_url, is_certified, last_seen') // <-- Ajout last_seen
-                .in('id', otherUserIds),
-            
-            supabaseClient.from('messages')
-                .select('chat_id, content, sender_id, created_at, is_read') // <-- Ajout is_read
-                .in('chat_id', chatIds)
-                .order('created_at', { ascending: false })
-                .limit(50),
-            
-            supabaseClient.from('messages')
-                .select('chat_id')
-                .eq('is_read', false)
-                .neq('sender_id', user.id)
-                .in('chat_id', chatIds)
+            supabaseClient.from('profiles').select('id, full_name, avatar_url, is_certified, last_seen').in('id', otherUserIds),
+            supabaseClient.from('messages').select('chat_id, content, sender_id, created_at, is_read').in('chat_id', chatIds).order('created_at', { ascending: false }).limit(50),
+            supabaseClient.from('messages').select('chat_id').eq('is_read', false).neq('sender_id', user.id).in('chat_id', chatIds)
         ]);
 
         const profilesMap = new Map(profilesRes.data?.map(p => [p.id, p]));
-        
         const latestMessagesMap = new Map();
         messagesRes.data?.forEach(msg => {
-            if (!latestMessagesMap.has(msg.chat_id)) {
-                latestMessagesMap.set(msg.chat_id, msg);
-            }
+            if (!latestMessagesMap.has(msg.chat_id)) latestMessagesMap.set(msg.chat_id, msg);
         });
-
         const unreadCountsMap = new Map();
-        unreadRes.data?.forEach(msg => {
-            unreadCountsMap.set(msg.chat_id, (unreadCountsMap.get(msg.chat_id) || 0) + 1);
-        });
+        unreadRes.data?.forEach(msg => unreadCountsMap.set(msg.chat_id, (unreadCountsMap.get(msg.chat_id) || 0) + 1));
 
-        // 3. Rendu
+        // 2. CRÉATION DU FRAGMENT POUR RÉORGANISATION
         const fragment = document.createDocumentFragment();
 
         chats.forEach(chat => {
@@ -2555,80 +2536,97 @@ async function loadChatList() {
             const lastMsg = latestMessagesMap.get(chat.id);
             const unreadCount = unreadCountsMap.get(chat.id) || 0;
             
+            // --- Calcul des données d'affichage ---
             let previewText = "Aucun message";
             let timeText = "";
-            let textClass = "text-slate-500 truncate"; 
-            let badgeHtml = "";
-            
-            // --- NOUVEAU : LOGIQUE STATUT EN LIGNE ---
-            let onlineDot = "";
-            if (profile.last_seen) {
-                const lastSeenDate = new Date(profile.last_seen);
-                const now = new Date();
-                const diffSeconds = (now - lastSeenDate) / 1000;
-                
-                // Si en ligne il y a moins de 2 min
-                if (diffSeconds < 120) {
-                    onlineDot = `<span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse"></span>`;
-                }
-            }
-
             if (lastMsg) {
                 previewText = lastMsg.content;
+                if (lastMsg.sender_id === user.id) previewText = `Moi: ${previewText}`;
                 timeText = getTimeAgoSimple(new Date(lastMsg.created_at));
                 
-                // --- NOUVEAU : LOGIQUE CHECKS (Lecture) ---
                 if (lastMsg.sender_id === user.id) {
-                    // C'est MON message
-                    if (lastMsg.is_read) {
-                        // Lu : 2 checks bleus
-                        previewText += ` <i class="fas fa-check-double text-blue-500 ml-1 text-[10px]"></i>`;
-                    } else {
-                        // Envoyé : 1 check gris
-                        previewText += ` <i class="fas fa-check text-slate-400 ml-1 text-[10px]"></i>`;
-                    }
+                    previewText += lastMsg.is_read 
+                        ? ` <i class="fas fa-check-double text-blue-500 ml-1 text-[10px]"></i>` 
+                        : ` <i class="fas fa-check text-slate-400 ml-1 text-[10px]"></i>`;
                 }
             }
 
-            // Logique Badge Non-Lu (Reçus)
+            // Logique Badge
+            let badgeHtml = "";
             if (unreadCount > 0) {
-                textClass = "text-gradient-unread truncate"; 
                 const plural = unreadCount > 1 ? 's' : '';
                 badgeHtml = `<span class="badge-unread-count">${unreadCount} nouveau${plural} message${plural}</span>`;
             }
 
-            const div = document.createElement('div');
-            div.className = 'flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer border-b border-slate-100 dark:border-slate-700 transition';
-            div.onclick = () => startChat(otherId);
-            
-            div.innerHTML = `
-                <div class="relative flex-shrink-0">
-                    <img src="${profile.avatar_url || `https://ui-avatars.com/api/?name=${profile.full_name}`}" class="w-12 h-12 rounded-full object-cover bg-slate-200 shadow-sm">
-                    ${onlineDot}
-                    ${profile.is_certified ? '<i class="fas fa-check-circle text-blue-500 text-[10px] absolute top-0 right-0 bg-white rounded-full"></i>' : ''}
-                </div>
-                <div class="flex-1 min-w-0">
-                    <div class="flex justify-between items-baseline mb-0.5">
-                         <h4 class="font-semibold text-slate-900 dark:text-white truncate">${profile.full_name}</h4>
-                         <span class="text-[10px] text-slate-400 flex-shrink-0 ml-2">${timeText}</span>
+            // Logique Statut En Ligne
+            let onlineDot = "";
+            if (profile.last_seen) {
+                const diffSeconds = (new Date() - new Date(profile.last_seen)) / 1000;
+                if (diffSeconds < 120) onlineDot = `<span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse"></span>`;
+            }
+
+            // 3. TENTATIVE DE RÉUTILISATION DE L'ÉLÉMENT EXISTANT
+            let div = container.querySelector(`[data-chat-id="${chat.id}"]`);
+
+            if (div) {
+                // MISE À JOUR PARTICULIÈRE (Pas de destruction totale)
+                // On met à jour le texte et les badges sans toucher à l'image ou au layout
+                const timeEl = div.querySelector('.chat-time-text');
+                const previewEl = div.querySelector('.chat-preview-text');
+                const badgeEl = div.querySelector('.chat-badge-wrapper');
+                const dotEl = div.querySelector('.online-dot-indicator');
+
+                if (timeEl) timeEl.textContent = timeText;
+                if (previewEl) previewEl.innerHTML = previewText; // innerHTML pour les icônes check
+                if (badgeEl) badgeEl.innerHTML = badgeHtml;
+                
+                // Gestion du point vert (on ajoute/supprime proprement)
+                if (dotEl) dotEl.remove(); // On l'enlève d'abord
+                if (onlineDot) {
+                    // On l'insère après l'avatar si besoin
+                    const avatarContainer = div.querySelector('.relative');
+                    if (avatarContainer) avatarContainer.insertAdjacentHTML('beforeend', onlineDot);
+                }
+
+                // On déplace l'élément existant dans le fragment (pour réordonner)
+                fragment.appendChild(div);
+            } else {
+                // CRÉATION NOUVEAU ELEMENT (Design inchangé)
+                div = document.createElement('div');
+                div.className = 'flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer border-b border-slate-100 dark:border-slate-700 transition';
+                div.setAttribute('data-chat-id', chat.id); // Identifiant crucial pour le diffing
+                div.onclick = () => startChat(otherId);
+                
+                div.innerHTML = `
+                    <div class="relative flex-shrink-0">
+                        <img src="${profile.avatar_url || `https://ui-avatars.com/api/?name=${profile.full_name}`}" class="w-12 h-12 rounded-full object-cover bg-slate-200 shadow-sm">
+                        ${onlineDot ? `<span class="online-dot-indicator absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse"></span>` : ''}
+                        ${profile.is_certified ? '<i class="fas fa-check-circle text-blue-500 text-[10px] absolute top-0 right-0 bg-white rounded-full"></i>' : ''}
                     </div>
-                    <div class="flex items-center gap-1">
-                         <p class="text-sm ${textClass}">${previewText}</p>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-baseline mb-0.5">
+                             <h4 class="font-semibold text-slate-900 dark:text-white truncate">${profile.full_name}</h4>
+                             <span class="chat-time-text text-[10px] text-slate-400 flex-shrink-0 ml-2">${timeText}</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                             <p class="chat-preview-text text-sm text-slate-500 truncate">${previewText}</p>
+                        </div>
+                        <div class="chat-badge-wrapper mt-1">${badgeHtml}</div>
                     </div>
-                    <div class="mt-1">${badgeHtml}</div>
-                </div>
-            `;
-            fragment.appendChild(div);
+                `;
+                fragment.appendChild(div);
+            }
         });
-        
+
+        // 4. INJECTION FINALE
+        // On vide le container UNE SEULE fois à la fin
         container.innerHTML = ''; 
-        container.appendChild(fragment); 
+        container.appendChild(fragment);
 
     } catch (err) {
         console.error("Erreur loadChatList:", err);
     }
 }
-
 /* --- OUVERTURE D'UNE DISCUSSION (VERSION CORRIGÉE) --- */
 async function openChatRoom(chatId, targetUserId) {
     currentChatId = chatId;
