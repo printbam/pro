@@ -24,7 +24,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://checkout.flutterwave.com/v3.js"></script>
-    <link rel="stylesheet" href="./css/ui.css">
+    <link rel="stylesheet" href="./ui.css">
     
 </head>
 <body>
@@ -220,7 +220,7 @@
 
     <!-- HEADERS -->
     <!-- MOBILE HEADER -->
-    <div class="sm:hidden fixed top-0 w-full z-[4000] px-4 py-1 transition-all duration-300" id="mobile-header">
+    <div class="sm:hidden fixed top-0 w-full z-[10000] px-4 py-1 transition-all duration-300" id="mobile-header">
         <div class="flex items-center justify-between gap-3">
             <button onclick="toggleSidebar()" class="flex items-center justify-center w-11 h-11 bg-white/90 border border-slate-200 rounded-xl shadow-sm backdrop-blur-md active:scale-95 transition-all group" aria-label="Menu"><i class="fas fa-bars text-slate-700 group-hover:text-indigo-600 transition-colors"></i></button>
             <div class="flex-1 h-11 bg-white/90 border border-slate-200 rounded-xl flex items-center justify-center px-4 shadow-sm backdrop-blur-md"><span class="font-bold text-lg tracking-tight"><span class="text-indigo-600">Link</span>o</span></div>
@@ -234,8 +234,7 @@
         </div>
     </div>
 
-    <!-- MOBILE DOCK -->
-  <!-- MOBILE DOCK -->
+<!-- MOBILE DOCK -->
 <div class="mobile-dock md:hidden fixed bottom-0 left-0 w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 h-[65px] flex items-center justify-around z-[9999] m-0 p-0">
     
     <!-- 1. EXPLORER (Accueil) -->
@@ -276,59 +275,52 @@
         <span class="text-[10px] font-medium text-slate-500 mt-1">Profil</span>
     </a>
 </div>
+
     <!-- MAIN CONTENT WRAPPER -->
    <!-- PAGE 1: ACCUEIL (FEED GLOBAL) -->
 <div id="home-view" class="page-view">
     <section class="max-w-2xl mx-auto px-4 pt-10 pb-20 ">
         
-        <!-- NOUVEAU WRAPPER STICKY MODIFIÉ -->
-<div class="sticky top-[50px] z-[3500] mb-10 py-1 -mx-4 px-4 border-b border-black/10 dark:border-white/10">
+      <!-- NOUVEAU WRAPPER (FIXE) -->
+<div class="fixed-explorer-header px-4 py-3">
     
     <!-- HEADER DU FEED -->
-    <div class="flex items-center justify-between mb-1"> <!-- mb-4 devient mb-1 -->
+    <div class="flex items-center justify-between mb-2">
         <h1 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
             Explorez
         </h1>
-        
-        <!-- BOUTON RECHERCHE (Remplace le bouton Publier) -->
         <button onclick="toggleSearch()" class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-4 py-2 rounded-full text-sm font-bold shadow-sm hover:bg-slate-200 transition flex items-center gap-2">
             <i class="fas fa-search"></i>
         </button>
     </div>
 
-    <!-- BARRE DE RECHERCHE (Cachée par défaut) -->
+    <!-- BARRE DE RECHERCHE -->
     <div id="feed-search-bar" class="hidden mb-3 overflow-hidden transition-all duration-300">
         <div class="relative">
             <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-            <input type="text" id="feed-search-input" placeholder="Rechercher des publications..." class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-full py-2 pl-9 pr-4 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all placeholder-slate-400">
+            <input type="text" id="feed-search-input" placeholder="Rechercher..." class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-full py-2 pl-9 pr-4 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
         </div>
     </div>
 
     <!-- BOUTONS DE TRI -->
-    <div class="flex gap-2 pb-1 overflow-x-auto no-scrollbar" id="sort-container">
-    
-    <button onclick="handleSortClick(this, 'recent')" 
-        title="Actualités"
-        class="sort-btn flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 text-[14px] font-semibold transition-all duration-300">
-        <i class="fas fa-bolt-lightning text-sm"></i>
-        <span class="btn-text">Actualités</span>
-    </button>
-
-    <button onclick="handleSortClick(this, 'popular')" 
-        title="Tendances"
-        class="sort-btn flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[14px] font-semibold transition-all duration-300">
-        <i class="fas fa-arrow-trend-up text-sm text-indigo-500"></i>
-        <span class="btn-text hidden">Tendances</span>
-    </button>
-
-    <button onclick="handleSortClick(this, 'shorts')" 
-        title="Shorts"
-        class="sort-btn flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[14px] font-semibold transition-all duration-300">
-        <i class="fas fa-clapperboard text-sm text-pink-500"></i>
-        <span class="btn-text hidden">Shorts</span>
-    </button>
+    <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1" id="sort-container">
+        <button onclick="handleSortClick(this, 'recent')" class="sort-btn flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 text-[14px] font-semibold transition-all">
+            <i class="fas fa-bolt-lightning text-sm"></i>
+            <span class="btn-text">Actualités</span>
+        </button>
+        <button onclick="handleSortClick(this, 'popular')" class="sort-btn flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[14px] font-semibold transition-all">
+            <i class="fas fa-arrow-trend-up text-sm text-indigo-500"></i>
+            <span class="btn-text hidden">Tendances</span>
+        </button>
+        <button onclick="handleSortClick(this, 'shorts')" class="sort-btn flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[14px] font-semibold transition-all">
+            <i class="fas fa-clapperboard text-sm text-pink-500"></i>
+            <span class="btn-text hidden">Shorts</span>
+        </button>
+    </div>
 </div>
-</div> 
+
+<!-- ESPACE VIDE (pour ne pas que le contenu soit caché sous la barre fixe) -->
+<div class="spacer-for-fixed-header"></div> <br>
         <!-- FIN DU WRAPPER STICKY -->
 
         <!-- CONTENEUR DES POSTS -->
@@ -499,7 +491,9 @@
     
     <input type="hidden" id="current-post-type" value="image">
     
-   <button onclick="handleNewPost(e)" type="submit" class="w-full py-3 font-bold rounded-lg transition">Publier</button>
+   <button type="submit" class="w-full py-3 font-bold rounded-lg transition bg-indigo-600 text-white hover:bg-indigo-700">
+    Publier
+</button>
 </form>
         </div>
     </div>
@@ -724,5 +718,5 @@
 </div>
 </body>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./js/app.js" defer></script>
+<script src="./app.js" defer></script>
 </html>
