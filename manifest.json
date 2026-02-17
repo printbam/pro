@@ -1,7 +1,7 @@
 {
-  "name": "Printbam",
-  "short_name": "Printbam",
-  "description": "Le savoir numerique",
+  "name": "Linko",
+  "short_name": "Linko",
+  "description": "Le tout en un capable",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
