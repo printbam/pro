@@ -1669,3 +1669,31 @@ body.dark-mode .fixed-explorer-header {
     transition: none; 
     will-change: width; /* Optimise le rendu GPU */
 }
+
+/* ==========================================================
+   ALIGNEMENT PARFAIT PROFIL SOUS LE HEADER
+   ========================================================== */
+
+/* 1. Cible le conteneur principal de la page Profil (la carte blanche) */
+#profile-social-view > div.bg-white {
+    /* 
+       Le header mobile fait environ 60px de haut.
+       On ajoute un padding-top pour pousser le contenu vers le bas.
+       80px = 60px (header) + 20px (respiration visuelle).
+    */
+    padding-top: 50px !important;
+    margin-top: 0 !important;
+}
+
+/* 2. Ajustement pour le mode Desktop (si le header change de taille ou disparait) */
+@media (min-width: 768px) {
+    #profile-social-view > div.bg-white {
+        /* Sur desktop, on peut réduire l'espace si nécessaire, par exemple 20px */
+        padding-top: 20px !important; 
+    }
+}
+
+/* 3. S'assurer que la barre du bas (Dock) ne cache pas le bouton "Modifier" */
+#profile-social-view {
+    padding-bottom: 80px !important; /* Espace pour la barre du bas */
+}
