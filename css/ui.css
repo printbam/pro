@@ -1410,7 +1410,7 @@ body.dark-mode .market-item .bg-emerald-50 {
     background: white;
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-    z-index: 100000;
+    z-index: 10000;
     padding: 8px 0;
     min-width: 180px;
     animation: popIn 0.15s ease-out;
@@ -1577,7 +1577,10 @@ body.dark-mode #chat-input {
     top: 40px; /* Juste sous le header mobile (qui fait 47px de haut) */
     left: 0;
     right: 0;
-    z-index: 100; /* Au-dessus du fond header (z-5), mais sous le header principal si nécessaire */
+    z-index: 100;
+    margin-top: 0px !important; /* Pas de marge au-dessus, c'est géré par le margin-bottom des stories */
+    padding-top: 12px !important; /* Espace interne confortable */
+}/* Au-dessus du fond header (z-5), mais sous le header principal si nécessaire */
     
     /* Fond opaque obligatoire pour cacher le contenu qui défile derrière */
     background: rgba(255, 255, 255, 0.98);
@@ -1586,6 +1589,8 @@ body.dark-mode #chat-input {
     
     /* Ombre pour séparer du contenu */
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    padding-top: 0px !important; /* Réduit l'espace (était peut-être plus grand avant) */
+    margin-top: 0px !important;
 }
 
 /* Mode Sombre */
@@ -1596,7 +1601,51 @@ body.dark-mode .fixed-explorer-header {
 
 /* On ajoute un espace AU-DESSUS du contenu pour qu'il ne soit pas caché par la barre fixe */
 .spacer-for-fixed-header {
-    height: 115px; /* Hauteur du header mobile + Hauteur barre explorer */
+    height: 8px; /* Hauteur du header mobile + Hauteur barre explorer */
     display: block;
     content: '';
+}
+
+/* 2. LA BARRE DES STORIES */
+#stories-bar {
+    position: relative;
+    z-index: 30; /* Moins que le header, au-dessus du contenu */
+    background: rgba(0, 0, 0, 0.98);
+    
+    /* L'ASTUCE : Une marge en haut pour ne pas être caché par le header fixe */
+    margin-top: 125px !important; /* 60px (header) + 10px (respiration) */
+    margin-bottom: 0px;
+    padding-bottom: 0px !important; /* Force l'absence d'espace en bas */
+    margin-bottom: 0px !important;
+    border-bottom: none;
+    padding-top: 0px !important;
+}
+
+/* Pour que le scroll horizontal fonctionne bien */
+#stories-bar .stories-container {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding: 0 1rem;
+    scrollbar-width: none; /* Cache la barre de scroll */
+}
+#stories-bar .stories-container::-webkit-scrollbar {
+    display: none;
+}
+
+/* STYLE "FLAT" POUR LES POSTS (Sans bordure, sans espace) */
+
+/* 1. Cible les posts dans le conteneur principal */
+#global-feed-container article {
+    border: none !important;            /* Supprime le contour */
+    box-shadow: none !important;        /* Supprime l'ombre */
+    border-radius: 0px !important;      /* Supprime les coins arrondis */
+    margin-bottom: 0px !important;      /* Supprime l'espace VERTICAL entre les posts */
+    
+    /* Optionnel : Ajoute une ligne fine de séparation comme Facebook */
+    border-bottom: 1px solid #f1f5f9 !important; 
+}
+
+.dark #global-feed-container article {
+    border-bottom-color: #1e293b !important; /* Ligne grise foncée en mode sombre */
 }
