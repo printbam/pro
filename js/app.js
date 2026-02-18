@@ -4589,80 +4589,94 @@ async function loadStories() {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) return;
 
-    // 1. Récupérer les stories (moins de 24h)
-    const { data: stories, error } = await supabaseClient
-        .from('stories')
-        .select('profiles(id, full_name, avatar_url)')
-        .gt('created_at', new Date(Date.now() - 86400000).toISOString())
-        .order('created_at', { ascending: false });
+    try {
+        // --- CORRECTION 1 : Récupérer VRAIMENT mon profil pour avoir ma photo ---
+        const { data: myProfile } = await supabaseClient
+            .from('profiles')
+            .select('id, full_name, avatar_url')
+            .eq('id', user.id)
+            .maybeSingle();
 
-    if (error) {
-        console.error("Erreur stories:", error);
-        return;
-    }
+        // Récupération des stories (moins de 24h)
+        const { data: stories, error } = await supabaseClient
+            .from('stories')
+            .select('*, profiles(id, full_name, avatar_url)')
+            .gt('created_at', new Date(Date.now() - 86400000).toISOString())
+            .order('created_at', { ascending: false });
 
-    // 2. Séparer mes stories de celles des autres
-    const myStories = stories ? stories.filter(s => s.user_id === user.id) : [];
-    const othersStories = stories ? stories.filter(s => s.user_id !== user.id) : [];
-    const myAvatar = user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${user.email}`;
+        if (error) throw error;
 
-    let htmlContent = '';
+        // Séparation de mes stories et de celles des autres
+        const myStories = stories ? stories.filter(s => s.user_id === user.id) : [];
+        const othersStories = stories ? stories.filter(s => s.user_id !== user.id) : [];
+        
+        // Utilisation de l'avatar du profil, ou fallback
+        const myAvatar = myProfile?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(myProfile?.full_name || 'U')}&background=random`;
 
-    // 3. MON STORY (Créer ou Voir)
-    if (myStories.length > 0) {
-        // Si j'ai déjà une story : Anneau coloré
-        htmlContent += `
-            <div class="flex flex-col items-center gap-1 cursor-pointer flex-shrink-0" onclick="openStoryViewer('${user.id}')">
-                <div class="p-0.5 rounded-full bg-gradient-to-tr from-sky-400 via-cyan-300 to-yellow-400">
-                    <img src="${myAvatar}" class="w-16 h-16 rounded-full border-2 border-white object-cover">
-                </div>
-                <span class="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Votre Story</span>
-            </div>
-        `;
-    } else {
-        // Si pas de story : Bouton Ajouter
-        htmlContent += `
-            <input type="file" id="story-upload-input" accept="image/*,video/*" class="hidden" onchange="handleStoryUpload(this)">
-            
-            <div class="flex flex-col items-center gap-1 cursor-pointer flex-shrink-0" onclick="document.getElementById('story-upload-input').click()">
-                <div class="relative">
-                    <div class="w-16 h-16 rounded-full border-2 border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800">
-                        <img src="${myAvatar}" class="w-full h-full object-cover opacity-60">
+        let htmlContent = '';
+
+        // --- MA STORY (Bulle "Votre Story" ou "Ajouter") ---
+        if (myStories.length > 0) {
+            // J'ai déjà une story -> Afficher avec l'anneau coloré
+            htmlContent += `
+                <div class="flex flex-col items-center gap-1 cursor-pointer flex-shrink-0" onclick="openStoryViewer('${user.id}')">
+                    <div class="p-0.5 rounded-full bg-gradient-to-tr from-sky-400 via-cyan-300 to-yellow-400">
+                        <img src="${myAvatar}" class="w-16 h-16 rounded-full border-2 border-white object-cover">
                     </div>
-                    <div class="absolute bottom-0 right-0 w-6 h-6 bg-blue-600 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center shadow-md">
-                        <i class="fas fa-plus text-white text-xs"></i>
-                    </div>
+                    <span class="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Votre Story</span>
                 </div>
-                <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Ajouter</span>
-            </div>
-        `;
+            `;
+        } else {
+            // Je n'ai pas de story -> Afficher le bouton "+"
+            htmlContent += `
+                <input type="file" id="story-upload-input" accept="image/*,video/*" class="hidden" onchange="handleStoryUpload(this)">
+                <div class="flex flex-col items-center gap-1 cursor-pointer flex-shrink-0" onclick="document.getElementById('story-upload-input').click()">
+                    <div class="relative">
+                        <!-- Photo de profil en fond (grisée) -->
+                        <div class="w-16 h-16 rounded-full border-2 border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800">
+                            <img src="${myAvatar}" class="w-full h-full object-cover opacity-60">
+                        </div>
+                        <!-- Bouton + Bleu -->
+                        <div class="absolute bottom-0 right-0 w-6 h-6 bg-blue-600 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center shadow-md">
+                            <i class="fas fa-plus text-white text-xs"></i>
+                        </div>
+                    </div>
+                    <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Ajouter</span>
+                </div>
+            `;
+        }
+
+        // --- STORIES DES AUTRES ---
+        const grouped = {};
+        othersStories.forEach(s => {
+            if (!grouped[s.user_id]) grouped[s.user_id] = { profile: s.profiles, items: [] };
+            grouped[s.user_id].items.push(s);
+        });
+
+        Object.values(grouped).forEach(u => {
+            // Gestion des données manquantes
+            const profile = u.profile || {};
+            const userName = profile.full_name || 'Utilisateur';
+            const avatarUrl = profile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=random`;
+            const userId = profile.id || u.items[0].user_id;
+
+            htmlContent += `
+                <div class="flex flex-col items-center gap-1 cursor-pointer flex-shrink-0" onclick="openStoryViewer('${userId}')">
+                    <div class="p-0.5 rounded-full bg-gradient-to-tr from-sky-400 via-cyan-300 to-yellow-400">
+                        <img src="${avatarUrl}" class="w-16 h-16 rounded-full border-2 border-white object-cover">
+                    </div>
+                    <span class="text-[11px] font-medium text-slate-700 dark:text-slate-300 truncate w-16 text-center">${userName}</span>
+                </div>
+            `;
+        });
+
+        // Injection
+        container.className = "relative z-30 flex gap-4 overflow-x-auto px-4 pt-4 pb-2 bg-white dark:bg-slate-900 max-w-2xl mx-auto mb-2";
+        container.innerHTML = htmlContent;
+
+    } catch (err) {
+        console.error("Erreur critique loadStories:", err);
     }
-
-    // 4. STORIES DES AUTRES
-    const grouped = {};
-    othersStories.forEach(s => {
-        if (!grouped[s.user_id]) grouped[s.user_id] = { profile: s.profiles, items: [] };
-        grouped[s.user_id].items.push(s);
-    });
-
-    Object.values(grouped).forEach(u => {
-    // AJOUT : On vérifie si le profil existe avant d'afficher
-    if (!u.profile) return; 
-
-    htmlContent += `
-        <div class="flex flex-col items-center gap-1 cursor-pointer flex-shrink-0" onclick="openStoryViewer('${u.profile.id}')">
-            <div class="p-0.5 rounded-full bg-gradient-to-tr from-sky-400 via-cyan-300 to-yellow-400">
-                <img src="${u.profile.avatar_url || `https://ui-avatars.com/api/?name=${u.profile.full_name}`}" class="w-16 h-16 rounded-full border-2 border-white object-cover">
-            </div>
-            <span class="text-[11px] font-medium text-slate-700 dark:text-slate-300 truncate w-16 text-center">${u.profile.full_name}</span>
-        </div>
-    `;
-});
-
-    // 5. INJECTION
-    // On ajoute un style flex pour le défilement horizontal
-    container.className = "stories-container flex gap-4 overflow-x-auto px-4 py-3 no-scrollbar max-w-2xl mx-auto";
-    container.innerHTML = htmlContent;
 }
 
 // Ouvrir/Fermer le panneau des vues
