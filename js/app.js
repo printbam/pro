@@ -1267,56 +1267,44 @@ async function loadSocialProfile(targetUserId = null) {
             .maybeSingle();
 
         if (error) throw error;
+        
+        // Si pas de profil trouvé, on arrête
+        if (!profile) return;
 
-        if (!profile) {
-            const container = document.querySelector('#profile-social-view .max-w-2xl'); 
-            if (container) container.innerHTML = `<div class="text-center py-20"><h2 class="text-xl font-bold text-slate-900">Profil introuvable</h2></div>`;
-            return;
-        }
-
-        // 2. Mise à jour du DOM de base
+        // 2. Fonction helper pour mettre à jour le texte
         const updateText = (id, text) => {
             const el = document.getElementById(id);
             if(el) el.textContent = text;
         };
 
+        // 3. Mise à jour des champs de base
         updateText('social-fullname', profile.full_name || 'Utilisateur');
         updateText('social-username', profile.username ? `@${profile.username}` : '@utilisateur');
+        
+        // --- CHAMPS MANQUANTS À AJOUTER ---
+        
+        // Téléphone (avec fallback)
+        updateText('social-phone', profile.phone || 'Non renseigné');
+        
+        // Date de naissance (avec formatage)
+        if (profile.dob) {
+            const date = new Date(profile.dob);
+            updateText('social-dob', date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }));
+        } else {
+            updateText('social-dob', 'Non renseignée');
+        }
 
-        // 3. Stats (Optimisation : Lancement des deux requêtes en même temps)
+        // 4. Stats (Abonnés / Suivis)
         const [followersRes, followingRes] = await Promise.all([
             supabaseClient.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', profileId),
             supabaseClient.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', profileId)
         ]);
-        
-        // 4. Gestion des éléments UI
-        const editBtn = document.querySelector('button[onclick="toggleProfile()"]');
-        const logoutBtn = document.querySelector('button[onclick="confirmSocialLogout()"]');
-        const followContainer = document.getElementById('profile-follow-container');
 
-        if (isMyProfile) {
-            if(editBtn) editBtn.style.display = 'inline-block';
-            if(logoutBtn) logoutBtn.style.display = 'flex';
-            if(followContainer) {
-                followContainer.style.display = 'none';
-                followContainer.innerHTML = ''; 
-            }
-            updateDockAvatar(profile.avatar_url);
-        } else {
-            if(editBtn) editBtn.style.display = 'none';
-            if(logoutBtn) logoutBtn.style.display = 'none';
-            
-            if (followContainer) {
-                followContainer.style.display = 'flex';
-                followContainer.innerHTML = ''; // On vide pour laisser la fonction suivante remplir
-                
-                // Appel de ta fonction de création de boutons (Abonnement + Message)
-                // Assure-toi que cette fonction utilise followContainer pour injecter le HTML
-                await initFollowButtonOnProfile(profileId, currentUser.id); 
-            }
-        }
+        // Injection des chiffres
+        updateText('stat-followers', followersRes.count || 0);
+        updateText('stat-following', followingRes.count || 0);
 
-        // 5. Avatar principal (Correction fallback)
+        // 5. Avatar
         const imgEl = document.getElementById('social-avatar');
         const placeholder = document.getElementById('social-avatar-placeholder');
         
@@ -1328,25 +1316,34 @@ async function loadSocialProfile(targetUserId = null) {
             } else {
                 imgEl.classList.add('hidden');
                 placeholder.classList.remove('hidden');
-                // Optionnel : Mettre une initiale dans le placeholder
-                placeholder.innerText = (profile.full_name || 'U').charAt(0).toUpperCase();
+                placeholder.innerHTML = `<span class="text-3xl font-bold text-slate-400">${(profile.full_name || 'U').charAt(0)}</span>`;
+            }
+        }
+        
+        // 6. Badge
+        const badgeInline = document.getElementById('social-badge-inline');
+        if(badgeInline) {
+             profile.is_certified ? badgeInline.classList.remove('hidden') : badgeInline.classList.add('hidden');
+        }
+
+        // 7. Gestion des boutons (Modifier / Suivre)
+        const editBtn = document.querySelector('button[onclick="toggleProfile()"]');
+        const followContainer = document.getElementById('profile-follow-container');
+
+        if (isMyProfile) {
+            if(editBtn) editBtn.style.display = 'inline-block';
+            if(followContainer) followContainer.classList.add('hidden');
+        } else {
+            if(editBtn) editBtn.style.display = 'none';
+            if(followContainer) {
+                followContainer.classList.remove('hidden');
+                // On charge le bouton follow si nécessaire
+                await initFollowButtonOnProfile(profileId, currentUser.id);
             }
         }
 
-        // 6. Badge de certification
-        const badgeInline = document.getElementById('social-badge-inline');
-        if(badgeInline) {
-            profile.is_certified ? badgeInline.classList.remove('hidden') : badgeInline.classList.add('hidden');
-        }
-
-        // 7. Charger les posts du profil
-        loadSocialPosts(profileId);
-
     } catch (err) {
-        if (err.name !== 'AbortError') {
-            console.error("Erreur profil social:", err);
-    loadSocialPosts(userId);
-        }
+        console.error("Erreur chargement profil social:", err);
     }
 }
 
@@ -4634,15 +4631,18 @@ async function loadStories() {
     });
 
     Object.values(grouped).forEach(u => {
-        htmlContent += `
-            <div class="flex flex-col items-center gap-1 cursor-pointer flex-shrink-0" onclick="openStoryViewer('${u.profile.id}')">
-                <div class="p-0.5 rounded-full bg-gradient-to-tr from-sky-400 via-cyan-300 to-yellow-400">
-                    <img src="${u.profile.avatar_url || `https://ui-avatars.com/api/?name=${u.profile.full_name}`}" class="w-16 h-16 rounded-full border-2 border-white object-cover">
-                </div>
-                <span class="text-[11px] font-medium text-slate-700 dark:text-slate-300 truncate w-16 text-center">${u.profile.full_name}</span>
+    // AJOUT : On vérifie si le profil existe avant d'afficher
+    if (!u.profile) return; 
+
+    htmlContent += `
+        <div class="flex flex-col items-center gap-1 cursor-pointer flex-shrink-0" onclick="openStoryViewer('${u.profile.id}')">
+            <div class="p-0.5 rounded-full bg-gradient-to-tr from-sky-400 via-cyan-300 to-yellow-400">
+                <img src="${u.profile.avatar_url || `https://ui-avatars.com/api/?name=${u.profile.full_name}`}" class="w-16 h-16 rounded-full border-2 border-white object-cover">
             </div>
-        `;
-    });
+            <span class="text-[11px] font-medium text-slate-700 dark:text-slate-300 truncate w-16 text-center">${u.profile.full_name}</span>
+        </div>
+    `;
+});
 
     // 5. INJECTION
     // On ajoute un style flex pour le défilement horizontal
