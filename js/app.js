@@ -1267,8 +1267,6 @@ async function loadSocialProfile(targetUserId = null) {
             .maybeSingle();
 
         if (error) throw error;
-        
-        // Si pas de profil trouvé, on arrête
         if (!profile) return;
 
         // 2. Fonction helper pour mettre à jour le texte
@@ -1276,17 +1274,25 @@ async function loadSocialProfile(targetUserId = null) {
             const el = document.getElementById(id);
             if(el) el.textContent = text;
         };
+        
+        // Fonction helper pour gérer les classes (pour le mode sombre)
+        const updateClass = (id, className) => {
+            const el = document.getElementById(id);
+            if(el) el.className = className;
+        };
 
         // 3. Mise à jour des champs de base
         updateText('social-fullname', profile.full_name || 'Utilisateur');
-        updateText('social-username', profile.username ? `@${profile.username}` : '@utilisateur');
         
-        // --- CHAMPS MANQUANTS À AJOUTER ---
+        // --- CORRECTION USERNAME (Avec fallback intelligent et couleur) ---
+        let usernameDisplay = profile.username ? `@${profile.username}` : `@${currentUser.email.split('@')[0]}`;
+        updateText('social-username', usernameDisplay);
+        // On s'assure que la couleur est visible en mode sombre
+        updateClass('social-username', 'text-sm text-slate-700 dark:text-slate-300 font-medium');
         
-        // Téléphone (avec fallback)
+        // --- CHAMPS MANQUANTS ---
         updateText('social-phone', profile.phone || 'Non renseigné');
         
-        // Date de naissance (avec formatage)
         if (profile.dob) {
             const date = new Date(profile.dob);
             updateText('social-dob', date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }));
@@ -1294,17 +1300,15 @@ async function loadSocialProfile(targetUserId = null) {
             updateText('social-dob', 'Non renseignée');
         }
 
-        // 4. Stats (Abonnés / Suivis)
+        // 4. Stats
         const [followersRes, followingRes] = await Promise.all([
             supabaseClient.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', profileId),
             supabaseClient.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', profileId)
         ]);
-
-        // Injection des chiffres
         updateText('stat-followers', followersRes.count || 0);
         updateText('stat-following', followingRes.count || 0);
 
-        // 5. Avatar
+        // 5. Avatar Principal
         const imgEl = document.getElementById('social-avatar');
         const placeholder = document.getElementById('social-avatar-placeholder');
         
@@ -1326,21 +1330,32 @@ async function loadSocialProfile(targetUserId = null) {
              profile.is_certified ? badgeInline.classList.remove('hidden') : badgeInline.classList.add('hidden');
         }
 
-        // 7. Gestion des boutons (Modifier / Suivre)
+        // 7. Gestion des boutons
         const editBtn = document.querySelector('button[onclick="toggleProfile()"]');
         const followContainer = document.getElementById('profile-follow-container');
 
         if (isMyProfile) {
             if(editBtn) editBtn.style.display = 'inline-block';
             if(followContainer) followContainer.classList.add('hidden');
+            
+            // --- FORCER LA MISE À JOUR DU DOCK (EN BAS) ---
+            if (typeof updateDockAvatar === 'function') {
+                updateDockAvatar(profile.avatar_url);
+            }
+            // --- FORCER LA MISE À JOUR DU SIDEBAR ---
+            const sideAvatar = document.getElementById('sidebar-avatar');
+            if(sideAvatar) sideAvatar.src = profile.avatar_url;
+
         } else {
             if(editBtn) editBtn.style.display = 'none';
             if(followContainer) {
                 followContainer.classList.remove('hidden');
-                // On charge le bouton follow si nécessaire
                 await initFollowButtonOnProfile(profileId, currentUser.id);
             }
         }
+
+        // Charger les posts
+        loadSocialPosts(profileId);
 
     } catch (err) {
         console.error("Erreur chargement profil social:", err);
