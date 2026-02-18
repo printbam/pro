@@ -1649,3 +1649,14 @@ body.dark-mode .fixed-explorer-header {
 .dark #global-feed-container article {
     border-bottom-color: #1e293b !important; /* Ligne grise foncée en mode sombre */
 }
+
+/* 1. CACHER LA SCROLLBAR DES STORIES (Style Instagram) */
+#stories-bar {
+    /* Cacher sur Chrome, Safari, Edge */
+    -ms-overflow-style: none;  /* IE et Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+#stories-bar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
