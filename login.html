@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#f8fafc">
-    <title>Connexion | Printbam Pro</title>
+    <meta name="theme-color" content="#ffffff">
+    <title>Connexion | Linko Pro</title>
     
     <!-- FONTS & ICONS -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -19,26 +19,22 @@
     <style>
         /* --- VARIABLES & RESET --- */
         :root {
-            --glass-bg: #ffffff;
-            --glass-border: #e2e8f0;
-            --accent-blue: #4f46e5;
-            --accent-blue-hover: #4338ca;
+            --linko-gradient: linear-gradient(135deg, #38bdf8 0%, #facc15 100%); /* Sky Blue to Yellow */
+            --linko-gradient-hover: linear-gradient(135deg, #0ea5e9 0%, #eab308 100%);
+            --accent-blue: #0ea5e9;
             --text-main: #0f172a;
             --text-muted: #64748b;
             --bg-body: #f8fafc;
-            --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            --shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            --ease-elastic: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --glass-bg: rgba(255, 255, 255, 0.85);
         }
 
         body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Inter', sans-serif;
             background-color: var(--bg-body);
             color: var(--text-main);
             margin: 0;
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
-            transition: background-color 0.4s ease, color 0.4s ease;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -46,308 +42,338 @@
         }
 
         /* --- BACKGROUND ELEMENTS --- */
-        .bg-grid {
+        .bg-pattern {
             position: fixed; inset: 0; z-index: -2;
-            background-image: linear-gradient(to right, #e2e8f0 1px, transparent 1px), linear-gradient(to bottom, #e2e8f0 1px, transparent 1px);
-            background-size: 48px 48px;
-            mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
-            opacity: 0.6;
-            pointer-events: none;
+            background-color: #ffffff;
+            background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+            background-size: 20px 20px;
         }
-        .bg-glow {
-            position: fixed; top: -20%; left: -10%; right: -10%; bottom: 0; z-index: -1;
-            background: radial-gradient(circle at 50% 0%, #e0e7ff 0%, transparent 60%);
+        .bg-shape {
+            position: fixed; z-index: -1;
+            border-radius: 50%;
+            filter: blur(80px);
             opacity: 0.6;
-            pointer-events: none;
         }
+        .shape-1 { top: -10%; left: -10%; width: 500px; height: 500px; background: rgba(56, 189, 248, 0.3); }
+        .shape-2 { bottom: -10%; right: -10%; width: 500px; height: 500px; background: rgba(250, 204, 21, 0.3); }
 
         /* --- GLASSMORPHISM --- */
-        .glass {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(226, 232, 240, 0.8);
-            border-radius: 24px;
-            box-shadow: var(--shadow-soft);
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
         }
 
         /* --- DARK MODE --- */
         body.dark-mode {
-            background: #0f172a !important;
-            color: #f8fafc !important;
-            --glass-bg: #1e293b;
-            --glass-border: rgba(255,255,255,0.08);
+            background-color: #0f172a !important;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
-            --bg-body: #020617;
+            --glass-bg: rgba(30, 41, 59, 0.7);
         }
-        body.dark-mode .bg-grid { background-image: linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px); opacity: 0.4; }
-        body.dark-mode .bg-glow { background: radial-gradient(circle at 50% 0%, rgba(79, 70, 229, 0.15) 0%, transparent 60%); }
-        body.dark-mode .glass { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3); }
+        body.dark-mode .bg-pattern { background-color: #0f172a; background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px); }
+        body.dark-mode .glass-card { border: 1px solid rgba(255,255,255,0.1); }
+
+        /* --- BUTTONS --- */
+        .btn-linko {
+            background: var(--linko-gradient);
+            color: #0f172a;
+            font-weight: 800;
+            padding: 14px 28px;
+            border-radius: 50px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 13px;
+        }
+        .btn-linko:hover {
+            background: var(--linko-gradient-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(56, 189, 248, 0.4);
+        }
+        .btn-linko:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+
+        .btn-secondary {
+            background: rgba(15, 23, 42, 0.05);
+            color: var(--text-main);
+            font-weight: 600;
+            padding: 14px 28px;
+            border-radius: 50px;
+            border: 1px solid rgba(15, 23, 42, 0.1);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .dark-mode .btn-secondary { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
 
         /* --- INPUTS --- */
-        .input-crystal {
+        .input-pro {
             width: 100%;
-            background: rgba(255,255,255,0.5);
-            border: 1px solid var(--glass-border);
+            background: rgba(255,255,255,0.6);
+            border: 1px solid rgba(226, 232, 240, 0.8);
             border-radius: 16px;
-            padding: 16px;
+            padding: 16px 20px;
             font-size: 15px;
-            font-weight: 600;
+            font-weight: 500;
             color: var(--text-main);
-            transition: all 0.3s ease;
+            transition: all 0.2s;
             box-sizing: border-box;
         }
-        .input-crystal:focus {
+        .input-pro:focus {
             outline: none;
             border-color: var(--accent-blue);
-            background: rgba(255,255,255,0.9);
-            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
         }
-        body.dark-mode .input-crystal {
+        .dark-mode .input-pro {
             background: rgba(0,0,0,0.2);
             border-color: rgba(255,255,255,0.1);
             color: white;
         }
-        body.dark-mode .input-crystal:focus {
-            background: rgba(0,0,0,0.4);
-            border-color: #6366f1;
-        }
+        .dark-mode .input-pro:focus { background: rgba(0,0,0,0.4); }
 
-        /* --- BUTTONS --- */
-        .btn-primary {
-            width: 100%;
-            background: var(--accent-blue);
-            color: white;
-            padding: 16px;
-            border-radius: 16px;
-            font-weight: 700;
-            font-size: 15px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            transition: all 0.3s ease;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
+        /* --- WIZARD STEPS --- */
+        .step-container { position: relative; width: 100%; overflow: hidden; }
+        .step-form { 
+            position: absolute; top: 0; left: 0; width: 100%;
+            opacity: 0; transform: translateX(100%); 
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            visibility: hidden;
         }
-        .btn-primary:hover {
-            background: var(--accent-blue-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
+        .step-form.active { 
+            opacity: 1; transform: translateX(0); 
+            position: relative; pointer-events: auto; visibility: visible;
         }
-        .btn-primary:disabled {
-            background: #94a3b8;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* --- TABS --- */
-        .tab-btn {
-            flex: 1;
-            padding: 12px;
-            text-align: center;
-            font-weight: 600;
-            color: var(--text-muted);
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: all 0.3s ease;
-        }
-        .tab-btn.active {
-            color: var(--accent-blue);
-            border-bottom-color: var(--accent-blue);
-        }
-
-        /* --- TOAST --- */
-        .toast {
-            position: fixed; bottom: 24px; right: 24px; z-index: 100;
-            padding: 16px 24px; border-radius: 12px; background: white;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-            border-left: 4px solid #10b981;
-            font-size: 14px; font-weight: 600;
-            transform: translateX(100%); opacity: 0; transition: all 0.4s ease;
-        }
-        .toast.show { transform: translateX(0); opacity: 1; }
-        .toast.error { border-left-color: #ef4444; }
-        body.dark-mode .toast { background: #1e293b; color: white; }
-
+        
+        /* Progress Dots */
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #e2e8f0; transition: all 0.3s; }
+        .dot.active { width: 24px; border-radius: 10px; background: var(--linko-gradient); }
+        
         /* --- UTILS --- */
-        .hidden { display: none; }
-        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        .hidden { display: none !important; }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        @media (min-width: 768px) {
+        /* Responsive Split */
+        @media (min-width: 1024px) {
             .split-layout {
                 display: grid;
-                grid-template-columns: 1fr 1fr;
-                min-height: 600px;
-                max-width: 1000px;
-                width: 90%;
-                overflow: hidden;
+                grid-template-columns: 1fr 1.2fr;
+                min-height: 700px;
+                max-width: 1200px;
+                width: 95%;
             }
             .split-image {
-                background-image: url('https://images.unsplash.com/photo-1561489413-985b06da5bee?auto=format&fit=crop&w=1000&q=80');
+                background-image: url('https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1000&q=80');
                 background-size: cover;
                 background-position: center;
+                border-radius: 32px 0 0 32px;
+                position: relative;
             }
-            .mobile-only { display: none; }
         }
     </style>
 </head>
-<body>
+<body class="dark-mode"> <!-- Dark mode activé par défaut pour le style Pro -->
 
     <!-- BACKGROUNDS -->
-    <div class="bg-grid"></div>
-    <div class="bg-glow"></div>
+    <div class="bg-pattern"></div>
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
 
     <!-- THEME TOGGLE -->
-    <button onclick="toggleTheme()" class="fixed top-6 right-6 z-50 w-10 h-10 rounded-full bg-white/80 border border-slate-200 flex items-center justify-center text-slate-600 hover:text-indigo-600 transition-colors shadow-sm backdrop-blur-md">
+    <button onclick="toggleTheme()" class="fixed top-6 right-6 z-50 w-10 h-10 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors backdrop-blur-md">
         <i class="fas fa-moon dark-icon"></i>
         <i class="fas fa-sun light-icon hidden"></i>
     </button>
 
     <!-- MAIN CONTAINER -->
-    <div class="glass split-layout w-full mx-auto relative overflow-hidden fade-in">
+    <div class="glass-card split-layout w-full mx-auto relative overflow-hidden fade-in">
         
         <!-- IMAGE SECTION (Desktop Only) -->
-        <div class="split-image relative hidden md:block">
-            <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
-            <div class="absolute bottom-0 left-0 p-10 text-white z-10">
-                <h2 class="text-4xl font-black mb-4 tracking-tight">Rejoignez la <br>Révolution.</h2>
-                <p class="text-slate-200 text-sm mb-6">Accès instantané à vos documents, où que vous soyez.</p>
-                <div class="flex gap-2">
-                    <div class="w-2 h-2 rounded-full bg-indigo-500"></div>
-                    <div class="w-2 h-2 rounded-full bg-indigo-500/50"></div>
-                    <div class="w-2 h-2 rounded-full bg-indigo-500/25"></div>
+        <div class="split-image relative hidden lg:flex flex-col justify-end p-12 text-white">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent rounded-l-[32px]"></div>
+            <div class="relative z-10">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-12 h-12 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center border border-white/20">
+                        <i class="fas fa-link text-xl"></i>
+                    </div>
+                    <h1 class="text-3xl font-black tracking-tight">Linko</h1>
                 </div>
+                <h2 class="text-4xl font-bold mb-4 leading-tight">Connectez-vous à l'avenir professionnel.</h2>
+                <p class="text-slate-200 text-sm mb-6 max-w-md">Rejoignez la communauté des leaders, entrepreneurs et créatifs. Votre réseau, votre valeur.</p>
             </div>
         </div>
 
         <!-- FORM SECTION -->
-        <div class="p-8 md:p-12 flex flex-col justify-center relative z-10">
+        <div class="p-8 md:p-12 flex flex-col justify-center relative z-10 bg-white dark:bg-slate-900/50 rounded-r-[32px] lg:rounded-r-[32px] rounded-[32px] lg:rounded-l-none">
             
             <!-- MOBILE HEADER -->
-            <div class="text-center mb-8 md:hidden mobile-only">
-                <h1 class="text-2xl font-black tracking-tight mb-2">Print<span class="text-indigo-600">bam</span></h1>
-                <p class="text-slate-500 text-xs">Bienvenue</p>
+            <div class="text-center mb-8 lg:hidden">
+                <h1 class="text-2xl font-black tracking-tight mb-1">Link<span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-yellow-400">o</span></h1>
+                <p class="text-slate-500 text-xs">Professional Network</p>
             </div>
 
-            <!-- DESKTOP HEADER -->
-            <div class="hidden md:flex items-center gap-3 mb-8">
-                <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white text-sm shadow-lg"><i class="fas fa-print"></i></div>
-                <h1 class="text-2xl font-black tracking-tight">Print<span class="text-indigo-600">bam</span></h1>
-            </div>
-
-            <!-- TABS -->
-            <div class="flex border-b border-slate-200 mb-8">
-                <button onclick="switchTab('login')" id="tab-login" class="tab-btn active">Connexion</button>
-                <button onclick="switchTab('register')" id="tab-register" class="tab-btn">Inscription</button>
+            <!-- TABS (Visible only for Login/Initial choice) -->
+            <div id="auth-tabs" class="flex border-b border-slate-200 dark:border-slate-700 mb-8">
+                <button onclick="switchAuthView('login')" id="tab-login" class="tab-btn active flex-1 py-3 text-sm font-bold">Connexion</button>
+                <button onclick="switchAuthView('register')" id="tab-register" class="tab-btn flex-1 py-3 text-sm font-bold">Inscription</button>
             </div>
 
             <!-- LOGIN FORM -->
             <form id="form-login" onsubmit="handleLogin(event)" class="space-y-5 fade-in">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Email</label>
-                    <input type="email" required id="login-email" placeholder="exemple@mail.com" class="input-crystal">
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Email Professionnel</label>
+                    <input type="email" required id="login-email" placeholder="nom@entreprise.com" class="input-pro">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Mot de passe</label>
-                    <input type="password" required id="login-password" placeholder="••••••••" class="input-crystal">
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Mot de passe</label>
+                    <input type="password" required id="login-password" placeholder="••••••••" class="input-pro">
                 </div>
                 
                 <div class="flex items-center justify-between text-xs font-medium">
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
-                        <span class="text-slate-500">Se souvenir de moi</span>
+                    <label class="flex items-center gap-2 cursor-pointer text-slate-500">
+                        <input type="checkbox" class="w-4 h-4 rounded border-slate-300 text-sky-500 focus:ring-sky-500">
+                        <span>Se souvenir</span>
                     </label>
-                    <a href="#" class="text-indigo-600 hover:text-indigo-800">Oublié ?</a>
+                    <a href="#" class="text-sky-500 hover:underline">Oublié ?</a>
                 </div>
 
-                <button type="submit" id="btn-login" class="btn-primary">
-                    <span id="btn-login-text">Se connecter</span>
+                <button type="submit" class="btn-linko w-full">
+                    <span>Se connecter</span>
                     <i class="fas fa-arrow-right"></i>
                 </button>
             </form>
 
-            <!-- REGISTER FORM -->
-            <!-- REGISTER FORM -->
-<form id="form-register" onsubmit="handleRegister(event)" class="space-y-4 hidden fade-in">
-    
-    <!-- Nom Complet -->
-    <div>
-        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Nom complet</label>
-        <input type="text" id="reg-name" required placeholder="Exemple : Bam Junior" class="input-crystal">
-    </div>
+            <!-- REGISTER WIZARD -->
+            <div id="form-register-container" class="hidden fade-in">
+                <!-- Step Indicators -->
+                <div class="flex justify-center gap-2 mb-8">
+                    <div id="dot-1" class="dot active"></div>
+                    <div id="dot-2" class="dot"></div>
+                    <div id="dot-3" class="dot"></div>
+                    <div id="dot-4" class="dot"></div>
+                </div>
 
-    <!-- Nom d'utilisateur (NOUVEAU) -->
-    <div>
-        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Nom d'utilisateur</label>
-        <div class="relative">
-            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">@</span>
-            <input type="text" id="reg-username" required placeholder="bam_junior" class="input-crystal pl-8">
-        </div>
-    </div>
+                <div class="step-container" style="min-height: 350px;">
+                    
+                    <!-- STEP 1: Identity -->
+                    <div id="step-1" class="step-form active">
+                        <h3 class="text-lg font-bold mb-1 text-center">Commençons par vous</h3>
+                        <p class="text-xs text-slate-500 text-center mb-6">Qui êtes-vous ?</p>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nom complet</label>
+                                <input type="text" id="reg-name" class="input-pro" placeholder="Bam Junior" required>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Email</label>
+                                <input type="email" id="reg-email" class="input-pro" placeholder="bam@linko.com" required>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Mot de passe</label>
+                                <input type="password" id="reg-password" class="input-pro" placeholder="6 caractères min" required>
+                            </div>
+                        </div>
+                    </div>
 
-    <!-- Email -->
-    <div>
-        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Email</label>
-        <input type="email" id="reg-email" required placeholder="exemple@mail.com" class="input-crystal">
-    </div>
+                    <!-- STEP 2: Contact & Personal -->
+                    <div id="step-2" class="step-form">
+                        <h3 class="text-lg font-bold mb-1 text-center">Coordonnées</h3>
+                        <p class="text-xs text-slate-500 text-center mb-6">Pour qu'on puisse vous joindre.</p>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nom d'utilisateur</label>
+                                <div class="relative">
+                                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">@</span>
+                                    <input type="text" id="reg-username" class="input-pro pl-8" placeholder="bam_junior" required>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Téléphone</label>
+                                <input type="tel" id="reg-phone" class="input-pro" oninput="formatPhone(this)" placeholder="+243 ..." required>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Date de naissance</label>
+                                <input type="date" id="reg-dob" class="input-pro" required style="color-scheme: dark;">
+                            </div>
+                        </div>
+                    </div>
 
-    <!-- Téléphone -->
-    <div>
-        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Téléphone</label>
-        <input type="tel" id="reg-phone" oninput="formatPhone(this)" required placeholder="+243 000 000 000" maxlength="16" class="input-crystal">
-    </div>
+                    <!-- STEP 3: Professional Info -->
+                    <div id="step-3" class="step-form">
+                        <h3 class="text-lg font-bold mb-1 text-center">Profil Professionnel</h3>
+                        <p class="text-xs text-slate-500 text-center mb-6">Votre valeur ajoutée.</p>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Titre du poste</label>
+                                <input type="text" id="reg-job" class="input-pro" placeholder="CEO, Designer, Étudiant..." required>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Entreprise / École</label>
+                                <input type="text" id="reg-company" class="input-pro" placeholder="Printbam Corp">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Localisation</label>
+                                <input type="text" id="reg-location" class="input-pro" placeholder="Kinshasa, RD Congo">
+                            </div>
+                        </div>
+                    </div>
 
-    <!-- Date de Naissance (NOUVEAU) -->
-    <div>
-        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Date de naissance</label>
-        <input type="date" id="reg-dob" required class="input-crystal text-slate-600">
-    </div>
+                    <!-- STEP 4: Finalize -->
+                    <div id="step-4" class="step-form">
+                        <h3 class="text-lg font-bold mb-1 text-center">Dernière étape</h3>
+                        <p class="text-xs text-slate-500 text-center mb-6">Votre image publique.</p>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Bio courte</label>
+                                <textarea id="reg-bio" rows="3" class="input-pro" placeholder="Décrivez-vous en quelques mots..."></textarea>
+                            </div>
+                            <div class="flex items-start gap-2 pt-2 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl">
+                                <input type="checkbox" required class="mt-1 w-4 h-4 rounded border-slate-300 text-sky-500 focus:ring-sky-500">
+                                <p class="text-[11px] text-slate-500 leading-tight">
+                                    J'accepte les <a href="#" class="text-sky-500 underline">CGU</a> et confirme avoir 16 ans ou plus.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-    <!-- Mot de passe -->
-    <div>
-        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Mot de passe</label>
-        <input type="password" id="reg-password" required placeholder="Min. 6 caractères" class="input-crystal">
-    </div>
+                <!-- Wizard Navigation -->
+                <div class="flex gap-3 mt-8">
+                    <button id="btn-prev" onclick="changeStep(-1)" class="btn-secondary w-full hidden">Retour</button>
+                    <button id="btn-next" onclick="changeStep(1)" class="btn-linko w-full">Continuer</button>
+                </div>
+            </div>
 
-    <!-- CGU -->
-    <div class="flex items-start gap-2 pt-2">
-        <input type="checkbox" required class="mt-1 w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
-        <p class="text-[11px] text-slate-500 leading-tight">
-            J'accepte les <a href="#" class="text-indigo-600 underline">conditions</a> et la <a href="#" class="text-indigo-600 underline">politique de confidentialité</a>.
-        </p>
-    </div>
-
-    <button type="submit" id="btn-register" class="btn-primary">
-        <span id="btn-reg-text">Créer mon compte</span>
-        <i class="fas fa-user-plus"></i>
-    </button>
-</form>
-
-            <!-- SOCIAL LOGIN (SHARED) -->
-            <div class="mt-8 pt-6 border-t border-slate-200">
-                <p class="text-center text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Ou continuer avec</p>
-                <div class="flex gap-4 justify-center">
-                    <button type="button" class="w-12 h-12 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-all shadow-sm">
+            <!-- SOCIAL LOGIN -->
+            <div class="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
+                <p class="text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-4">Ou continuer avec</p>
+                <div class="flex gap-3 justify-center">
+                    <button type="button" class="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm">
                         <i class="fab fa-google"></i>
                     </button>
-                    <button type="button" class="w-12 h-12 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-all shadow-sm">
-                        <i class="fab fa-apple text-xl"></i>
-                    </button>
-                    <button type="button" class="w-12 h-12 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-all shadow-sm">
+                    <button type="button" class="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm">
                         <i class="fab fa-linkedin-in"></i>
+                    </button>
+                    <button type="button" class="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm">
+                        <i class="fab fa-apple text-xl"></i>
                     </button>
                 </div>
             </div>
 
             <div class="mt-8 text-center">
-                <a href="index.html" class="text-xs font-bold text-slate-400 hover:text-indigo-600 uppercase tracking-widest transition-colors">
-                    <i class="fas fa-arrow-left mr-2"></i> Retour à l'accueil
+                <a href="index.html" class="text-[10px] font-bold text-slate-400 hover:text-sky-500 uppercase tracking-widest transition-colors">
+                    <i class="fas fa-arrow-left mr-1"></i> Retour à l'accueil
                 </a>
             </div>
 
@@ -355,41 +381,66 @@
     </div>
 
     <!-- TOAST NOTIFICATION -->
-    <div id="toast" class="toast">
-        <div class="flex items-center gap-3">
-            <i class="fas fa-check-circle text-green-500" id="toast-icon"></i>
-            <span id="toast-message">Opération réussie</span>
-        </div>
+    <div id="toast" class="fixed bottom-6 right-6 z-50 p-4 rounded-xl bg-white shadow-2xl border border-slate-100 transform translate-x-full opacity-0 transition-all duration-300 flex items-center gap-3 max-w-xs" style="display: none;">
+        <i class="fas fa-check-circle text-green-500 text-lg" id="toast-icon"></i>
+        <span id="toast-message" class="text-sm font-medium text-slate-700">Message</span>
     </div>
 
    <script>
         // ==================================================================================
-        // PARTIE 1 : FONCTIONS D'INTERFACE
+        // 1. CONFIGURATION & STATE
+        // ==================================================================================
+        
+        let supabaseClient = null;
+        let currentStep = 1;
+        const totalSteps = 4;
+
+        // Initialize Supabase
+        try {
+            if (typeof window.supabase !== 'undefined') {
+                const supabaseUrl = 'https://lqqtvumwdixlhamwmqii.supabase.co'; 
+                const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxcXR2dW13ZGl4bGhhbXdtcWlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyOTQ1NjMsImV4cCI6MjA4NTg3MDU2M30.QKTBQbZ78iRVyM1o-hhtAPkWP23h_vXAMA3zrfuzipY';
+                supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+            }
+        } catch (error) {
+            console.error("Supabase Init Error:", error);
+        }
+
+        // ==================================================================================
+        // 2. UI UTILITIES
         // ==================================================================================
 
-        // --- GESTION DES ONGLETS (switchTab) ---
-        function switchTab(tab) {
+        function switchAuthView(view) {
             const loginForm = document.getElementById('form-login');
-            const registerForm = document.getElementById('form-register');
+            const regContainer = document.getElementById('form-register-container');
             const tabLogin = document.getElementById('tab-login');
             const tabRegister = document.getElementById('tab-register');
-        
-            if (tab === 'login') {
-                if(registerForm) registerForm.classList.add('hidden');
-                if(loginForm) loginForm.classList.remove('hidden');
+            const tabs = document.getElementById('auth-tabs');
+
+            // Show tabs
+            tabs.classList.remove('hidden');
+            
+            if (view === 'login') {
+                loginForm.classList.remove('hidden');
+                regContainer.classList.add('hidden');
                 tabLogin.classList.add('active');
                 tabRegister.classList.remove('active');
+                tabLogin.style.borderBottomColor = 'var(--accent-blue)';
+                tabRegister.style.borderBottomColor = 'transparent';
             } else {
-                if(loginForm) loginForm.classList.add('hidden');
-                if(registerForm) registerForm.classList.remove('hidden');
+                loginForm.classList.add('hidden');
+                regContainer.classList.remove('hidden');
                 tabLogin.classList.remove('active');
                 tabRegister.classList.add('active');
+                tabLogin.style.borderBottomColor = 'transparent';
+                tabRegister.style.borderBottomColor = 'var(--accent-blue)';
+                // Reset wizard
+                currentStep = 1;
+                updateWizardUI();
             }
         }
-        // Fix pour l'erreur "ReferenceError: switchTab is not defined"
-        window.switchTab = switchTab;
+        window.switchAuthView = switchAuthView;
 
-        // --- GESTION DU THÈME ---
         function toggleTheme() {
             const body = document.body;
             const darkIcon = document.querySelector('.dark-icon');
@@ -397,26 +448,25 @@
             
             if (body.classList.contains('dark-mode')) {
                 body.classList.remove('dark-mode');
-                localStorage.setItem('printbam-theme', 'light');
+                localStorage.setItem('linko-theme', 'light');
                 if(darkIcon) darkIcon.classList.remove('hidden');
                 if(lightIcon) lightIcon.classList.add('hidden');
             } else {
                 body.classList.add('dark-mode');
-                localStorage.setItem('printbam-theme', 'dark');
+                localStorage.setItem('linko-theme', 'dark');
                 if(darkIcon) darkIcon.classList.add('hidden');
                 if(lightIcon) lightIcon.classList.remove('hidden');
             }
         }
         window.toggleTheme = toggleTheme;
 
-        // --- CHARGEMENT DU THÈME ---
-        (function loadTheme() {
-            if(localStorage.getItem('printbam-theme') === 'dark') {
-                document.body.classList.add('dark-mode');
-            }
-        })();
+        // Load saved theme
+        if(localStorage.getItem('linko-theme') === 'light') {
+            document.body.classList.remove('dark-mode');
+            document.querySelector('.dark-icon')?.classList.remove('hidden');
+            document.querySelector('.light-icon')?.classList.add('hidden');
+        }
 
-        // --- FORMATAGE TÉLÉPHONE ---
         function formatPhone(input) {
             let value = input.value.replace(/\D/g, '');
             if (value.length > 0 && !value.startsWith('243')) value = '243' + value;
@@ -429,108 +479,161 @@
             input.value = formatted;
         }
 
-        // --- NOTIFICATIONS ---
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');
             const toastMsg = document.getElementById('toast-message');
             const toastIcon = document.getElementById('toast-icon');
             if(!toast || !toastMsg) return;
+            
             toastMsg.innerText = message;
-            toast.className = (type === 'error') ? 'toast show error' : 'toast show';
-            setTimeout(() => toast.classList.remove('show'), 3000);
-        }
-
-        // ==================================================================================
-        // PARTIE 2 : CONFIGURATION SUPABASE (Corrigé pour éviter SyntaxError)
-        // ==================================================================================
-        
-        let supabaseClient = null; // Nom modifié pour éviter le conflit
-
-        try {
-            if (typeof window.supabase !== 'undefined') {
-                const supabaseUrl = 'https://lqqtvumwdixlhamwmqii.supabase.co'; 
-                const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxcXR2dW13ZGl4bGhhbXdtcWlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyOTQ1NjMsImV4cCI6MjA4NTg3MDU2M30.QKTBQbZ78iRVyM1o-hhtAPkWP23h_vXAMA3zrfuzipY';
-                supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+            toast.classList.remove('translate-x-full', 'opacity-0');
+            toast.style.display = 'flex';
+            
+            if(type === 'error') {
+                toastIcon.className = 'fas fa-exclamation-triangle text-red-500 text-lg';
+                toast.classList.add('border-red-200');
+            } else {
+                toastIcon.className = 'fas fa-check-circle text-green-500 text-lg';
+                toast.classList.remove('border-red-200');
             }
-        } catch (error) {
-            console.error("Initialisation échouée:", error);
+
+            setTimeout(() => {
+                toast.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => { toast.style.display = 'none'; }, 300);
+            }, 3000);
         }
 
-        // --- GESTION CONNEXION ---
+        // ==================================================================================
+        // 3. WIZARD LOGIC
+        // ==================================================================================
+
+        function updateWizardUI() {
+            // Update Dots
+            for(let i=1; i<=totalSteps; i++) {
+                const dot = document.getElementById(`dot-${i}`);
+                if(dot) {
+                    if(i <= currentStep) dot.classList.add('active');
+                    else dot.classList.remove('active');
+                }
+            }
+
+            // Update Forms
+            for(let i=1; i<=totalSteps; i++) {
+                const step = document.getElementById(`step-${i}`);
+                if(step) {
+                    if(i === currentStep) step.classList.add('active');
+                    else step.classList.remove('active');
+                }
+            }
+
+            // Update Buttons
+            const btnPrev = document.getElementById('btn-prev');
+            const btnNext = document.getElementById('btn-next');
+
+            if(currentStep === 1) {
+                btnPrev.classList.add('hidden');
+                btnNext.classList.remove('hidden');
+                btnNext.innerHTML = '<span>Continuer</span> <i class="fas fa-arrow-right ml-1"></i>';
+            } else if (currentStep === totalSteps) {
+                btnPrev.classList.remove('hidden');
+                btnNext.innerHTML = '<span>Terminer</span> <i class="fas fa-check ml-1"></i>';
+            } else {
+                btnPrev.classList.remove('hidden');
+                btnNext.innerHTML = '<span>Suivant</span> <i class="fas fa-arrow-right ml-1"></i>';
+            }
+        }
+
+        function changeStep(direction) {
+            const newStep = currentStep + direction;
+
+            if(newStep > totalSteps) {
+                // Submit Form
+                handleRegister();
+                return;
+            }
+            
+            if(newStep < 1) return;
+
+            // Basic Validation before next
+            if(direction > 0) {
+                let isValid = true;
+                if(currentStep === 1) {
+                    if(!document.getElementById('reg-name').value || !document.getElementById('reg-email').value || !document.getElementById('reg-password').value) isValid = false;
+                }
+                // Add validation for other steps if needed
+                
+                if(!isValid) {
+                    showToast("Veuillez remplir les champs requis", "error");
+                    return;
+                }
+            }
+
+            currentStep = newStep;
+            updateWizardUI();
+        }
+        window.changeStep = changeStep;
+
+        // ==================================================================================
+        // 4. AUTHENTICATION LOGIC
+        // ==================================================================================
+
         async function handleLogin(e) {
             e.preventDefault();
-            if (!supabaseClient) return showToast("Service indisponible", "error");
+            if (!supabaseClient) return showToast("Erreur de connexion au serveur", "error");
 
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
-            const btn = document.getElementById('btn-login');
             
-            btn.disabled = true;
             try {
                 const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
                 if (error) throw error;
-                showToast("Connexion réussie !");
+                showToast("Connexion réussie !", "success");
                 setTimeout(() => window.location.href = 'index.html', 1000);
             } catch (err) {
-                showToast(err.message, "error");
-                btn.disabled = false;
+                showToast(err.message || "Erreur de connexion", "error");
             }
         }
 
-       // --- GESTION INSCRIPTION (VERSION COMPLÈTE) ---
-async function handleRegister(e) {
-    e.preventDefault();
-    
-    // 1. Récupération de TOUS les champs
-    const name = document.getElementById('reg-name').value;
-    const username = document.getElementById('reg-username').value; // Nouveau
-    const email = document.getElementById('reg-email').value;
-    const phone = document.getElementById('reg-phone').value;
-    const dob = document.getElementById('reg-dob').value;          // Nouveau
-    const password = document.getElementById('reg-password').value;
-    
-    const btn = document.getElementById('btn-register');
+        async function handleRegister() {
+            if (!supabaseClient) return showToast("Erreur de connexion au serveur", "error");
 
-    // Sécurité de base
-    if (!supabaseClient) return showToast("Erreur de connexion à la base", "error");
-    if (password.length < 6) return showToast("Le mot de passe doit faire 6 caractères", "error");
-
-    btn.disabled = true;
-    btn.innerText = "Création en cours...";
-
-    try {
-        // 2. Inscription avec toutes les métadonnées
-        const { data, error: authError } = await supabaseClient.auth.signUp({
-            email: email,
-            password: password,
-            options: {
-                data: {
-                    full_name: name,
-                    username: username,    // Envoi du username
-                    phone: phone,
-                    birth_date: dob        // Envoi de la date de naissance
+            // Gather all data
+            const payload = {
+                email: document.getElementById('reg-email').value,
+                password: document.getElementById('reg-password').value,
+                options: {
+                    data: {
+                        full_name: document.getElementById('reg-name').value,
+                        username: document.getElementById('reg-username').value,
+                        phone: document.getElementById('reg-phone').value,
+                        dob: document.getElementById('reg-dob').value,
+                        job_title: document.getElementById('reg-job').value,
+                        company: document.getElementById('reg-company').value,
+                        location: document.getElementById('reg-location').value,
+                        bio: document.getElementById('reg-bio').value
+                    }
                 }
-            }
-        });
+            };
 
-        if (data.user) {
-            showToast("Compte créé avec succès ! Connexion en cours...", "success");
-            
-            setTimeout(() => {
-                window.location.href = 'index.html'; 
-            }, 1500);
-        } else if (authError) {
-            throw authError;
+            const btn = document.getElementById('btn-next');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            try {
+                const { data, error } = await supabaseClient.auth.signUp(payload);
+                
+                if (error) throw error;
+
+                showToast("Compte créé avec succès !", "success");
+                setTimeout(() => window.location.href = 'index.html', 1500);
+
+            } catch (err) {
+                showToast(err.message || "Erreur lors de l'inscription", "error");
+                btn.disabled = false;
+                btn.innerHTML = '<span>Terminer</span> <i class="fas fa-check ml-1"></i>';
+            }
         }
-        
-    } catch (err) {
-        console.error("Erreur Inscription:", err);
-        showToast(err.message || "Une erreur est survenue", "error");
-    } finally {
-        btn.disabled = false;
-        btn.innerText = "Créer mon compte"; // Reset texte bouton
-    }
-}
+
     </script>
 </body>
 </html>
