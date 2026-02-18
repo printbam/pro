@@ -3633,7 +3633,7 @@ function closeReactionPopup(postId) {
     openReactionsPopupId = null;
 }
 
-// Fonction de mise à jour du style (Remplacez l'ancienne setReaction)
+// Fonction de mise à jour du style et du COMPTEUR
 async function setReaction(postId, reactionType, btnElement) {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) {
@@ -3641,8 +3641,20 @@ async function setReaction(postId, reactionType, btnElement) {
         return;
     }
 
+    // 1. Récupérer l'élément du compteur
+    const countSpan = document.getElementById(`count-like-${postId}`);
+    if (!countSpan) return;
+
+    // 2. Calculer le nombre actuel (gestion du format "1.2K")
+    let currentCount = parseInt(countSpan.getAttribute('data-raw-count'));
+    if (isNaN(currentCount)) {
+        let rawText = countSpan.innerText || "0";
+        if (rawText.includes('K')) currentCount = parseFloat(rawText) * 1000;
+        else currentCount = parseInt(rawText.replace(/[^0-9]/g, '')) || 0;
+    }
+
     try {
-        // 1. Vérifier si une réaction existe déjà
+        // 3. Vérifier si une réaction existe déjà
         const { data: existingReaction } = await supabaseClient
             .from('post_likes')
             .select('*')
@@ -3650,10 +3662,10 @@ async function setReaction(postId, reactionType, btnElement) {
             .eq('user_id', user.id)
             .maybeSingle();
 
-        // 2. Logique de changement
+        // 4. Logique de changement d'état et MISE À JOUR DU COMPTEUR
         if (existingReaction) {
             if (existingReaction.reaction_type === reactionType) {
-                // On annule la réaction (Toggle OFF)
+                // --- ACTION : RETIRER (Toggle OFF) ---
                 const { error } = await supabaseClient
                     .from('post_likes')
                     .delete()
@@ -3661,11 +3673,11 @@ async function setReaction(postId, reactionType, btnElement) {
                 
                 if (error) throw error;
 
-                // On supprime de la mémoire locale
+                currentCount = Math.max(0, currentCount - 1); // On décrémente
                 userReactions.delete(postId);
                 updateMainIcon(postId, null);
             } else {
-                // On change de type (ex: Heart -> Support)
+                // --- ACTION : CHANGER DE TYPE (ex: Cœur -> Bravo) ---
                 const { error } = await supabaseClient
                     .from('post_likes')
                     .update({ reaction_type: reactionType })
@@ -3673,20 +3685,15 @@ async function setReaction(postId, reactionType, btnElement) {
                 
                 if (error) throw error;
 
-                // On met à jour la mémoire locale
+                // Le compte ne change pas, juste le type
                 userReactions.set(postId, reactionType);
                 updateMainIcon(postId, reactionType);
             }
             
-            // ---> C'EST ICI LE POINT CRITIQUE <---
-            // On ferme le menu dès que l'action est réussie
             closeReactionPopup(postId);
-            // --------------------------------
-            
-            showToast("Mise à jour effectuée", "success");
 
         } else {
-            // Nouvelle réaction (Insertion)
+            // --- ACTION : AJOUTER (Nouvelle réaction) ---
             const { error } = await supabaseClient
                 .from('post_likes')
                 .insert([{
@@ -3697,21 +3704,20 @@ async function setReaction(postId, reactionType, btnElement) {
 
             if (error) throw error;
 
-            // On sauvegarde dans la Map
+            currentCount++; // On incrémente
             userReactions.set(postId, reactionType);
             updateMainIcon(postId, reactionType);
             
-            // ---> C'EST ICI LE POINT CRITIQUE <---
-            // On ferme le menu dès que l'action est réussie
-            closeReactionPopup(postId); // Note: postId suffit comme argument si la fonction gère l'ID
-            // ----------------------------------
-            
-            showToast("Réaction enregistrée", "success");
+            closeReactionPopup(postId);
         }
+
+        // 5. MISE À JOUR VISUELLE IMMÉDIATE DU CHIFFRE
+        countSpan.innerText = formatNumber(currentCount);
+        countSpan.setAttribute('data-raw-count', currentCount); // On sauvegarde la valeur brute
 
     } catch (err) {
         console.error("Erreur Réaction:", err);
-        showToast("Erreur lors de la mise à jour", "danger");
+        showToast("Erreur de mise à jour", "error");
     }
 }
 
