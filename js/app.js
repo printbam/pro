@@ -4500,7 +4500,6 @@ async function loadPotentialContacts() {
 
 // --- FONCTION PUBLICATION (CORRIGÉE) ---
 async function handleNewPost(e) {
-    // 1. C'est LA ligne manquante qui empêche le rechargement
     e.preventDefault(); 
 
     const btn = e.target.querySelector('button[type="submit"]');
@@ -4509,12 +4508,11 @@ async function handleNewPost(e) {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Publication...';
 
     try {
-        // Récupération des valeurs
+        // 1. Récupération des valeurs
         const caption = document.getElementById('post-caption').value;
         const visibility = document.getElementById('post-visibility').value;
-        const postType = document.getElementById('current-post-type').value;
+        const postType = document.getElementById('current-post-type').value; // 'image' ou 'short'
         
-        // Récupérer le fichier (image ou vidéo)
         let fileInput = postType === 'short' 
             ? document.getElementById('post-video-input') 
             : document.getElementById('post-file-input');
@@ -4526,39 +4524,45 @@ async function handleNewPost(e) {
             throw new Error("No file");
         }
 
-        // Vérification utilisateur
+        // 2. Vérification utilisateur
         const { data: { user } } = await supabaseClient.auth.getUser();
         if (!user) throw new Error("Non connecté");
 
-        // 2. Upload du fichier dans Supabase Storage
+        // 3. Préparation du fichier
         const fileExt = file.name.split('.').pop();
         const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-        const bucket = postType === 'posts'; // Assurez-vous d'avoir ces buckets dans Supabase
+        
+        // --- CORRECTION CRITIQUE ICI ---
+        // On définit le nom du bucket en dur (string), pas un booléen
+        // Assurez-vous d'avoir créé un bucket nommé "posts" dans Supabase Storage
+        const bucketName = 'posts'; 
 
+        // 4. Upload du fichier
         const { data: uploadData, error: uploadError } = await supabaseClient.storage
-            .from(bucket) 
-            .upload(fileName, file);
+            .from(bucketName) 
+            .upload(fileName, file, {
+                cacheControl: '3600',
+                upsert: false
+            });
 
         if (uploadError) throw uploadError;
 
-        // Récupérer l'URL publique
-        const { data: urlData } = supabaseClient.storage.from(bucket).getPublicUrl(fileName);
+        // 5. Récupérer l'URL publique
+        const { data: urlData } = supabaseClient.storage.from(bucketName).getPublicUrl(fileName);
         const publicUrl = urlData.publicUrl;
 
-        // 3. Insertion dans la table 'posts'
+        // 6. Préparation des données pour la table 'posts'
         const newPost = {
             user_id: user.id,
             caption: caption,
             visibility: visibility,
-            is_short: postType === 'posts'
+            // Logique corrigée : on définit l'URL selon le type
+            image_url: postType === 'image' ? publicUrl : null,
+            video_url: postType === 'short' ? publicUrl : null,
+            is_short: postType === 'short' 
         };
 
-        if (postType === 'posts') {
-            newPost.video_url = publicUrl;
-        } else {
-            newPost.image_url = publicUrl;
-        }
-
+        // 7. Insertion dans la base de données
         const { error: insertError } = await supabaseClient.from('posts').insert([newPost]);
 
         if (insertError) throw insertError;
@@ -4567,7 +4571,7 @@ async function handleNewPost(e) {
         showToast("Publication réussie ! 🎉", "success");
         closeNewPostModal();
         
-        // Vider le formulaire
+        // Nettoyage
         document.getElementById('new-post-form').reset();
         resetPreview(); 
         
@@ -4575,8 +4579,10 @@ async function handleNewPost(e) {
         if (typeof loadGlobalFeed === 'function') loadGlobalFeed();
 
     } catch (err) {
-        console.error(err);
-        if(err.message !== "No file") showToast("Erreur : " + err.message, "error");
+        console.error("Erreur publication:", err);
+        if(err.message !== "No file") {
+            showToast("Erreur : " + (err.message || "Impossible de publier"), "error");
+        }
     } finally {
         btn.disabled = false;
         btn.innerHTML = originalText;
@@ -4681,9 +4687,23 @@ async function loadStories() {
 }
 
 // Ouvrir/Fermer le panneau des vues
+// Ouvrir/Fermer le panneau des vues AVEC GESTION PAUSE
 function toggleViewersPanel() {
     const panel = document.getElementById('story-viewers-panel');
-    panel.classList.toggle('translate-y-full');
+    // On vérifie s'il est actuellement fermé (contient la classe de fermeture)
+    const isCurrentlyClosed = panel.classList.contains('translate-y-full');
+
+    if (isCurrentlyClosed) {
+        // 1. On ouvre le panneau
+        panel.classList.remove('translate-y-full');
+        // 2. On met en pause la story
+        pauseStory(); 
+    } else {
+        // 1. On ferme le panneau
+        panel.classList.add('translate-y-full');
+        // 2. On reprend la lecture
+        resumeStory();
+    }
 }
 
 // Charger la liste des gens qui ont vu
@@ -5228,9 +5248,22 @@ async function sendStoryReply(e) {
 }
 
 // 1. Ouvrir/Fermer le menu
+// Ouvrir/Fermer le menu AVEC GESTION PAUSE
 function toggleStoryMenu() {
     const menu = document.getElementById('story-dropdown-menu');
-    if(menu) menu.classList.toggle('hidden');
+    const isHidden = menu.classList.contains('hidden');
+    
+    if (isHidden) {
+        // 1. Afficher le menu
+        menu.classList.remove('hidden');
+        // 2. Mettre en pause la story
+        pauseStory();
+    } else {
+        // 1. Cacher le menu
+        menu.classList.add('hidden');
+        // 2. Reprendre la lecture
+        resumeStory();
+    }
 }
 
 // 2. Générer le contenu du menu selon le propriétaire
@@ -5238,10 +5271,18 @@ function renderStoryMenu(isOwner, targetUserId) {
     const menu = document.getElementById('story-dropdown-menu');
     if (!menu) return;
 
-    // Fermer le menu si on clique ailleurs
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('#story-dropdown-menu') && !e.target.closest('[onclick="toggleStoryMenu()"]')) {
+    // Gestion du clic extérieur pour fermer ET REPRENDRE
+    // On utilise une fonction nommée pour pouvoir la retirer si besoin, ou un flag simple
+    document.addEventListener('click', function closeMenuOnOutsideClick(e) {
+        const isClickInsideMenu = e.target.closest('#story-dropdown-menu');
+        const isClickOnButton = e.target.closest('[onclick="toggleStoryMenu()"]');
+        
+        // Si on clique dehors (et que le menu n'est pas déjà caché)
+        if (!isClickInsideMenu && !isClickOnButton && !menu.classList.contains('hidden')) {
             menu.classList.add('hidden');
+            resumeStory(); // IMPORTANT : Reprendre la lecture
+            // Optionnel : retirer l'écouteur après exécution pour propreté
+            // document.removeEventListener('click', closeMenuOnOutsideClick); 
         }
     });
 
