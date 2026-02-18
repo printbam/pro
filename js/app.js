@@ -5075,18 +5075,28 @@ async function handleStoryUpload(input) {
     }
 }
 
-// 9. FONCTION : MARQUER COMME VUE
+// 10. FONCTION : MARQUER COMME VUE (SANS ERREUR 409)
 async function markStoryAsViewed(storyId) {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) return;
-    
-    // On essaie d'insérer, si déjà vu ça ne fait rien grace à l'unicité
-    await supabaseClient.from('story_views').insert([{
-        story_id: storyId,
-        viewer_id: user.id
-    }]).catch(() => {}); // Ignore l'erreur duplicate
-}
 
+    // On utilise UPSERT : "Insère, ou ignore si conflit"
+    const { error } = await supabaseClient
+        .from('story_views')
+        .upsert([{
+            story_id: storyId,
+            viewer_id: user.id
+        }], {
+            // IMPORTANT : On spécifie quelles colonnes définissent l'unicité
+            // Cela permet à Supabase de savoir quand il doit ignorer l'insertion
+            onConflict: 'story_id,viewer_id' 
+        });
+
+    if (error && error.code !== '23505') { 
+        // On ignore l'erreur 23505 (doublon), mais on log les autres
+        console.warn("Erreur mineure vue story:", error.message);
+    }
+}
 // 10. INITIALISATION AU CHARGEMENT
 // Ajoutez ceci à votre DOMContentLoaded existant :
 document.addEventListener('DOMContentLoaded', () => {
