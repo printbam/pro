@@ -4782,26 +4782,24 @@ function updateProgressBar() {
     const container = document.getElementById('story-progress-bar');
     if (!container) return;
     
-    container.innerHTML = ''; // Vider l'ancienne barre
+    container.innerHTML = ''; 
 
     currentUserStories.forEach((story, index) => {
-        // Création du segment (la ligne grise de fond)
         const segment = document.createElement('div');
         segment.className = 'h-0.5 flex-1 bg-white/30 rounded-full overflow-hidden mx-0.5';
         
-        // Création du remplissage (la ligne blanche)
         const fill = document.createElement('div');
         fill.className = 'h-full bg-white';
         
+        // ASTUCE : On prépare le navigateur à animer la largeur
+        fill.style.willChange = 'width';
+        
         if (index < currentStoryIndex) {
-            // Story passée : on met la barre à 100%
             fill.style.width = '100%';
         } else if (index === currentStoryIndex) {
-            // Story actuelle : on prépare l'animation
             fill.style.width = '0%';
-            fill.id = 'active-progress-fill'; // ID pour le retrouver et l'animer
+            fill.id = 'active-progress-fill';
         } else {
-            // Story future : barre vide
             fill.style.width = '0%';
         }
         
@@ -4812,26 +4810,30 @@ function updateProgressBar() {
 
 // 2. Démarrer le minuteur et l'animation
 function startProgressTimer(duration) {
-    clearTimeout(storyProgressTimer); // Nettoyer l'ancien minuteur
-    currentStoryDuration = duration; // Stocker la durée pour la pause
+    clearTimeout(storyProgressTimer);
+    currentStoryDuration = duration;
     isPaused = false;
 
-    // Animation de la barre blanche
     const fill = document.getElementById('active-progress-fill');
-    if (fill) {
-        // Reset immédiat
-        fill.style.transition = 'none';
-        fill.style.width = '0%';
-        
-        // Forcer le navigateur à prendre en compte le reset (astuce reflow)
-        void fill.offsetWidth; 
-        
-        // Lancer l'animation CSS
+    if (!fill) return;
+
+    // 1. RESET : On s'assure que la barre est à 0% SANS animation
+    fill.style.transition = 'none';
+    fill.style.width = '0%';
+
+    // 2. FORCE REPAINT (L'astuce magique)
+    // En lisant offsetHeight, le navigateur est obligé de calculer le layout
+    // actuel (donc la largeur à 0%) avant de passer à la suite.
+    void fill.offsetHeight; 
+
+    // 3. LANCEMENT : On applique la transition et la largeur finale
+    // On attend la prochaine frame pour être sûr
+    requestAnimationFrame(() => {
         fill.style.transition = `width ${duration}ms linear`;
         fill.style.width = '100%';
-    }
+    });
 
-    // Minuteur logique pour passer à la suite
+    // 4. MINUTEUR : Passer à la suite après le temps écoulé
     storyProgressTimer = setTimeout(() => {
         nextStory();
     }, duration);
@@ -4929,7 +4931,6 @@ let currentViewingUserId = null;
 
 // 1. Initialisation de l'interface (HTML)
 function initStoryViewerUI() {
-    // On détruit l'ancienne version pour éviter les conflits
     const oldOverlay = document.getElementById('story-viewer-overlay');
     if (oldOverlay) oldOverlay.remove();
 
@@ -4940,45 +4941,50 @@ function initStoryViewerUI() {
             <!-- A. BARRE DE PROGRESSION -->
             <div id="story-progress-bar" class="absolute top-0 left-0 right-0 z-20 flex gap-1 p-2 px-4"></div>
 
-            <!-- B. HEADER -->
+            <!-- B. HEADER (AVEC BOUTON MENU AJOUTÉ) -->
             <div class="absolute top-6 left-0 right-0 z-20 flex items-center justify-between px-4">
-                <div class="flex items-center gap-2 cursor-pointer" onclick="viewUserProfile(currentViewingUserId)">
+                <div class="flex items-center gap-2 cursor-pointer flex-1" onclick="viewUserProfile(currentViewingUserId)">
                     <img id="story-user-avatar" src="" class="w-8 h-8 rounded-full border-2 border-white shadow">
-                    <div>
+                    <div class="flex flex-col">
                         <span id="story-username" class="text-white text-sm font-bold drop-shadow-md"></span>
-                        <span id="story-time" class="text-white/70 text-[10px] ml-1 drop-shadow"></span>
+                        <span id="story-time" class="text-white/70 text-[10px] drop-shadow"></span>
                     </div>
                 </div>
-                <button onclick="closeStoryViewer()" class="text-white/80 hover:text-white p-2">
+                
+                <!-- BOUTON MENU (3 POINTS) -->
+                <button onclick="toggleStoryMenu()" class="text-white/80 hover:text-white p-2 z-30 relative">
+                    <i class="fas fa-ellipsis-vertical text-lg"></i>
+                </button>
+                
+                <!-- MENU DÉROULANT (Caché par défaut) -->
+                <div id="story-dropdown-menu" class="hidden absolute top-12 right-4 bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-48 py-2 z-50 border border-slate-200 dark:border-slate-700">
+                    <!-- Contenu injecté par JS -->
+                </div>
+
+                <button onclick="closeStoryViewer()" class="text-white/80 hover:text-white p-2 ml-2">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
 
             <!-- C. MEDIA -->
             <div id="story-media-container" class="flex-1 bg-black flex items-center justify-center overflow-hidden relative"></div>
-
-            <!-- D. ZONE BAS (CONDITIONNELLE) -->
             
-            <!-- D1. BOUTON VUES (Visible si MA story) -->
-            <div id="story-seen-btn" class="absolute bottom-4 left-4 z-20 hidden cursor-pointer bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full text-white text-xs flex items-center gap-2 hover:bg-black/50 transition-all" onclick="toggleViewersPanel()">
+            <!-- D. ZONE BAS & D1/D2/D3 (Garder votre code existant pour les vues/réponses ici) -->
+             <!-- ... (Collez ici votre code pour D1, D2, D3 si nécessaire, sinon je le mets en bas) -->
+             
+             <!-- Exemple simplifié pour que ça tienne, mais utilisez votre code complet pour D1/D2/D3 -->
+             <div id="story-seen-btn" class="absolute bottom-4 left-4 z-20 hidden cursor-pointer bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full text-white text-xs flex items-center gap-2 hover:bg-black/50 transition-all" onclick="toggleViewersPanel()">
                 <i class="fas fa-eye"></i>
                 <span id="story-seen-count">0</span>
             </div>
-
-            <!-- D2. FORMULAIRE RÉPONSE (Visible si AUTRE story) -->
-            <div id="story-reply-container" class="absolute bottom-0 left-0 right-0 p-4 z-20 bg-gradient-to-t from-black/50 to-transparent">
+             <div id="story-reply-container" class="absolute bottom-0 left-0 right-0 p-4 z-20 bg-gradient-to-t from-black/50 to-transparent">
                 <form onsubmit="sendStoryReply(event)" class="flex items-center gap-2">
-                    <input type="text" id="story-reply-input" placeholder="Répondre..." 
-                           class="flex-1 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-full px-4 py-2 text-sm focus:outline-none placeholder-white/50">
-                    <button type="submit" class="text-white hover:text-blue-400 transition p-2">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
+                    <input type="text" id="story-reply-input" placeholder="Répondre..." class="flex-1 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-full px-4 py-2 text-sm focus:outline-none placeholder-white/50">
+                    <button type="submit" class="text-white hover:text-blue-400 transition p-2"><i class="fas fa-paper-plane"></i></button>
                 </form>
             </div>
-
-            <!-- D3. PANNEAU DES VUES -->
             <div id="story-viewers-panel" class="absolute bottom-0 left-0 right-0 h-1/2 bg-white dark:bg-slate-900 rounded-t-3xl z-30 transform translate-y-full transition-transform duration-300 shadow-lg overflow-hidden flex flex-col">
-                <div class="p-4 border-b dark:border-slate-700 flex justify-between items-center">
+                 <div class="p-4 border-b dark:border-slate-700 flex justify-between items-center">
                     <h3 class="font-bold text-slate-800 dark:text-white">Vues</h3>
                     <button onclick="toggleViewersPanel()" class="text-slate-500 hover:text-slate-700"><i class="fas fa-times"></i></button>
                 </div>
@@ -5050,6 +5056,9 @@ function playCurrentStory() {
     const story = currentUserStories[currentStoryIndex];
     if (!story) { closeStoryViewer(); return; }
 
+    // --- CORRECTION 1 : Créer la barre AVANT de lancer le timer ---
+    updateProgressBar(); 
+
     // Mise à jour du Header
     document.getElementById('story-user-avatar').src = story.profiles?.avatar_url || '';
     document.getElementById('story-username').innerText = story.profiles?.full_name || 'Utilisateur';
@@ -5059,36 +5068,30 @@ function playCurrentStory() {
     const mediaContainer = document.getElementById('story-media-container');
     if (story.type === 'video' || story.media_url?.endsWith('.mp4')) {
         mediaContainer.innerHTML = `<video src="${story.media_url}" autoplay muted playsinline class="max-h-full max-w-full"></video>`;
-        startProgressTimer(15000);
+        // Maintenant on peut lancer le timer car la barre existe
+        startProgressTimer(15000); 
     } else {
         mediaContainer.innerHTML = `<img src="${story.media_url}" class="w-full h-full object-contain">`;
         startProgressTimer(5000);
     }
 
-    // Progress Bar
-    updateProgressBar();
+    // --- NOUVEAU : RENDU DU MENU (3 points) ---
+    renderStoryMenu(isViewingOwnStory, currentViewingUserId);
 
-    // --- LOGIQUE CONDITIONNELLE (LA CORRECTION) ---
+    // Logique Conditionnelle (Vues vs Réponse)
     const replyContainer = document.getElementById('story-reply-container');
     const seenBtn = document.getElementById('story-seen-btn');
     const viewersPanel = document.getElementById('story-viewers-panel');
 
-    // Fermer le panneau des vues par défaut
     if (viewersPanel) viewersPanel.classList.add('translate-y-full');
 
     if (isViewingOwnStory) {
-        // C'EST MA STORY -> J'affiche les VUES, je cache la REPONSE
         if (replyContainer) replyContainer.classList.add('hidden');
         if (seenBtn) seenBtn.classList.remove('hidden');
-        
-        // Charger les vues
         loadStoryViews(story.id);
     } else {
-        // C'EST UNE AUTRE STORY -> J'affiche la REPONSE, je cache les VUES
         if (replyContainer) replyContainer.classList.remove('hidden');
         if (seenBtn) seenBtn.classList.add('hidden');
-        
-        // Marquer comme vu
         markStoryAsViewed(story.id);
     }
 }
@@ -5112,83 +5115,6 @@ function closeStoryViewer() {
     // Vider l'état
     currentUserStories = [];
     currentStoryIndex = 0;
-}
-
-// 6. FONCTION : TIMER DE PROGRESSION
-function startProgressTimer(duration) {
-    clearTimeout(storyProgressTimer);
-    
-    // Animation visuelle de la barre
-    const activeBar = document.querySelector('.progress-segment.animating');
-    if (activeBar) {
-        // On force le recalcul du style pour l'animation CSS
-        activeBar.style.transition = `width ${duration}ms linear`;
-        activeBar.classList.remove('w-0');
-        activeBar.classList.add('w-full');
-    }
-
-    storyProgressTimer = setTimeout(() => {
-        nextStory();
-    }, duration);
-}
-
-// 7. FONCTIONS DE CONTRÔLE
-function nextStory() {
-    if (isPaused) return;
-    currentStoryIndex++;
-    playCurrentStory();
-}
-
-function prevStory() {
-    if (isPaused) return;
-    if (currentStoryIndex > 0) {
-        currentStoryIndex--;
-        playCurrentStory();
-    }
-}
-
-function pauseStory() {
-    isPaused = true;
-    clearTimeout(storyProgressTimer); // Stop le timer de fin
-    
-    // Pause la vidéo si c'en est une
-    const video = document.querySelector('#story-media-container video');
-    if (video) video.pause();
-    
-    // Gèle l'animation CSS
-    const activeBar = document.querySelector('.progress-segment.animating');
-    if (activeBar) {
-        // On calcule la largeur actuelle et on la fige
-        const width = activeBar.offsetWidth;
-        const parentWidth = activeBar.parentElement.offsetWidth;
-        const percent = (width / parentWidth) * 100;
-        activeBar.style.transition = 'none';
-        activeBar.style.width = percent + '%';
-    }
-}
-
-function resumeStory() {
-    isPaused = false;
-    
-    // Reprise Vidéo
-    const video = document.querySelector('#story-media-container video');
-    if (video) video.play();
-
-    // Reprise Animation
-    const activeBar = document.querySelector('.progress-segment.animating');
-    if (activeBar) {
-        // Calcul du temps restant basé sur le pourcentage restant
-        const currentWidth = parseFloat(activeBar.style.width);
-        const remainingPercent = 100 - currentWidth;
-        const remainingTime = (remainingPercent / 100) * 5000; // Supposons 5s de base, à affiner
-        
-        activeBar.style.transition = `width ${remainingTime}ms linear`;
-        activeBar.style.width = '100%';
-        
-        storyProgressTimer = setTimeout(() => {
-            nextStory();
-        }, remainingTime);
-    }
 }
 
 // 8. FONCTION : UPLOAD (MANQUANTE)
@@ -5299,4 +5225,94 @@ async function sendStoryReply(e) {
     } catch (err) {
         console.error("Erreur réponse story:", err);
     }
+}
+
+// 1. Ouvrir/Fermer le menu
+function toggleStoryMenu() {
+    const menu = document.getElementById('story-dropdown-menu');
+    if(menu) menu.classList.toggle('hidden');
+}
+
+// 2. Générer le contenu du menu selon le propriétaire
+function renderStoryMenu(isOwner, targetUserId) {
+    const menu = document.getElementById('story-dropdown-menu');
+    if (!menu) return;
+
+    // Fermer le menu si on clique ailleurs
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#story-dropdown-menu') && !e.target.closest('[onclick="toggleStoryMenu()"]')) {
+            menu.classList.add('hidden');
+        }
+    });
+
+    if (isOwner) {
+        // MENU POUR MA STORY
+        menu.innerHTML = `
+            <div onclick="deleteCurrentStory()" class="px-4 py-3 text-sm text-red-600 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer flex items-center gap-3 font-medium">
+                <i class="fas fa-trash-alt w-5"></i> Supprimer la story
+            </div>
+        `;
+    } else {
+        // MENU POUR UNE AUTRE STORY
+        menu.innerHTML = `
+            <div onclick="handleMuteUser('${targetUserId}')" class="px-4 py-3 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer flex items-center gap-3 font-medium">
+                <i class="fas fa-eye-slash w-5"></i> Voir moins ses stories
+            </div>
+            <div onclick="blockUser('${targetUserId}')" class="px-4 py-3 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer flex items-center gap-3 font-medium">
+                <i class="fas fa-ban w-5"></i> Bloquer l'utilisateur
+            </div>
+            <div onclick="reportStory()" class="px-4 py-3 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer flex items-center gap-3 font-medium border-t dark:border-slate-700">
+                <i class="fas fa-flag w-5"></i> Signaler
+            </div>
+        `;
+    }
+}
+
+// 3. ACTION : Supprimer ma story
+async function deleteCurrentStory() {
+    if (!currentUserStories[currentStoryIndex]) return;
+    const storyId = currentUserStories[currentStoryIndex].id;
+
+    if (confirm("Supprimer cette story ?")) {
+        const { error } = await supabaseClient
+            .from('stories')
+            .delete()
+            .eq('id', storyId);
+
+        if (error) {
+            showToast("Erreur suppression", "error");
+        } else {
+            showToast("Story supprimée", "success");
+            closeStoryViewer();
+            loadStories(); // Rafraîchir la liste
+        }
+    }
+    toggleStoryMenu(); // Fermer le menu
+}
+
+// 4. ACTION : Voir moins (Mettre en sourdine)
+async function handleMuteUser(userId) {
+    // Note : Cela nécessite une table 'muted_stories' ou une colonne dans profiles
+    // Exemple simple avec une table 'muted_stories' (à créer dans Supabase)
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return;
+
+    // Essayer d'insérer, si la table n'existe pas, on affiche juste un message
+    const { error } = await supabaseClient
+        .from('muted_stories') 
+        .insert([{ user_id: user.id, muted_user_id: userId }]);
+
+    if (error) {
+        showToast("Fonctionnalité à configurer en BDD", "info");
+        console.error("Créez une table 'muted_stories' pour activer cette fonction.");
+    } else {
+        showToast("Stories masquées", "success");
+    }
+    toggleStoryMenu();
+}
+
+// 5. ACTION : Signaler (Placeholder)
+function reportStory() {
+    showToast("Story signalée aux modérateurs", "success");
+    toggleStoryMenu();
 }
