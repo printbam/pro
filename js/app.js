@@ -5483,3 +5483,65 @@ async function submitEditProfile() {
         btn.disabled = false;
     }
 }
+/* ==========================================================
+   FONCTIONS UTILITAIRES MODIFICATION PROFIL
+   ========================================================== */
+
+// 1. Ouvrir la modale et charger les données existantes
+async function openEditProfileModal() {
+    const modal = document.getElementById('edit-profile-modal');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden'; // Bloquer le scroll du fond
+
+    try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+
+        const { data: profile, error } = await supabaseClient
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .maybeSingle();
+
+        if (error) throw error;
+
+        // Remplir les champs
+        const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.full_name || 'User')}&background=random`;
+        
+        document.getElementById('edit-avatar-preview').src = profile?.avatar_url || defaultAvatar;
+        document.getElementById('edit-name').value = profile?.full_name || '';
+        document.getElementById('edit-username').value = profile?.username || '';
+        document.getElementById('edit-bio').value = profile?.bio || '';
+        document.getElementById('edit-phone').value = profile?.phone || '';
+        
+        // Gestion de la date
+        if (profile?.dob) {
+            const d = new Date(profile.dob);
+            document.getElementById('edit-dob').value = d.toISOString().split('T')[0];
+        } else {
+            document.getElementById('edit-dob').value = '';
+        }
+
+    } catch (err) {
+        console.error("Erreur chargement profil:", err);
+        showToast("Impossible de charger vos informations", "error");
+    }
+}
+
+// 2. Fermer la modale
+function closeEditProfileModal() {
+    const modal = document.getElementById('edit-profile-modal');
+    if (modal) modal.classList.add('hidden');
+    document.body.style.overflow = 'auto'; // Réactiver le scroll
+}
+
+// 3. Prévisualiser l'avatar avant upload
+function previewEditAvatar(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('edit-avatar-preview').src = e.target.result;
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
