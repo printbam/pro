@@ -30,6 +30,7 @@ let globalMessageListener = null;
 let globalNotifListener = null;
 let myChatIdsCache = new Set(); // Cache des IDs de chat de l'utilisateur
 let chatStatusInterval = null;
+let isViewingOwnStory = false; // Variable globale pour l'état
             
 // 3. Configuration des Réactions (Doit être accessible pour le Feed)
 const REACTIONS = [
@@ -4682,107 +4683,82 @@ async function loadStories() {
 // Ouvrir/Fermer le panneau des vues
 function toggleViewersPanel() {
     const panel = document.getElementById('story-viewers-panel');
-    panel.classList.toggle('open');
+    panel.classList.toggle('translate-y-full');
 }
 
-// Charger les vues pour une story
+// Charger la liste des gens qui ont vu
+// Charger la liste des gens qui ont vu
+// Fonction pour charger les vues (VERSION CORRIGÉE - SANS JOINTURE AUTO)
 async function loadStoryViews(storyId) {
     const list = document.getElementById('story-viewers-list');
     const countSpan = document.getElementById('story-seen-count');
-    const seenBtn = document.getElementById('story-seen-btn');
 
-    const { data: views, error } = await supabase
-        .from('story_views')
-        .select('*, profiles(full_name, avatar_url)')
-        .eq('story_id', storyId);
+    try {
+        // 1. Récupérer les vues (juste les IDs et la date)
+        const { data: views, error } = await supabaseClient
+            .from('story_views')
+            .select('created_at, viewer_id')
+            .eq('story_id', storyId);
 
-    if (error || !views) {
-        seenBtn.classList.add('hidden');
-        return;
+        if (error) throw error;
+        
+        if (!views || views.length === 0) {
+            countSpan.innerText = "0";
+            list.innerHTML = '<p class="text-center text-slate-400 text-sm py-10">Aucune vue pour le moment</p>';
+            return;
+        }
+
+        // Mise à jour du compteur
+        countSpan.innerText = views.length;
+
+        // 2. Récupérer les IDs uniques des viewers
+        const viewerIds = [...new Set(views.map(v => v.viewer_id))];
+
+        // 3. Récupérer les profils de ces utilisateurs
+        const { data: profiles, error: profilesError } = await supabaseClient
+            .from('profiles')
+            .select('id, full_name, avatar_url')
+            .in('id', viewerIds);
+
+        if (profilesError) throw profilesError;
+
+        // 4. Créer une "Map" (dictionnaire) pour trouver un profil rapidement par son ID
+        const profilesMap = new Map(profiles.map(p => [p.id, p]));
+
+        // 5. Afficher la liste en combinant les deux
+        list.innerHTML = views.map(v => {
+            // On trouve le profil correspondant à l'ID du viewer
+            const profile = profilesMap.get(v.viewer_id) || { full_name: 'Utilisateur', avatar_url: '' };
+            const avatar = profile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.full_name)}&background=random`;
+            const time = typeof getTimeAgoSimple === 'function' ? getTimeAgoSimple(new Date(v.created_at)) : '';
+
+            return `
+                <div class="flex items-center gap-3">
+                    <img src="${avatar}" class="w-10 h-10 rounded-full object-cover">
+                    <div>
+                        <p class="font-semibold text-sm text-slate-800 dark:text-white">${profile.full_name}</p>
+                        <p class="text-[10px] text-slate-400">${time}</p>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    } catch (err) {
+        console.error("Erreur chargement vues:", err);
+        list.innerHTML = '<p class="text-center text-red-500 text-sm py-10">Erreur de chargement des vues</p>';
     }
-
-    // Mettre à jour le compteur
-    countSpan.innerText = views.length;
-    seenBtn.classList.remove('hidden');
-
-    // Remplir la liste
-    list.innerHTML = views.map(v => `
-        <div class="viewer-item">
-            <img src="${v.profiles?.avatar_url || 'https://ui-avatars.com/api/?name=' + (v.profiles?.full_name || 'User')}">
-            <span class="text-sm font-medium">${v.profiles?.full_name || 'Anonyme'}</span>
-        </div>
-    `).join('');
 }
 
 // 3. Afficher l'item Story actuel (VERSION COMPLÈTE)
-async function showStoryItem() {
-    clearTimeout(storyTimer); // Arrêter le timer précédent
-
-    const story = currentUserStories[currentStoryIndex];
-    if (!story) {
-        closeStoryViewer();
-        return;
-    }
-
-    // --- 1. Mise à jour du Header (Avatar, Nom, Temps) ---
-    document.getElementById('story-user-avatar').src = story.profiles.avatar_url || `https://ui-avatars.com/api/?name=${story.profiles.full_name}`;
-    document.getElementById('story-username').innerText = story.profiles.full_name;
-    document.getElementById('story-time').innerText = getTimeAgoSimple(new Date(story.created_at));
-
-    // --- 2. Mise à jour du Média (Image ou Vidéo) ---
-    const mediaContainer = document.getElementById('story-media-container');
-    if (story.type === 'video') {
-        mediaContainer.innerHTML = `<video src="${story.media_url}" autoplay muted playsinline class="max-h-full max-w-full"></video>`;
-    } else {
-        mediaContainer.innerHTML = `<img src="${story.media_url}">`;
-    }
-
-    // --- 3. Mise à jour de la Progress Bar ---
-    updateProgressBar();
-
-    // --- 4. Marquer comme vu (après 1s) ---
-    setTimeout(() => markStoryAsViewed(story.id), 1000);
-
-    // --- 5. GESTION DES VUES (NOUVEAU) ---
-    // On récupère l'utilisateur actuel pour savoir si c'est NOTRE story
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    
-    const seenBtn = document.getElementById('story-seen-btn');
-    const viewersPanel = document.getElementById('story-viewers-panel');
-
-    // On cache le panneau par défaut à chaque nouvelle story
-    viewersPanel.classList.remove('open');
-
-    // Si c'est MA story, j'affiche le bouton des vues et je charge les données
-    if (user && story.user_id === user.id) {
-        seenBtn.classList.remove('hidden');
-        loadStoryViews(story.id); // Charge la liste des gens qui ont vu
-    } else {
-        // Si c'est la story d'un autre, on cache le bouton
-        seenBtn.classList.add('hidden');
-    }
-    // ---------------------------------------------
-
-    // --- 6. Timer pour passer à la suivante ---
-    let duration = 5000; // 5 secondes pour les images
-    if (story.type === 'video') {
-        duration = 15000; // 15 secondes max pour les vidéos (ou on pourrait attendre la fin réelle)
-    }
-    
-    storyTimer = setTimeout(() => {
-        currentStoryIndex++;
-        showStoryItem();
-    }, duration);
-}
-         // --- GESTION RECONNEXION REALTIME ---
+// --- GESTION RECONNEXION REALTIME (À COLLER À LA FIN DU FICHIER) ---
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
         console.log("App active : Re-synchronisation...");
         
-        // 1. Relancer la présence
+        // 1. Relancer la présence (Mettre à jour "En ligne")
         if (typeof updateMyPresence === 'function') updateMyPresence();
         
-        // 2. Rafraîchir les badges et listes
+        // 2. Rafraîchir les badges (Messages, Notifs)
         if (typeof updateMessageBadge === 'function') updateMessageBadge();
         
         // 3. Forcer le rechargement de la liste des messages si on est sur la page chat
@@ -4792,6 +4768,150 @@ document.addEventListener('visibilitychange', () => {
         }
     }
 });
+
+/* ==========================================================
+   FONCTIONS UTILITAIRES STORIES (A COLLER APRÈS playCurrentStory)
+   ========================================================== */
+
+// Variables globales nécessaires pour la gestion du temps
+let currentStoryDuration = 5000; // Durée par défaut (5s)
+let isPaused = false;
+
+// 1. Mise à jour visuelle de la barre de progression
+function updateProgressBar() {
+    const container = document.getElementById('story-progress-bar');
+    if (!container) return;
+    
+    container.innerHTML = ''; // Vider l'ancienne barre
+
+    currentUserStories.forEach((story, index) => {
+        // Création du segment (la ligne grise de fond)
+        const segment = document.createElement('div');
+        segment.className = 'h-0.5 flex-1 bg-white/30 rounded-full overflow-hidden mx-0.5';
+        
+        // Création du remplissage (la ligne blanche)
+        const fill = document.createElement('div');
+        fill.className = 'h-full bg-white';
+        
+        if (index < currentStoryIndex) {
+            // Story passée : on met la barre à 100%
+            fill.style.width = '100%';
+        } else if (index === currentStoryIndex) {
+            // Story actuelle : on prépare l'animation
+            fill.style.width = '0%';
+            fill.id = 'active-progress-fill'; // ID pour le retrouver et l'animer
+        } else {
+            // Story future : barre vide
+            fill.style.width = '0%';
+        }
+        
+        segment.appendChild(fill);
+        container.appendChild(segment);
+    });
+}
+
+// 2. Démarrer le minuteur et l'animation
+function startProgressTimer(duration) {
+    clearTimeout(storyProgressTimer); // Nettoyer l'ancien minuteur
+    currentStoryDuration = duration; // Stocker la durée pour la pause
+    isPaused = false;
+
+    // Animation de la barre blanche
+    const fill = document.getElementById('active-progress-fill');
+    if (fill) {
+        // Reset immédiat
+        fill.style.transition = 'none';
+        fill.style.width = '0%';
+        
+        // Forcer le navigateur à prendre en compte le reset (astuce reflow)
+        void fill.offsetWidth; 
+        
+        // Lancer l'animation CSS
+        fill.style.transition = `width ${duration}ms linear`;
+        fill.style.width = '100%';
+    }
+
+    // Minuteur logique pour passer à la suite
+    storyProgressTimer = setTimeout(() => {
+        nextStory();
+    }, duration);
+}
+
+// 3. Story Suivante
+function nextStory() {
+    if (isPaused) return;
+    
+    currentStoryIndex++;
+    if (currentStoryIndex < currentUserStories.length) {
+        playCurrentStory();
+    } else {
+        closeStoryViewer(); // Fermer si c'était la dernière
+    }
+}
+
+// 4. Story Précédente
+function prevStory() {
+    if (isPaused) return;
+    
+    if (currentStoryIndex > 0) {
+        currentStoryIndex--;
+        playCurrentStory();
+    }
+}
+
+// 5. Mettre en pause (Appui long)
+function pauseStory() {
+    isPaused = true;
+    clearTimeout(storyProgressTimer); // Arrêter le minuteur
+
+    // Mettre la vidéo en pause si c'en est une
+    const video = document.querySelector('#story-media-container video');
+    if (video) video.pause();
+
+    // Geler la barre de progression
+    const fill = document.getElementById('active-progress-fill');
+    if (fill) {
+        // Calculer le temps restant basé sur la largeur actuelle
+        const currentWidth = fill.getBoundingClientRect().width;
+        const parentWidth = fill.parentElement.getBoundingClientRect().width;
+        const percent = currentWidth / parentWidth;
+        
+        // On fixe la largeur actuelle pour arrêter l'animation CSS
+        fill.style.transition = 'none'; 
+        fill.style.width = `${currentWidth}px`;
+        
+        // Calculer le temps restant en millisecondes
+        remainingTime = currentStoryDuration * (1 - percent);
+    }
+}
+
+// 6. Reprendre la lecture (Relâchement)
+function resumeStory() {
+    if (!isPaused) return;
+    isPaused = false;
+
+    // Relancer la vidéo
+    const video = document.querySelector('#story-media-container video');
+    if (video) video.play();
+
+    // Relancer l'animation pour le temps restant
+    const fill = document.getElementById('active-progress-fill');
+    if (fill) {
+        const duration = remainingTime > 0 ? remainingTime : 100;
+        
+        // Reset pour l'animation finale
+        fill.style.transition = `width ${duration}ms linear`;
+        fill.style.width = '100%';
+        
+        // Relancer le minuteur
+        storyProgressTimer = setTimeout(() => {
+            nextStory();
+        }, duration);
+    }
+}
+
+// Variable pour le temps restant (utilisée par pause/resume)
+let remainingTime = 0;
 /* ==========================================================
    MODULE STORIES (VERSION PRO - COMPLÈTE)
    ========================================================== */
@@ -4801,26 +4921,26 @@ let currentUserStories = [];
 let currentStoryIndex = 0;
 let storyProgressTimer = null;
 let progressInterval = null;
-let isPaused = false;
 let currentViewingUserId = null;
 
-// 2. FONCTION : INJECTER L'INTERFACE DU LECTEUR (A exécuter au démarrage)
+/* ==========================================================
+   MODULE LECTEUR DE STORIES (VERSION CORRIGÉE ET COMPLÈTE)
+   ========================================================== */
+
+// 1. Initialisation de l'interface (HTML)
 function initStoryViewerUI() {
-    // On vérifie si ça existe déjà pour éviter les doublons
-    if (document.getElementById('story-viewer-overlay')) return;
+    // On détruit l'ancienne version pour éviter les conflits
+    const oldOverlay = document.getElementById('story-viewer-overlay');
+    if (oldOverlay) oldOverlay.remove();
 
     const viewerHTML = `
     <div id="story-viewer-overlay" class="fixed inset-0 z-[9999] bg-black hidden flex-col items-center justify-center">
-        
-        <!-- Conteneur Principal (Style Instagram) -->
         <div class="relative w-full h-full max-w-md mx-auto flex flex-col">
             
-            <!-- A. BARRE DE PROGRESSION HAUTE -->
-            <div id="story-progress-bar" class="absolute top-0 left-0 right-0 z-20 flex gap-1 p-2 px-4">
-                <!-- Les segments seront injectés ici par JS -->
-            </div>
+            <!-- A. BARRE DE PROGRESSION -->
+            <div id="story-progress-bar" class="absolute top-0 left-0 right-0 z-20 flex gap-1 p-2 px-4"></div>
 
-            <!-- B. HEADER (Avatar + Nom + Temps) -->
+            <!-- B. HEADER -->
             <div class="absolute top-6 left-0 right-0 z-20 flex items-center justify-between px-4">
                 <div class="flex items-center gap-2 cursor-pointer" onclick="viewUserProfile(currentViewingUserId)">
                     <img id="story-user-avatar" src="" class="w-8 h-8 rounded-full border-2 border-white shadow">
@@ -4829,20 +4949,26 @@ function initStoryViewerUI() {
                         <span id="story-time" class="text-white/70 text-[10px] ml-1 drop-shadow"></span>
                     </div>
                 </div>
-                <button onclick="closeStoryViewer()" class="text-white/80 hover:text-white p-2 active:scale-90 transition">
+                <button onclick="closeStoryViewer()" class="text-white/80 hover:text-white p-2">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
 
-            <!-- C. IMAGE / VIDEO -->
-            <div id="story-media-container" class="flex-1 bg-black flex items-center justify-center overflow-hidden relative">
-                <!-- Media injecté ici -->
+            <!-- C. MEDIA -->
+            <div id="story-media-container" class="flex-1 bg-black flex items-center justify-center overflow-hidden relative"></div>
+
+            <!-- D. ZONE BAS (CONDITIONNELLE) -->
+            
+            <!-- D1. BOUTON VUES (Visible si MA story) -->
+            <div id="story-seen-btn" class="absolute bottom-4 left-4 z-20 hidden cursor-pointer bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full text-white text-xs flex items-center gap-2 hover:bg-black/50 transition-all" onclick="toggleViewersPanel()">
+                <i class="fas fa-eye"></i>
+                <span id="story-seen-count">0</span>
             </div>
 
-            <!-- D. ZONE DE RÉPONSE (Bas) -->
-            <div class="absolute bottom-0 left-0 right-0 p-4 z-20 bg-gradient-to-t from-black/50 to-transparent">
+            <!-- D2. FORMULAIRE RÉPONSE (Visible si AUTRE story) -->
+            <div id="story-reply-container" class="absolute bottom-0 left-0 right-0 p-4 z-20 bg-gradient-to-t from-black/50 to-transparent">
                 <form onsubmit="sendStoryReply(event)" class="flex items-center gap-2">
-                    <input type="text" id="story-reply-input" placeholder="Répondre à la story..." 
+                    <input type="text" id="story-reply-input" placeholder="Répondre..." 
                            class="flex-1 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-full px-4 py-2 text-sm focus:outline-none placeholder-white/50">
                     <button type="submit" class="text-white hover:text-blue-400 transition p-2">
                         <i class="fas fa-paper-plane"></i>
@@ -4850,19 +4976,19 @@ function initStoryViewerUI() {
                 </form>
             </div>
 
-            <!-- E. ZONES DE NAVIGATION (Clic Gauche / Droite invisible) -->
-            <div class="absolute inset-0 top-16 bottom-20 flex z-10">
-                <!-- Zone Gauche (Story Précédente) -->
-                <div class="w-1/3 h-full cursor-pointer" onclick="prevStory()"></div>
-                <!-- Zone Centrale (Pause) -->
-                <div class="w-1/3 h-full" 
-                     onmousedown="pauseStory()" 
-                     onmouseup="resumeStory()" 
-                     onmouseleave="resumeStory()"
-                     ontouchstart="pauseStory()" 
-                     ontouchend="resumeStory()">
+            <!-- D3. PANNEAU DES VUES -->
+            <div id="story-viewers-panel" class="absolute bottom-0 left-0 right-0 h-1/2 bg-white dark:bg-slate-900 rounded-t-3xl z-30 transform translate-y-full transition-transform duration-300 shadow-lg overflow-hidden flex flex-col">
+                <div class="p-4 border-b dark:border-slate-700 flex justify-between items-center">
+                    <h3 class="font-bold text-slate-800 dark:text-white">Vues</h3>
+                    <button onclick="toggleViewersPanel()" class="text-slate-500 hover:text-slate-700"><i class="fas fa-times"></i></button>
                 </div>
-                <!-- Zone Droite (Story Suivante) -->
+                <div id="story-viewers-list" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+            </div>
+
+            <!-- E. NAVIGATION -->
+            <div class="absolute inset-0 top-16 bottom-20 flex z-10">
+                <div class="w-1/3 h-full cursor-pointer" onclick="prevStory()"></div>
+                <div class="w-1/3 h-full" onmousedown="pauseStory()" onmouseup="resumeStory()" ontouchstart="pauseStory()" ontouchend="resumeStory()"></div>
                 <div class="w-1/3 h-full cursor-pointer" onclick="nextStory()"></div>
             </div>
         </div>
@@ -4872,16 +4998,24 @@ function initStoryViewerUI() {
     document.body.insertAdjacentHTML('beforeend', viewerHTML);
 }
 
-// 3. FONCTION : OUVRIR LE LECTEUR
+// 2. Ouvrir le visualiseur
 async function openStoryViewer(userId) {
-    const overlay = document.getElementById('story-viewer-overlay');
+    currentChatId = null;
     
-    // Récupérer les stories de cet utilisateur
+    // Définir si c'est MA story
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (user) {
+        isViewingOwnStory = (userId === user.id);
+    } else {
+        isViewingOwnStory = false;
+    }
+
+    // Charger les données
     const { data: stories, error } = await supabaseClient
         .from('stories')
         .select('*, profiles(id, full_name, avatar_url)')
         .eq('user_id', userId)
-        .gt('created_at', new Date(Date.now() - 86400000).toISOString()) // 24h
+        .gt('created_at', new Date(Date.now() - 86400000).toISOString())
         .order('created_at', { ascending: true });
 
     if (error || !stories || stories.length === 0) {
@@ -4889,18 +5023,74 @@ async function openStoryViewer(userId) {
         return;
     }
 
-    // Initialiser l'état
+    // Mise à jour des variables globales
     currentUserStories = stories;
     currentStoryIndex = 0;
     currentViewingUserId = userId;
 
-    // Afficher l'overlay
-    overlay.classList.remove('hidden');
-    overlay.classList.add('flex');
+    // Affichage
+    const overlay = document.getElementById('story-viewer-overlay');
+    if (!overlay) initStoryViewerUI(); // Créer si inexistant
+    
+    const currentOverlay = document.getElementById('story-viewer-overlay');
+    currentOverlay.classList.remove('hidden');
+    currentOverlay.classList.add('flex');
     document.body.style.overflow = 'hidden';
 
-    // Lancer la lecture
     playCurrentStory();
+}
+
+// 3. Jouer la story actuelle
+function playCurrentStory() {
+    if (currentStoryIndex >= currentUserStories.length) {
+        closeStoryViewer();
+        return;
+    }
+
+    const story = currentUserStories[currentStoryIndex];
+    if (!story) { closeStoryViewer(); return; }
+
+    // Mise à jour du Header
+    document.getElementById('story-user-avatar').src = story.profiles?.avatar_url || '';
+    document.getElementById('story-username').innerText = story.profiles?.full_name || 'Utilisateur';
+    document.getElementById('story-time').innerText = typeof getTimeAgoSimple === 'function' ? getTimeAgoSimple(new Date(story.created_at)) : '';
+
+    // Mise à jour Média
+    const mediaContainer = document.getElementById('story-media-container');
+    if (story.type === 'video' || story.media_url?.endsWith('.mp4')) {
+        mediaContainer.innerHTML = `<video src="${story.media_url}" autoplay muted playsinline class="max-h-full max-w-full"></video>`;
+        startProgressTimer(15000);
+    } else {
+        mediaContainer.innerHTML = `<img src="${story.media_url}" class="w-full h-full object-contain">`;
+        startProgressTimer(5000);
+    }
+
+    // Progress Bar
+    updateProgressBar();
+
+    // --- LOGIQUE CONDITIONNELLE (LA CORRECTION) ---
+    const replyContainer = document.getElementById('story-reply-container');
+    const seenBtn = document.getElementById('story-seen-btn');
+    const viewersPanel = document.getElementById('story-viewers-panel');
+
+    // Fermer le panneau des vues par défaut
+    if (viewersPanel) viewersPanel.classList.add('translate-y-full');
+
+    if (isViewingOwnStory) {
+        // C'EST MA STORY -> J'affiche les VUES, je cache la REPONSE
+        if (replyContainer) replyContainer.classList.add('hidden');
+        if (seenBtn) seenBtn.classList.remove('hidden');
+        
+        // Charger les vues
+        loadStoryViews(story.id);
+    } else {
+        // C'EST UNE AUTRE STORY -> J'affiche la REPONSE, je cache les VUES
+        if (replyContainer) replyContainer.classList.remove('hidden');
+        if (seenBtn) seenBtn.classList.add('hidden');
+        
+        // Marquer comme vu
+        markStoryAsViewed(story.id);
+    }
 }
 
 // 4. FONCTION : FERMER LE LECTEUR
@@ -4922,64 +5112,6 @@ function closeStoryViewer() {
     // Vider l'état
     currentUserStories = [];
     currentStoryIndex = 0;
-}
-
-// 5. FONCTION : LECTURE DE LA STORY ACTUELLE
-function playCurrentStory() {
-    if (currentStoryIndex >= currentUserStories.length) {
-        closeStoryViewer(); // Fin des stories pour cet user
-        return;
-    }
-
-    const story = currentUserStories[currentStoryIndex];
-    const mediaContainer = document.getElementById('story-media-container');
-    const progressBar = document.getElementById('story-progress-bar');
-    const avatarEl = document.getElementById('story-user-avatar');
-    const usernameEl = document.getElementById('story-username');
-    const timeEl = document.getElementById('story-time');
-
-    // Mise à jour du Header
-    avatarEl.src = story.profiles?.avatar_url || '';
-    usernameEl.innerText = story.profiles?.full_name || 'Utilisateur';
-    timeEl.innerText = typeof getTimeAgoSimple === 'function' ? getTimeAgoSimple(new Date(story.created_at)) : 'Récemment';
-
-    // Mise à jour des Progress Bars (Segments)
-    let progressHTML = '';
-    for (let i = 0; i < currentUserStories.length; i++) {
-        // Si c'est la story précédente -> pleine, actuelle -> animation, suivante -> vide
-        const state = i < currentStoryIndex ? 'full' : (i === currentStoryIndex ? 'active' : 'empty');
-        progressHTML += `<div class="h-0.5 flex-1 rounded-full bg-white/30 overflow-hidden">
-                            <div class="h-full bg-white progress-segment ${state === 'full' ? 'w-full' : (state === 'empty' ? 'w-0' : 'w-0 animating')}" style="transition: width 5s linear;"></div>
-                         </div>`;
-    }
-    progressBar.innerHTML = progressHTML;
-
-    // Injection du Média
-    mediaContainer.innerHTML = '';
-    if (story.type === 'video' || story.media_url?.endsWith('.mp4')) {
-        const video = document.createElement('video');
-        video.src = story.media_url;
-        video.className = "w-full h-full object-contain";
-        video.autoplay = true;
-        video.muted = false; // On peut laisser le son pour les stories
-        video.playsinline = true;
-        mediaContainer.appendChild(video);
-        
-        // Durée basée sur la vidéo
-        video.onloadedmetadata = () => {
-            startProgressTimer(video.duration * 1000);
-        };
-    } else {
-        const img = document.createElement('img');
-        img.src = story.media_url;
-        img.className = "w-full h-full object-contain";
-        mediaContainer.appendChild(img);
-        // Durée par défaut pour image : 5 secondes
-        startProgressTimer(5000);
-    }
-
-    // Marquer comme vue (Backend)
-    markStoryAsViewed(story.id);
 }
 
 // 6. FONCTION : TIMER DE PROGRESSION
@@ -5131,3 +5263,40 @@ async function markStoryAsViewed(storyId) {
 document.addEventListener('DOMContentLoaded', () => {
     initStoryViewerUI(); // Construit l'interface invisible prête à l'emploi
 });
+
+// Fonction pour répondre à une story (envoie un message privé)
+async function sendStoryReply(e) {
+    e.preventDefault();
+    const input = document.getElementById('story-reply-input');
+    const message = input.value.trim();
+    
+    if (!message || !currentViewingUserId) return;
+
+    // On réutilise la fonction de chat existante
+    // 1. On ouvre le chat avec l'auteur de la story
+    // Note: Cela va fermer la story viewer, ce qui est normal pour aller sur le chat
+    
+    try {
+        // Sauvegarder le message à envoyer
+        const tempMsg = message;
+        
+        // Fermer la story
+        closeStoryViewer();
+        
+        // Ouvrir le chat (cette fonction vient de votre module messagerie)
+        await startChat(currentViewingUserId);
+        
+        // Remplir l'input et envoyer (petit hack pour l'UX)
+        setTimeout(() => {
+            const chatInput = document.getElementById('chat-input');
+            if(chatInput) {
+                chatInput.value = tempMsg;
+                // On peut même déclencher l'envoi automatiquement si souhaité :
+                // document.getElementById('chat-form').dispatchEvent(new Event('submit'));
+            }
+        }, 500);
+
+    } catch (err) {
+        console.error("Erreur réponse story:", err);
+    }
+}
