@@ -220,7 +220,7 @@
 
     <!-- HEADERS -->
     <!-- MOBILE HEADER -->
-    <div class="sm:hidden fixed top-0 w-full z-[10000] px-4 py-1 transition-all duration-300" id="mobile-header">
+    <div class="sm:hidden fixed top-0 w-full z-[400] px-4 py-1 transition-all duration-300" id="mobile-header">
         <div class="flex items-center justify-between gap-3">
             <button onclick="toggleSidebar()" class="flex items-center justify-center w-11 h-11 bg-white/90 border border-slate-200 rounded-xl shadow-sm backdrop-blur-md active:scale-95 transition-all group" aria-label="Menu"><i class="fas fa-bars text-slate-700 group-hover:text-indigo-600 transition-colors"></i></button>
             <div class="flex-1 h-11 bg-white/90 border border-slate-200 rounded-xl flex items-center justify-center px-4 shadow-sm backdrop-blur-md"><span class="font-bold text-lg tracking-tight"><span class="text-indigo-600">Link</span>o</span></div>
@@ -279,7 +279,12 @@
     <!-- MAIN CONTENT WRAPPER -->
    <!-- PAGE 1: ACCUEIL (FEED GLOBAL) -->
 <div id="home-view" class="page-view">
-    <section class="max-w-2xl mx-auto px-4 pt-10 pb-20 ">
+    <section class="max-w-sl mx-auto ">
+    <!-- SECTION STORIES -->
+<div id="stories-bar" class="stories-container max-w-2xl mx-auto">
+    <!-- Le JavaScript va injecter le bouton "Votre Story" et les autres ici -->
+    <input type="file" id="story-upload-input" accept="image/*,video/*" class="hidden" onchange="handleStoryUpload(this)">
+</div>
         
       <!-- NOUVEAU WRAPPER (FIXE) -->
 <div class="fixed-explorer-header px-4 py-3">
@@ -320,7 +325,7 @@
 </div>
 
 <!-- ESPACE VIDE (pour ne pas que le contenu soit caché sous la barre fixe) -->
-<div class="spacer-for-fixed-header"></div> <br>
+<div class="spacer-for-fixed-header"></div>
         <!-- FIN DU WRAPPER STICKY -->
 
         <!-- CONTENEUR DES POSTS -->
