@@ -5363,3 +5363,123 @@ function reportStory() {
     showToast("Story signalée aux modérateurs", "success");
     toggleStoryMenu();
 }
+
+// 1. Ouvrir et charger (VERSION AVEC DATE)
+async function openEditProfileModal() {
+    const modal = document.getElementById('edit-profile-modal');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+
+        const { data: profile, error } = await supabaseClient
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .maybeSingle();
+
+        if (error) throw error;
+
+        const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.full_name || 'User')}&background=random`;
+        
+        document.getElementById('edit-avatar-preview').src = profile?.avatar_url || defaultAvatar;
+        document.getElementById('edit-name').value = profile?.full_name || '';
+        document.getElementById('edit-username').value = profile?.username || '';
+        document.getElementById('edit-bio').value = profile?.bio || '';
+        document.getElementById('edit-phone').value = profile?.phone || '';
+        
+        // --- GESTION DE LA DATE ---
+        // Si la date existe dans la BDD, on la formate pour l'input (YYYY-MM-DD)
+        if (profile?.dob) {
+            const dateObj = new Date(profile.dob);
+            // Correction du décalage horaire pour l'input date
+            const formattedDate = dateObj.toISOString().split('T')[0];
+            document.getElementById('edit-dob').value = formattedDate;
+        } else {
+            document.getElementById('edit-dob').value = ''; 
+        }
+
+    } catch (err) {
+        console.error("Erreur chargement profil:", err);
+        showToast("Impossible de charger vos informations", "error");
+    }
+}
+
+// 2. Sauvegarder (VERSION AVEC DATE)
+async function submitEditProfile() {
+    const btn = document.querySelector('#edit-profile-modal button[onclick="submitEditProfile()"]');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btn.disabled = true;
+
+    try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error("Non connecté");
+
+        // Récupération des valeurs
+        const fullName = document.getElementById('edit-name').value.trim();
+        const username = document.getElementById('edit-username').value.trim();
+        const bio = document.getElementById('edit-bio').value.trim();
+        const phone = document.getElementById('edit-phone').value.trim();
+        const dob = document.getElementById('edit-dob').value; // Récupère la date (format YYYY-MM-DD)
+        const avatarFile = document.getElementById('edit-avatar-input').files[0];
+
+        let avatarUrl = null;
+
+        // A. Upload avatar si nouveau fichier
+        if (avatarFile) {
+            const fileExt = avatarFile.name.split('.').pop();
+            const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+            const { error: uploadError } = await supabaseClient.storage
+                .from('avatars')
+                .upload(fileName, avatarFile, { upsert: true });
+
+            if (uploadError) throw new Error("Erreur upload image");
+
+            const { data: publicUrlData } = supabaseClient.storage.from('avatars').getPublicUrl(fileName);
+            avatarUrl = publicUrlData.publicUrl;
+        }
+
+        // B. Préparation de la mise à jour
+        const updates = {
+            id: user.id,
+            full_name: fullName,
+            username: username,
+            bio: bio,
+            phone: phone,
+            dob: dob || null, // On ajoute la date ici (null si vide)
+            updated_at: new Date().toISOString()
+        };
+
+        if (avatarUrl) updates.avatar_url = avatarUrl;
+
+        // C. Envoi à Supabase
+        const { error: updateError } = await supabaseClient
+            .from('profiles')
+            .upsert(updates, { onConflict: 'id' });
+
+        if (updateError) throw updateError;
+
+        // D. Succès et rafraîchissement
+        showToast("Profil mis à jour !", "success");
+        closeEditProfileModal();
+        
+        if (avatarUrl && typeof updateDockAvatar === 'function') {
+            updateDockAvatar(avatarUrl);
+            const sideAvatar = document.getElementById('sidebar-avatar');
+            if(sideAvatar) sideAvatar.src = avatarUrl;
+        }
+        
+        if (typeof loadSocialProfile === 'function') loadSocialProfile();
+
+    } catch (err) {
+        console.error("Erreur sauvegarde:", err);
+        showToast(err.message || "Erreur lors de la sauvegarde", "error");
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
