@@ -17,216 +17,109 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 
     <style>
-        /* --- VARIABLES & RESET --- */
         :root {
-            --linko-gradient: linear-gradient(135deg, #38bdf8 0%, #facc15 100%); /* Sky Blue to Yellow */
+            --linko-gradient: linear-gradient(135deg, #38bdf8 0%, #facc15 100%);
             --linko-gradient-hover: linear-gradient(135deg, #0ea5e9 0%, #eab308 100%);
             --accent-blue: #0ea5e9;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --bg-body: #f8fafc;
+            --text-main: #0f172a; --text-muted: #64748b; --bg-body: #f8fafc;
             --glass-bg: rgba(255, 255, 255, 0.85);
         }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-body);
-            color: var(--text-main);
-            margin: 0;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* --- BACKGROUND ELEMENTS --- */
-        .bg-pattern {
-            position: fixed; inset: 0; z-index: -2;
-            background-color: #ffffff;
-            background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
-            background-size: 20px 20px;
-        }
-        .bg-shape {
-            position: fixed; z-index: -1;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.6;
-        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-body); color: var(--text-main); margin: 0; overflow-x: hidden; -webkit-font-smoothing: antialiased; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        
+        /* Backgrounds */
+        .bg-pattern { position: fixed; inset: 0; z-index: -2; background-color: #ffffff; background-image: radial-gradient(#e2e8f0 1px, transparent 1px); background-size: 20px 20px; }
+        .bg-shape { position: fixed; z-index: -1; border-radius: 50%; filter: blur(80px); opacity: 0.6; }
         .shape-1 { top: -10%; left: -10%; width: 500px; height: 500px; background: rgba(56, 189, 248, 0.3); }
         .shape-2 { bottom: -10%; right: -10%; width: 500px; height: 500px; background: rgba(250, 204, 21, 0.3); }
 
-        /* --- GLASSMORPHISM --- */
-        .glass-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            border-radius: 32px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
-        }
-
-        /* --- DARK MODE --- */
-        body.dark-mode {
-            background-color: #0f172a !important;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --glass-bg: rgba(30, 41, 59, 0.7);
-        }
+        /* Glass & Dark Mode */
+        .glass-card { background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 32px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1); }
+        body.dark-mode { background-color: #0f172a !important; --text-main: #f8fafc; --text-muted: #94a3b8; --glass-bg: rgba(30, 41, 59, 0.7); }
         body.dark-mode .bg-pattern { background-color: #0f172a; background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px); }
         body.dark-mode .glass-card { border: 1px solid rgba(255,255,255,0.1); }
 
-        /* --- BUTTONS --- */
-        .btn-linko {
-            background: var(--linko-gradient);
-            color: #0f172a;
-            font-weight: 800;
-            padding: 14px 28px;
-            border-radius: 50px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-size: 13px;
-        }
-        .btn-linko:hover {
-            background: var(--linko-gradient-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(56, 189, 248, 0.4);
-        }
+        /* Buttons */
+        .btn-linko { background: var(--linko-gradient); color: #0f172a; font-weight: 800; padding: 14px 28px; border-radius: 50px; border: none; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3); display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-transform: uppercase; letter-spacing: 0.5px; font-size: 13px; width: 100%; }
+        .btn-linko:hover { background: var(--linko-gradient-hover); transform: translateY(-2px); box-shadow: 0 8px 25px rgba(56, 189, 248, 0.4); }
         .btn-linko:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
-
-        .btn-secondary {
-            background: rgba(15, 23, 42, 0.05);
-            color: var(--text-main);
-            font-weight: 600;
-            padding: 14px 28px;
-            border-radius: 50px;
-            border: 1px solid rgba(15, 23, 42, 0.1);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .dark-mode .btn-secondary { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
-
-        /* --- INPUTS --- */
-        .input-pro {
-            width: 100%;
-            background: rgba(255,255,255,0.6);
-            border: 1px solid rgba(226, 232, 240, 0.8);
-            border-radius: 16px;
-            padding: 16px 20px;
-            font-size: 15px;
-            font-weight: 500;
-            color: var(--text-main);
-            transition: all 0.2s;
-            box-sizing: border-box;
-        }
-        .input-pro:focus {
-            outline: none;
-            border-color: var(--accent-blue);
-            background: white;
-            box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
-        }
-        .dark-mode .input-pro {
-            background: rgba(0,0,0,0.2);
-            border-color: rgba(255,255,255,0.1);
-            color: white;
-        }
-        .dark-mode .input-pro:focus { background: rgba(0,0,0,0.4); }
-
-        /* --- WIZARD STEPS --- */
-        .step-container { position: relative; width: 100%; overflow: hidden; }
-        .step-form { 
-            position: absolute; top: 0; left: 0; width: 100%;
-            opacity: 0; transform: translateX(100%); 
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            pointer-events: none;
-            visibility: hidden;
-        }
-        .step-form.active { 
-            opacity: 1; transform: translateX(0); 
-            position: relative; pointer-events: auto; visibility: visible;
-        }
         
-        /* Progress Dots */
+        /* Secondary Button (Transparent style) */
+        .btn-create-account { background: transparent; color: var(--text-main); font-weight: 700; padding: 14px 28px; border-radius: 50px; border: 2px solid rgba(15, 23, 42, 0.1); cursor: pointer; transition: all 0.3s; width: 100%; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .btn-create-account:hover { background: rgba(0,0,0,0.03); border-color: var(--accent-blue); color: var(--accent-blue); }
+        .dark-mode .btn-create-account { border-color: rgba(255,255,255,0.1); color: white; }
+        .dark-mode .btn-create-account:hover { background: rgba(255,255,255,0.05); border-color: var(--accent-blue); }
+
+        .btn-back { background: rgba(0,0,0,0.05); color: var(--text-muted); padding: 10px 20px; border-radius: 50px; border: none; cursor: pointer; font-weight: 600; font-size: 12px; transition: all 0.2s; }
+        .dark-mode .btn-back { background: rgba(255,255,255,0.05); }
+
+        /* Inputs */
+        .input-pro { width: 100%; background: rgba(255,255,255,0.6); border: 1px solid rgba(226, 232, 240, 0.8); border-radius: 16px; padding: 16px 20px; font-size: 15px; font-weight: 500; color: var(--text-main); transition: all 0.2s; box-sizing: border-box; appearance: none; }
+        .input-pro:focus { outline: none; border-color: var(--accent-blue); background: white; box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1); }
+        .dark-mode .input-pro { background: rgba(0,0,0,0.2); border-color: rgba(255,255,255,0.1); color: white; }
+        .dark-mode .input-pro:focus { background: rgba(0,0,0,0.4); }
+        select.input-pro { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); background-position: right 1rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em; padding-right: 2.5rem; }
+        .dark-mode select.input-pro { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); }
+
+        /* Wizard */
+        .step-container { position: relative; width: 100%; overflow: hidden; min-height: 350px; }
+        .step-form { position: absolute; top: 0; left: 0; width: 100%; opacity: 0; transform: translateX(100%); transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); pointer-events: none; visibility: hidden; }
+        .step-form.active { opacity: 1; transform: translateX(0); position: relative; pointer-events: auto; visibility: visible; }
         .dot { width: 8px; height: 8px; border-radius: 50%; background: #e2e8f0; transition: all 0.3s; }
         .dot.active { width: 24px; border-radius: 10px; background: var(--linko-gradient); }
-        
-        /* --- UTILS --- */
+
+        /* Avatar Upload */
+        .avatar-upload-box { width: 120px; height: 120px; border-radius: 50%; border: 3px dashed #cbd5e1; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; overflow: hidden; background: rgba(0,0,0,0.05); }
+        .avatar-upload-box:hover { border-color: var(--accent-blue); background: rgba(14, 165, 233, 0.05); }
+        .avatar-upload-box img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* User Card (Suggestions) */
+        .user-suggest-card { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 16px; transition: background 0.2s; }
+        .user-suggest-card:hover { background: rgba(0,0,0,0.03); }
+        .dark-mode .user-suggest-card:hover { background: rgba(255,255,255,0.05); }
+        .btn-follow-small { padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; border: 1px solid var(--accent-blue); color: var(--accent-blue); background: transparent; cursor: pointer; transition: all 0.2s; }
+        .btn-follow-small.following { background: #e2e8f1; color: #64748b; border-color: transparent; }
+        .btn-follow-small:hover { background: var(--accent-blue); color: white; }
+
         .hidden { display: none !important; }
         .fade-in { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Responsive Split */
         @media (min-width: 1024px) {
-            .split-layout {
-                display: grid;
-                grid-template-columns: 1fr 1.2fr;
-                min-height: 700px;
-                max-width: 1200px;
-                width: 95%;
-            }
-            .split-image {
-                background-image: url('https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1000&q=80');
-                background-size: cover;
-                background-position: center;
-                border-radius: 32px 0 0 32px;
-                position: relative;
-            }
+            .split-layout { display: grid; grid-template-columns: 1fr 1.2fr; min-height: 700px; max-width: 1200px; width: 95%; }
+            .split-image { background-image: url('https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1000&q=80'); background-size: cover; background-position: center; border-radius: 32px 0 0 32px; position: relative; }
         }
     </style>
 </head>
-<body class="dark-mode"> <!-- Dark mode activé par défaut pour le style Pro -->
+<body class="dark-mode">
 
-    <!-- BACKGROUNDS -->
     <div class="bg-pattern"></div>
     <div class="bg-shape shape-1"></div>
     <div class="bg-shape shape-2"></div>
 
-    <!-- THEME TOGGLE -->
     <button onclick="toggleTheme()" class="fixed top-6 right-6 z-50 w-10 h-10 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors backdrop-blur-md">
         <i class="fas fa-moon dark-icon"></i>
         <i class="fas fa-sun light-icon hidden"></i>
     </button>
 
-    <!-- MAIN CONTAINER -->
     <div class="glass-card split-layout w-full mx-auto relative overflow-hidden fade-in">
         
-        <!-- IMAGE SECTION (Desktop Only) -->
         <div class="split-image relative hidden lg:flex flex-col justify-end p-12 text-white">
             <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent rounded-l-[32px]"></div>
             <div class="relative z-10">
                 <div class="flex items-center gap-3 mb-6">
-                    <div class="w-12 h-12 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center border border-white/20">
-                        <i class="fas fa-link text-xl"></i>
-                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center border border-white/20"><i class="fas fa-link text-xl"></i></div>
                     <h1 class="text-3xl font-black tracking-tight">Linko</h1>
                 </div>
                 <h2 class="text-4xl font-bold mb-4 leading-tight">Connectez-vous à l'avenir professionnel.</h2>
-                <p class="text-slate-200 text-sm mb-6 max-w-md">Rejoignez la communauté des leaders, entrepreneurs et créatifs. Votre réseau, votre valeur.</p>
+                <p class="text-slate-200 text-sm mb-6 max-w-md">Rejoignez la communauté des leaders, entrepreneurs et créatifs.</p>
             </div>
         </div>
 
-        <!-- FORM SECTION -->
         <div class="p-8 md:p-12 flex flex-col justify-center relative z-10 bg-white dark:bg-slate-900/50 rounded-r-[32px] lg:rounded-r-[32px] rounded-[32px] lg:rounded-l-none">
             
-            <!-- MOBILE HEADER -->
             <div class="text-center mb-8 lg:hidden">
                 <h1 class="text-2xl font-black tracking-tight mb-1">Link<span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-yellow-400">o</span></h1>
-                <p class="text-slate-500 text-xs">Professional Network</p>
-            </div>
-
-            <!-- TABS (Visible only for Login/Initial choice) -->
-            <div id="auth-tabs" class="flex border-b border-slate-200 dark:border-slate-700 mb-8">
-                <button onclick="switchAuthView('login')" id="tab-login" class="tab-btn active flex-1 py-3 text-sm font-bold">Connexion</button>
-                <button onclick="switchAuthView('register')" id="tab-register" class="tab-btn flex-1 py-3 text-sm font-bold">Inscription</button>
+                <p class="text-slate-500 text-xs">Connectez_vous à votre nature</p>
             </div>
 
             <!-- LOGIN FORM -->
@@ -239,7 +132,6 @@
                     <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Mot de passe</label>
                     <input type="password" required id="login-password" placeholder="••••••••" class="input-pro">
                 </div>
-                
                 <div class="flex items-center justify-between text-xs font-medium">
                     <label class="flex items-center gap-2 cursor-pointer text-slate-500">
                         <input type="checkbox" class="w-4 h-4 rounded border-slate-300 text-sky-500 focus:ring-sky-500">
@@ -248,55 +140,41 @@
                     <a href="#" class="text-sky-500 hover:underline">Oublié ?</a>
                 </div>
 
-                <button type="submit" class="btn-linko w-full">
-                    <span>Se connecter</span>
-                    <i class="fas fa-arrow-right"></i>
+                <!-- BOUTON CONNEXION -->
+                <button type="submit" class="btn-linko"><span>Se connecter</span><i class="fas fa-arrow-right"></i></button>
+                
+                <!-- NOUVEAU BOUTON INSCRIPTION (Même taille) -->
+                <button type="button" onclick="switchAuthView('register')" class="btn-create-account mt-3">
+                    Créez un compte
                 </button>
             </form>
 
             <!-- REGISTER WIZARD -->
             <div id="form-register-container" class="hidden fade-in">
-                <!-- Step Indicators -->
-                <div class="flex justify-center gap-2 mb-8">
-                    <div id="dot-1" class="dot active"></div>
-                    <div id="dot-2" class="dot"></div>
-                    <div id="dot-3" class="dot"></div>
-                    <div id="dot-4" class="dot"></div>
+                <!-- Header with Back Button -->
+                <div class="flex items-center justify-between mb-6">
+                    <button onclick="switchAuthView('login')" class="btn-back">
+                        <i class="fas fa-arrow-left mr-2"></i> Connexion
+                    </button>
+                    <div class="flex gap-1">
+                        <div id="dot-1" class="dot active"></div><div id="dot-2" class="dot"></div><div id="dot-3" class="dot"></div><div id="dot-4" class="dot"></div>
+                    </div>
                 </div>
 
-                <div class="step-container" style="min-height: 350px;">
+                <div class="step-container">
                     
                     <!-- STEP 1: Identity -->
                     <div id="step-1" class="step-form active">
-                        <h3 class="text-lg font-bold mb-1 text-center">Commençons par vous</h3>
-                        <p class="text-xs text-slate-500 text-center mb-6">Qui êtes-vous ?</p>
+                        <h3 class="text-lg font-bold mb-1">Identité</h3>
+                        <p class="text-xs text-slate-500 mb-6">Qui êtes-vous ?</p>
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nom complet</label>
                                 <input type="text" id="reg-name" class="input-pro" placeholder="Bam Junior" required>
                             </div>
                             <div>
-                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Email</label>
-                                <input type="email" id="reg-email" class="input-pro" placeholder="bam@linko.com" required>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Mot de passe</label>
-                                <input type="password" id="reg-password" class="input-pro" placeholder="6 caractères min" required>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- STEP 2: Contact & Personal -->
-                    <div id="step-2" class="step-form">
-                        <h3 class="text-lg font-bold mb-1 text-center">Coordonnées</h3>
-                        <p class="text-xs text-slate-500 text-center mb-6">Pour qu'on puisse vous joindre.</p>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nom d'utilisateur</label>
-                                <div class="relative">
-                                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">@</span>
-                                    <input type="text" id="reg-username" class="input-pro pl-8" placeholder="bam_junior" required>
-                                </div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">@ Nom d'utilisateur</label>
+                                <input type="text" id="reg-username" class="input-pro" placeholder="bam_junior" required>
                             </div>
                             <div>
                                 <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Téléphone</label>
@@ -309,34 +187,71 @@
                         </div>
                     </div>
 
-                    <!-- STEP 3: Professional Info -->
-                    <div id="step-3" class="step-form">
-                        <h3 class="text-lg font-bold mb-1 text-center">Profil Professionnel</h3>
-                        <p class="text-xs text-slate-500 text-center mb-6">Votre valeur ajoutée.</p>
+                    <!-- STEP 2: Personal -->
+                    <div id="step-2" class="step-form">
+                        <h3 class="text-lg font-bold mb-1">Infos Personnelles</h3>
+                        <p class="text-xs text-slate-500 mb-6">Détails supplémentaires.</p>
                         <div class="space-y-4">
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Titre du poste</label>
-                                <input type="text" id="reg-job" class="input-pro" placeholder="CEO, Designer, Étudiant..." required>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Entreprise / École</label>
-                                <input type="text" id="reg-company" class="input-pro" placeholder="Printbam Corp">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sexe</label>
+                                    <select id="reg-sex" class="input-pro" required>
+                                        <option value="" disabled selected>Choisir</option>
+                                        <option value="male">Homme</option>
+                                        <option value="female">Femme</option>
+                                        <option value="other">Autre</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Situation</label>
+                                    <select id="reg-relationship" class="input-pro">
+                                        <option value="" selected>Ne pas dire</option>
+                                        <option value="single">Célibataire</option>
+                                        <option value="relationship">En couple</option>
+                                        <option value="married">Marié(e)</option>
+                                    </select>
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Localisation</label>
-                                <input type="text" id="reg-location" class="input-pro" placeholder="Kinshasa, RD Congo">
+                                <input type="text" id="reg-location" class="input-pro" placeholder="Ville, Pays">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Bio</label>
+                                <textarea id="reg-bio" rows="2" class="input-pro" placeholder="Parlez-nous de vous..."></textarea>
                             </div>
                         </div>
                     </div>
 
-                    <!-- STEP 4: Finalize -->
+                    <!-- STEP 3: Avatar Upload -->
+                    <div id="step-3" class="step-form">
+                        <h3 class="text-lg font-bold mb-1 text-center">Photo de Profil</h3>
+                        <p class="text-xs text-slate-500 text-center mb-6">Ajoutez une touche personnelle.</p>
+                        <div class="flex flex-col items-center justify-center space-y-4">
+                            <label class="avatar-upload-box">
+                                <input type="file" id="reg-avatar" class="hidden" accept="image/*" onchange="previewAvatar(this)">
+                                <div id="avatar-placeholder" class="text-center text-slate-400">
+                                    <i class="fas fa-camera text-3xl mb-2"></i>
+                                    <p class="text-xs font-medium">Cliquez pour ajouter</p>
+                                </div>
+                                <img id="avatar-preview" src="" class="hidden w-full h-full object-cover">
+                            </label>
+                            <p class="text-[10px] text-slate-400">JPG, PNG. 5MB max.</p>
+                        </div>
+                    </div>
+
+                    <!-- STEP 4: Security (Last Input Step) -->
                     <div id="step-4" class="step-form">
-                        <h3 class="text-lg font-bold mb-1 text-center">Dernière étape</h3>
-                        <p class="text-xs text-slate-500 text-center mb-6">Votre image publique.</p>
+                        <h3 class="text-lg font-bold mb-1 text-center">Sécurité</h3>
+                        <p class="text-xs text-slate-500 text-center mb-6">Sécurisez votre compte.</p>
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Bio courte</label>
-                                <textarea id="reg-bio" rows="3" class="input-pro" placeholder="Décrivez-vous en quelques mots..."></textarea>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Email</label>
+                                <input type="email" id="reg-email" class="input-pro" placeholder="votre@email.com" required>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Mot de passe</label>
+                                <input type="password" id="reg-password" class="input-pro" placeholder="Min. 6 caractères" required>
                             </div>
                             <div class="flex items-start gap-2 pt-2 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl">
                                 <input type="checkbox" required class="mt-1 w-4 h-4 rounded border-slate-300 text-sky-500 focus:ring-sky-500">
@@ -346,12 +261,30 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- STEP 5: Suggestions (Post-Creation) -->
+                    <div id="step-5" class="step-form">
+                        <div class="text-center mb-6">
+                            <div class="w-16 h-16 bg-green-100 dark:bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-check text-green-500 text-2xl"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-800 dark:text-white">Compte créé !</h3>
+                            <p class="text-xs text-slate-500">Suivez des personnes pour commencer.</p>
+                        </div>
+                        <div id="suggested-users-list" class="space-y-2 max-h-64 overflow-y-auto pr-2 mb-6">
+                            <!-- Injected by JS -->
+                        </div>
+                        <!-- BOUTON DYNAMIQUE (PASSER / ENTRER) -->
+                        <div class="flex justify-end">
+                            <button id="btn-finish" onclick="finishOnboarding()" class="btn-linko w-auto px-8">Passer</button>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Wizard Navigation -->
-                <div class="flex gap-3 mt-8">
-                    <button id="btn-prev" onclick="changeStep(-1)" class="btn-secondary w-full hidden">Retour</button>
-                    <button id="btn-next" onclick="changeStep(1)" class="btn-linko w-full">Continuer</button>
+                <!-- Navigation Buttons (Hidden on Step 5) -->
+                <div id="wizard-nav" class="flex gap-3 mt-8">
+                    <button id="btn-prev" onclick="changeStep(-1)" class="btn-secondary hidden">Retour</button>
+                    <button id="btn-next" onclick="changeStep(1)" class="btn-linko">Continuer</button>
                 </div>
             </div>
 
@@ -359,83 +292,47 @@
             <div class="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
                 <p class="text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-4">Ou continuer avec</p>
                 <div class="flex gap-3 justify-center">
-                    <button type="button" class="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm">
-                        <i class="fab fa-google"></i>
-                    </button>
-                    <button type="button" class="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm">
-                        <i class="fab fa-linkedin-in"></i>
-                    </button>
-                    <button type="button" class="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm">
-                        <i class="fab fa-apple text-xl"></i>
-                    </button>
+                    <button type="button" class="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"><i class="fab fa-google"></i></button>
+                    <button type="button" class="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"><i class="fab fa-linkedin-in"></i></button>
+                    <button type="button" class="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"><i class="fab fa-apple text-xl"></i></button>
                 </div>
-            </div>
-
-            <div class="mt-8 text-center">
-                <a href="index.html" class="text-[10px] font-bold text-slate-400 hover:text-sky-500 uppercase tracking-widest transition-colors">
-                    <i class="fas fa-arrow-left mr-1"></i> Retour à l'accueil
-                </a>
             </div>
 
         </div>
     </div>
 
-    <!-- TOAST NOTIFICATION -->
     <div id="toast" class="fixed bottom-6 right-6 z-50 p-4 rounded-xl bg-white shadow-2xl border border-slate-100 transform translate-x-full opacity-0 transition-all duration-300 flex items-center gap-3 max-w-xs" style="display: none;">
         <i class="fas fa-check-circle text-green-500 text-lg" id="toast-icon"></i>
         <span id="toast-message" class="text-sm font-medium text-slate-700">Message</span>
     </div>
 
    <script>
-        // ==================================================================================
-        // 1. CONFIGURATION & STATE
-        // ==================================================================================
-        
+        // 1. CONFIGURATION
         let supabaseClient = null;
         let currentStep = 1;
-        const totalSteps = 4;
+        const totalSteps = 5; 
+        let selectedAvatarFile = null;
+        let selectedUserIds = []; 
 
-        // Initialize Supabase
         try {
             if (typeof window.supabase !== 'undefined') {
                 const supabaseUrl = 'https://lqqtvumwdixlhamwmqii.supabase.co'; 
                 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxcXR2dW13ZGl4bGhhbXdtcWlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyOTQ1NjMsImV4cCI6MjA4NTg3MDU2M30.QKTBQbZ78iRVyM1o-hhtAPkWP23h_vXAMA3zrfuzipY';
                 supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
             }
-        } catch (error) {
-            console.error("Supabase Init Error:", error);
-        }
+        } catch (error) { console.error("Supabase Init Error:", error); }
 
-        // ==================================================================================
         // 2. UI UTILITIES
-        // ==================================================================================
-
         function switchAuthView(view) {
             const loginForm = document.getElementById('form-login');
             const regContainer = document.getElementById('form-register-container');
-            const tabLogin = document.getElementById('tab-login');
-            const tabRegister = document.getElementById('tab-register');
-            const tabs = document.getElementById('auth-tabs');
 
-            // Show tabs
-            tabs.classList.remove('hidden');
-            
             if (view === 'login') {
-                loginForm.classList.remove('hidden');
-                regContainer.classList.add('hidden');
-                tabLogin.classList.add('active');
-                tabRegister.classList.remove('active');
-                tabLogin.style.borderBottomColor = 'var(--accent-blue)';
-                tabRegister.style.borderBottomColor = 'transparent';
+                loginForm.classList.remove('hidden'); regContainer.classList.add('hidden');
             } else {
-                loginForm.classList.add('hidden');
-                regContainer.classList.remove('hidden');
-                tabLogin.classList.remove('active');
-                tabRegister.classList.add('active');
-                tabLogin.style.borderBottomColor = 'transparent';
-                tabRegister.style.borderBottomColor = 'var(--accent-blue)';
-                // Reset wizard
-                currentStep = 1;
+                loginForm.classList.add('hidden'); regContainer.classList.remove('hidden');
+                currentStep = 1; 
+                selectedUserIds = []; // Reset follows
                 updateWizardUI();
             }
         }
@@ -443,24 +340,13 @@
 
         function toggleTheme() {
             const body = document.body;
-            const darkIcon = document.querySelector('.dark-icon');
-            const lightIcon = document.querySelector('.light-icon');
-            
-            if (body.classList.contains('dark-mode')) {
-                body.classList.remove('dark-mode');
-                localStorage.setItem('linko-theme', 'light');
-                if(darkIcon) darkIcon.classList.remove('hidden');
-                if(lightIcon) lightIcon.classList.add('hidden');
-            } else {
-                body.classList.add('dark-mode');
-                localStorage.setItem('linko-theme', 'dark');
-                if(darkIcon) darkIcon.classList.add('hidden');
-                if(lightIcon) lightIcon.classList.remove('hidden');
-            }
+            body.classList.toggle('dark-mode');
+            localStorage.setItem('linko-theme', body.classList.contains('dark-mode') ? 'dark' : 'light');
+            document.querySelector('.dark-icon')?.classList.toggle('hidden');
+            document.querySelector('.light-icon')?.classList.toggle('hidden');
         }
         window.toggleTheme = toggleTheme;
 
-        // Load saved theme
         if(localStorage.getItem('linko-theme') === 'light') {
             document.body.classList.remove('dark-mode');
             document.querySelector('.dark-icon')?.classList.remove('hidden');
@@ -480,160 +366,218 @@
         }
 
         function showToast(message, type = 'success') {
-            const toast = document.getElementById('toast');
-            const toastMsg = document.getElementById('toast-message');
-            const toastIcon = document.getElementById('toast-icon');
-            if(!toast || !toastMsg) return;
-            
+            const toast = document.getElementById('toast'); const toastMsg = document.getElementById('toast-message'); const toastIcon = document.getElementById('toast-icon');
+            if(!toast) return;
             toastMsg.innerText = message;
-            toast.classList.remove('translate-x-full', 'opacity-0');
-            toast.style.display = 'flex';
-            
-            if(type === 'error') {
-                toastIcon.className = 'fas fa-exclamation-triangle text-red-500 text-lg';
-                toast.classList.add('border-red-200');
-            } else {
-                toastIcon.className = 'fas fa-check-circle text-green-500 text-lg';
-                toast.classList.remove('border-red-200');
-            }
-
-            setTimeout(() => {
-                toast.classList.add('translate-x-full', 'opacity-0');
-                setTimeout(() => { toast.style.display = 'none'; }, 300);
-            }, 3000);
+            toast.classList.remove('translate-x-full', 'opacity-0'); toast.style.display = 'flex';
+            toastIcon.className = type === 'error' ? 'fas fa-exclamation-triangle text-red-500 text-lg' : 'fas fa-check-circle text-green-500 text-lg';
+            setTimeout(() => { toast.classList.add('translate-x-full', 'opacity-0'); setTimeout(() => { toast.style.display = 'none'; }, 300); }, 3000);
         }
 
-        // ==================================================================================
         // 3. WIZARD LOGIC
-        // ==================================================================================
-
         function updateWizardUI() {
-            // Update Dots
-            for(let i=1; i<=totalSteps; i++) {
-                const dot = document.getElementById(`dot-${i}`);
-                if(dot) {
-                    if(i <= currentStep) dot.classList.add('active');
-                    else dot.classList.remove('active');
+            // Dots & Nav visibility
+            const wizardNav = document.getElementById('wizard-nav');
+            const dotsContainer = document.querySelector('.flex.gap-1'); // The dots container
+
+            if(currentStep === totalSteps) {
+                wizardNav.classList.add('hidden');
+                if(dotsContainer) dotsContainer.classList.add('hidden');
+            } else {
+                wizardNav.classList.remove('hidden');
+                if(dotsContainer) dotsContainer.classList.remove('hidden');
+                
+                for(let i=1; i < totalSteps; i++) {
+                    const dot = document.getElementById(`dot-${i}`);
+                    if(dot) { if(i <= currentStep) dot.classList.add('active'); else dot.classList.remove('active'); }
                 }
             }
 
-            // Update Forms
+            // Forms
             for(let i=1; i<=totalSteps; i++) {
                 const step = document.getElementById(`step-${i}`);
-                if(step) {
-                    if(i === currentStep) step.classList.add('active');
-                    else step.classList.remove('active');
-                }
+                if(step) { if(i === currentStep) step.classList.add('active'); else step.classList.remove('active'); }
             }
 
-            // Update Buttons
             const btnPrev = document.getElementById('btn-prev');
             const btnNext = document.getElementById('btn-next');
 
-            if(currentStep === 1) {
-                btnPrev.classList.add('hidden');
-                btnNext.classList.remove('hidden');
-                btnNext.innerHTML = '<span>Continuer</span> <i class="fas fa-arrow-right ml-1"></i>';
-            } else if (currentStep === totalSteps) {
-                btnPrev.classList.remove('hidden');
-                btnNext.innerHTML = '<span>Terminer</span> <i class="fas fa-check ml-1"></i>';
-            } else {
-                btnPrev.classList.remove('hidden');
-                btnNext.innerHTML = '<span>Suivant</span> <i class="fas fa-arrow-right ml-1"></i>';
-            }
+            if(currentStep === 1) { btnPrev.classList.add('hidden'); btnNext.innerHTML = '<span>Continuer</span> <i class="fas fa-arrow-right ml-1"></i>'; } 
+            else if (currentStep === totalSteps - 1) { btnPrev.classList.remove('hidden'); btnNext.innerHTML = '<span>Créer mon compte</span> <i class="fas fa-check ml-1"></i>'; } 
+            else { btnPrev.classList.remove('hidden'); btnNext.innerHTML = '<span>Suivant</span> <i class="fas fa-arrow-right ml-1"></i>'; }
         }
 
-        function changeStep(direction) {
+        async function changeStep(direction) {
             const newStep = currentStep + direction;
-
-            if(newStep > totalSteps) {
-                // Submit Form
-                handleRegister();
-                return;
+            
+            // If moving forward from Security step (Step 4) -> Create Account
+            if(newStep === totalSteps && direction > 0) {
+                await handleRegister();
+                return; 
             }
             
             if(newStep < 1) return;
-
-            // Basic Validation before next
-            if(direction > 0) {
-                let isValid = true;
-                if(currentStep === 1) {
-                    if(!document.getElementById('reg-name').value || !document.getElementById('reg-email').value || !document.getElementById('reg-password').value) isValid = false;
-                }
-                // Add validation for other steps if needed
-                
-                if(!isValid) {
-                    showToast("Veuillez remplir les champs requis", "error");
-                    return;
-                }
-            }
-
             currentStep = newStep;
             updateWizardUI();
         }
         window.changeStep = changeStep;
 
-        // ==================================================================================
-        // 4. AUTHENTICATION LOGIC
-        // ==================================================================================
+        // 4. AVATAR PREVIEW
+        function previewAvatar(input) {
+            if (input.files && input.files[0]) {
+                selectedAvatarFile = input.files[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.getElementById('avatar-preview');
+                    const placeholder = document.getElementById('avatar-placeholder');
+                    img.src = e.target.result;
+                    img.classList.remove('hidden');
+                    placeholder.classList.add('hidden');
+                }
+                reader.readAsDataURL(selectedAvatarFile);
+            }
+        }
+        window.previewAvatar = previewAvatar;
 
+        // 5. SUGGESTED USERS & BUTTON LOGIC
+        function updateFinishButton() {
+            const btn = document.getElementById('btn-finish');
+            if(!btn) return;
+            if (selectedUserIds.length > 0) {
+                btn.innerText = "Entrer";
+            } else {
+                btn.innerText = "Passer";
+            }
+        }
+
+        async function loadSuggestedUsers() {
+            const list = document.getElementById('suggested-users-list');
+            if (!list || !supabaseClient) return;
+
+            const { data: users, error } = await supabaseClient
+                .from('profiles')
+                .select('id, full_name, username, avatar_url')
+                .limit(5)
+                .order('created_at', { ascending: false });
+
+            if (error) { list.innerHTML = '<p class="text-center text-xs text-slate-400">Erreur de chargement</p>'; return; }
+            
+            if(!users || users.length === 0) {
+                list.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">Aucun utilisateur pour le moment</p>';
+                return;
+            }
+
+            list.innerHTML = users.map(u => {
+                const avatar = u.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.full_name || 'User')}&background=random`;
+                return `
+                <div class="user-suggest-card">
+                    <img src="${avatar}" class="w-10 h-10 rounded-full object-cover">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">${u.full_name}</p>
+                        <p class="text-[10px] text-slate-400">@${u.username || 'user'}</p>
+                    </div>
+                    <button onclick="toggleSuggestedFollow('${u.id}', this)" class="btn-follow-small">Suivre</button>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function toggleSuggestedFollow(userId, btn) {
+            if (selectedUserIds.includes(userId)) {
+                selectedUserIds = selectedUserIds.filter(id => id !== userId);
+                btn.classList.remove('following');
+                btn.innerText = "Suivre";
+            } else {
+                selectedUserIds.push(userId);
+                btn.classList.add('following');
+                btn.innerText = "Suivi";
+            }
+            updateFinishButton(); // Update main button text
+        }
+        window.toggleSuggestedFollow = toggleSuggestedFollow;
+
+        // 6. AUTH LOGIC
         async function handleLogin(e) {
             e.preventDefault();
-            if (!supabaseClient) return showToast("Erreur de connexion au serveur", "error");
-
+            if (!supabaseClient) return showToast("Erreur serveur", "error");
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
-            
             try {
                 const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
                 if (error) throw error;
                 showToast("Connexion réussie !", "success");
                 setTimeout(() => window.location.href = 'index.html', 1000);
-            } catch (err) {
-                showToast(err.message || "Erreur de connexion", "error");
-            }
+            } catch (err) { showToast(err.message, "error"); }
         }
 
         async function handleRegister() {
-            if (!supabaseClient) return showToast("Erreur de connexion au serveur", "error");
-
-            // Gather all data
-            const payload = {
-                email: document.getElementById('reg-email').value,
-                password: document.getElementById('reg-password').value,
-                options: {
-                    data: {
-                        full_name: document.getElementById('reg-name').value,
-                        username: document.getElementById('reg-username').value,
-                        phone: document.getElementById('reg-phone').value,
-                        dob: document.getElementById('reg-dob').value,
-                        job_title: document.getElementById('reg-job').value,
-                        company: document.getElementById('reg-company').value,
-                        location: document.getElementById('reg-location').value,
-                        bio: document.getElementById('reg-bio').value
-                    }
-                }
-            };
+            if (!supabaseClient) return showToast("Erreur serveur", "error");
 
             const btn = document.getElementById('btn-next');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
 
             try {
-                const { data, error } = await supabaseClient.auth.signUp(payload);
-                
-                if (error) throw error;
+                // 1. Create Auth User
+                const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+                    email, password,
+                    options: {
+                        data: {
+                            full_name: document.getElementById('reg-name').value,
+                            username: document.getElementById('reg-username').value,
+                            phone: document.getElementById('reg-phone').value,
+                            dob: document.getElementById('reg-dob').value,
+                            gender: document.getElementById('reg-sex').value,
+                            relationship_status: document.getElementById('reg-relationship').value,
+                            location: document.getElementById('reg-location').value,
+                            bio: document.getElementById('reg-bio').value
+                        }
+                    }
+                });
+                if (authError) throw authError;
 
-                showToast("Compte créé avec succès !", "success");
-                setTimeout(() => window.location.href = 'index.html', 1500);
+                const userId = authData.user.id;
+
+                // 2. Upload Avatar
+                if (selectedAvatarFile) {
+                    const fileExt = selectedAvatarFile.name.split('.').pop();
+                    const fileName = `${userId}/avatar.${fileExt}`;
+                    await supabaseClient.storage.from('avatars').upload(fileName, selectedAvatarFile, { upsert: true });
+                    const { data: pub } = supabaseClient.storage.from('avatars').getPublicUrl(fileName);
+                    if(pub) await supabaseClient.from('profiles').update({ avatar_url: pub.publicUrl }).eq('id', userId);
+                }
+
+                // 3. Success -> Go to Step 5
+                currentStep = totalSteps;
+                updateWizardUI();
+                loadSuggestedUsers();
+                updateFinishButton();
 
             } catch (err) {
-                showToast(err.message || "Erreur lors de l'inscription", "error");
-                btn.disabled = false;
-                btn.innerHTML = '<span>Terminer</span> <i class="fas fa-check ml-1"></i>';
+                showToast(err.message || "Erreur", "error");
+                btn.disabled = false; btn.innerHTML = '<span>Créer mon compte</span> <i class="fas fa-check ml-1"></i>';
             }
         }
 
+        // 7. FINISH ONBOARDING
+        async function finishOnboarding() {
+            // Batch Follow
+            if (selectedUserIds.length > 0) {
+                 const { data: { user } } = await supabaseClient.auth.getUser();
+                 if(user) {
+                    const followsToInsert = selectedUserIds.map(targetId => ({
+                        follower_id: user.id,
+                        following_id: targetId
+                    }));
+                    await supabaseClient.from('follows').insert(followsToInsert);
+                 }
+            }
+            // Redirect
+            window.location.href = 'index.html';
+        }
+        window.finishOnboarding = finishOnboarding;
     </script>
 </body>
 </html>
