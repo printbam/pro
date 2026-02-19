@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -7,35 +8,44 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#f8fafc">
     <title>Linko v3.5 Pro</title>
-    <link rel="apple-touch-icon" href="logo-printbam-icon2.png">
-    <link rel="icon" type="image/png" href="print.png">
+    <link rel="apple-touch-icon" href="donnees-mobiles.png">
+    <link rel="icon" type="image/png" href="/donnees-mobiles.png">
     <link rel="manifest" href="./manifest.json">
     <meta name="color-scheme" content="light dark">
     <meta name="description" content="Linko est un reseau social pro">
-    
+
     <!-- PRECHARGEMENT -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://checkout.flutterwave.com/v3.js"></script>
     <link rel="stylesheet" href="./css/ui.css">
-    
+
 </head>
+
 <body>
 
     <!-- PROFESSIONAL LOADER -->
     <div id="loader">
         <div class="loader-content">
-            <div class="loader-icon"><i class="fab fa-linkedin text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer"></i></div>
+            <div class="loader-icon"><img src="/donnees-mobiles.png" alt="Linko Logo" class="main-logo">
+            </div>
             <div class="loader-text">Linko</div>
         </div>
-        <div class="loader-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        <div class="loader-dots">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
     </div>
 
     <!-- TOAST CONTAINER -->
@@ -45,766 +55,901 @@
     <div class="bg-grid" id="parallax-bg"></div>
     <div class="bg-glow"></div>
     <!-- Fond blanc/noir unifié derrière le header -->
-<div class="header-bg-extension"></div>
+    <div class="header-bg-extension"></div>
 
     <!-- SIDEBAR OVERLAY -->
     <div id="sidebar-overlay" class="fixed inset-0 z-[5000] invisible transition-all duration-500" aria-hidden="true">
-        <div id="sidebar-bg" class="absolute inset-0 bg-slate-900/20 backdrop-blur-sm opacity-0 transition-opacity duration-500" onclick="toggleSidebar()"></div>
-        
-       <div id="sidebar-panel" class="fixed top-0 left-0 h-full w-[280px] md:w-[300px] bg-white dark:bg-slate-900 z-[5001] -translate-x-full opacity-0 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col shadow-2xl border-r border-slate-100 dark:border-slate-800 overflow-y-auto">
-    
-    <!-- HEADER FERMETURE (Mobile) -->
-    <div class="p-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-700/50 md:hidden">
-        <div class="flex items-center gap-2 text-xl font-black text-slate-900 dark:text-white">
-            Link<span class="text-indigo-600">o</span>
-        </div>
-        <button onclick="toggleSidebar()" class="w-9 h-9 rounded-full btn-sky-yellow dark:bg-slate-800 flex items-center justify-center">
-            <i class="fas fa-times text-slate-500"></i>
-        </button>
-    </div>
+        <div id="sidebar-bg"
+            class="absolute inset-0 bg-slate-900/20 backdrop-blur-sm opacity-0 transition-opacity duration-500"
+            onclick="toggleSidebar()"></div>
 
-    <!-- 1. PROFIL UTILISATEUR (Style Facebook) -->
-    <div id="sidebar-user-card" onclick="switchPage('profile-social'); toggleSidebar();" 
-     class="p-3 flex items-center gap-3 hover:btn-sky-yellow dark:hover:bg-slate-800/60 cursor-pointer transition-all mx-2 mt-3 rounded-lg group">
-    
-    <div class="relative">
-        <img id="sidebar-avatar" src="https://ui-avatars.com/api/?name=Guest&background=e2e8f0&color=64748b" 
-             class="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700 shadow-sm">
-        <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full"></div>
-    </div>
-    
-    <div class="flex-1 overflow-hidden">
-        <h4 id="sidebar-username" class="font-bold text-[15px] text-black dark:text-white leading-tight truncate">
-            Chargement...
-        </h4>
-        <span class="text-[13px] text-slate-500 dark:text-slate-400 font-normal group-hover:underline">
-            Voir votre profil
-        </span>
-    </div>
+        <div id="sidebar-panel"
+            class="fixed top-0 left-0 h-full w-[280px] md:w-[300px] bg-white dark:bg-slate-900 z-[5001] -translate-x-full opacity-0 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col shadow-2xl border-r border-slate-100 dark:border-slate-800 overflow-y-auto">
 
-    <i class="fas fa-chevron-right text-[10px] text-slate-400"></i>
-</div>
-
-    <!-- LISTE MENU -->
-    <nav class="flex-1 p-2 space-y-1">
-        
-        <!-- MENU PRINCIPAL -->
-        <a onclick="switchPage('home'); toggleSidebar();" class="nav-link-pro active group">
-            <div class="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center mr-3 transition-colors group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50">
-                <i class="fas fa-house text-indigo-600 dark:text-indigo-400 text-sm"></i>
+            <!-- HEADER FERMETURE (Mobile) -->
+            <div
+                class="p-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-700/50 md:hidden">
+                <div class="flex items-center gap-2 text-xl font-black text-slate-900 dark:text-white">
+                    Link<span class="text-indigo-600">o</span>
+                </div>
+                <button onclick="toggleSidebar()"
+                    class="w-9 h-9 rounded-full btn-sky-yellow dark:bg-slate-800 flex items-center justify-center">
+                    <i class="fas fa-times text-slate-500"></i>
+                </button>
             </div>
-            <span>Accueil</span>
-        </a>
 
-        <a onclick="switchPage('messages'); toggleSidebar();" class="nav-link-pro group">
-            <div class="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center mr-3 transition-colors group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50">
-                <i class="fas fa-comment-dots text-blue-500 dark:text-blue-400 text-sm"></i>
+            <!-- 1. PROFIL UTILISATEUR (Style Facebook) -->
+            <div id="sidebar-user-card" onclick="switchPage('profile-social'); toggleSidebar();"
+                class="p-3 flex items-center gap-3 hover:btn-sky-yellow dark:hover:bg-slate-800/60 cursor-pointer transition-all mx-2 mt-3 rounded-lg group">
+
+                <div class="relative">
+                    <img id="sidebar-avatar" src="https://ui-avatars.com/api/?name=Guest&background=e2e8f0&color=64748b"
+                        class="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <div
+                        class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full">
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-hidden">
+                    <h4 id="sidebar-username"
+                        class="font-bold text-[15px] text-black dark:text-white leading-tight truncate">
+                        Chargement...
+                    </h4>
+                    <span class="text-[13px] text-slate-500 dark:text-slate-400 font-normal group-hover:underline">
+                        Voir votre profil
+                    </span>
+                </div>
+
+                <i class="fas fa-chevron-right text-[10px] text-slate-400"></i>
             </div>
-            <span>Messenger</span>
-        </a>
 
-        <a onclick="switchPage('notifications'); toggleSidebar();" class="nav-link-pro group">
-            <div class="w-8 h-8 rounded-lg bg-pink-50 dark:bg-pink-900/30 flex items-center justify-center mr-3 transition-colors group-hover:bg-pink-100 dark:group-hover:bg-pink-900/50">
-                <i class="fas fa-bell text-pink-500 dark:text-pink-400 text-sm"></i>
-            </div>
-            <span>Notifications</span>
-        </a>
+            <!-- LISTE MENU -->
+            <nav class="flex-1 p-2 space-y-1">
 
-        <a onclick="switchPage('marketplace'); toggleSidebar();" class="nav-link-pro group">
-            <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center mr-3 transition-colors group-hover:bg-slate-200 dark:group-hover:bg-slate-700">
-                <i class="fas fa-store text-slate-600 dark:text-slate-400 text-sm"></i>
-            </div>
-            <span>Marketplace</span>
-        </a>
+                <!-- MENU PRINCIPAL -->
+                <a onclick="switchPage('home'); toggleSidebar();" class="nav-link-pro active group">
+                    <div
+                        class="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center mr-3 transition-colors group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50">
+                        <i class="fas fa-house text-indigo-600 dark:text-indigo-400 text-sm"></i>
+                    </div>
+                    <span>Accueil</span>
+                </a>
 
-        <!-- SÉPARATEUR -->
-        <div class="border-t border-slate-100 dark:border-slate-800 my-3 mx-2"></div>
+                <a onclick="switchPage('messages'); toggleSidebar();" class="nav-link-pro group">
+                    <div
+                        class="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center mr-3 transition-colors group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50">
+                        <i class="fas fa-comment-dots text-blue-500 dark:text-blue-400 text-sm"></i>
+                    </div>
+                    <span>Messenger</span>
+                </a>
 
-        <!-- RACCOURCIS (Nouveau Design) -->
-        <!-- RACCOURCIS (Style Grille Facebook) -->
-<div class="flex items-center justify-between px-4 mb-3">
-    <p class="text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tight">Raccourcis</p>
-    <button class="text-blue-600 dark:text-blue-400 text-[12px] font-medium">Modifier</button>
-</div>
+                <a onclick="switchPage('notifications'); toggleSidebar();" class="nav-link-pro group">
+                    <div
+                        class="w-8 h-8 rounded-lg bg-pink-50 dark:bg-pink-900/30 flex items-center justify-center mr-3 transition-colors group-hover:bg-pink-100 dark:group-hover:bg-pink-900/50">
+                        <i class="fas fa-bell text-pink-500 dark:text-pink-400 text-sm"></i>
+                    </div>
+                    <span>Notifications</span>
+                </a>
 
-<div class="grid grid-cols-3 gap-y-4 gap-x-2 px-2 mb-6">
-    
-    <a href="javascript:void(0)" onclick="switchPage('saved'); toggleSidebar();" class="flex flex-col items-center group">
-        <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-1 group-active:scale-90 transition-transform">
-            <i class="fas fa-bookmark text-blue-600 text-[20px]"></i>
-        </div>
-        <span class="text-[12px] font-medium text-slate-900 dark:text-slate-200">Enregistrés</span>
-    </a>
+                <a onclick="switchPage('marketplace'); toggleSidebar();" class="nav-link-pro group">
+                    <div
+                        class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center mr-3 transition-colors group-hover:bg-slate-200 dark:group-hover:bg-slate-700">
+                        <i class="fas fa-store text-slate-600 dark:text-slate-400 text-sm"></i>
+                    </div>
+                    <span>Marketplace</span>
+                </a>
 
-    <a href="javascript:void(0)" onclick="switchPage('pages'); toggleSidebar();" class="flex flex-col items-center group">
-        <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-1 group-active:scale-90 transition-transform">
-            <i class="fas fa-flag text-orange-500 text-[20px]"></i>
-        </div>
-        <span class="text-[12px] font-medium text-slate-900 dark:text-slate-200">Pages</span>
-    </a>
+                <!-- SÉPARATEUR -->
+                <div class="border-t border-slate-100 dark:border-slate-800 my-3 mx-2"></div>
 
-    <a href="javascript:void(0)" onclick="switchPage('groups'); toggleSidebar();" class="flex flex-col items-center group">
-        <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-1 group-active:scale-90 transition-transform">
-            <i class="fas fa-users text-cyan-500 text-[20px]"></i>
-        </div>
-        <span class="text-[12px] font-medium text-slate-900 dark:text-slate-200">Canaux</span>
-    </a>
+                <!-- RACCOURCIS (Nouveau Design) -->
+                <!-- RACCOURCIS (Style Grille Facebook) -->
+                <div class="flex items-center justify-between px-4 mb-3">
+                    <p class="text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tight">
+                        Raccourcis</p>
+                    <button class="text-blue-600 dark:text-blue-400 text-[12px] font-medium">Modifier</button>
+                </div>
 
-    <a href="javascript:void(0)" onclick="switchPage('events'); toggleSidebar();" class="flex flex-col items-center group">
-        <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-1 group-active:scale-90 transition-transform">
-            <i class="fas fa-calendar-day text-red-500 text-[20px]"></i>
-        </div>
-        <span class="text-[12px] font-medium text-slate-900 dark:text-slate-200">Événements</span>
-    </a>
+                <div class="grid grid-cols-3 gap-y-4 gap-x-2 px-2 mb-6">
 
-    <a href="javascript:void(0)" onclick="switchPage('stats'); toggleSidebar();" class="flex flex-col items-center group">
-        <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-1 group-active:scale-90 transition-transform">
-            <i class="fas fa-chart-simple text-emerald-500 text-[20px]"></i>
-        </div>
-        <span class="text-[12px] font-medium text-slate-900 dark:text-slate-200">Tableau bord</span>
-    </a>
+                    <a href="javascript:void(0)" onclick="switchPage('saved'); toggleSidebar();"
+                        class="flex flex-col items-center group">
+                        <div
+                            class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-1 group-active:scale-90 transition-transform">
+                            <i class="fas fa-bookmark text-blue-600 text-[20px]"></i>
+                        </div>
+                        <span class="text-[12px] font-medium text-slate-900 dark:text-slate-200">Enregistrés</span>
+                    </a>
 
-</div>
+                    <a href="javascript:void(0)" onclick="switchPage('pages'); toggleSidebar();"
+                        class="flex flex-col items-center group">
+                        <div
+                            class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-1 group-active:scale-90 transition-transform">
+                            <i class="fas fa-flag text-orange-500 text-[20px]"></i>
+                        </div>
+                        <span class="text-[12px] font-medium text-slate-900 dark:text-slate-200">Pages</span>
+                    </a>
 
-        <div class="flex items-center justify-between px-4 mb-3">
-    <p class="text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tight">Outils professionnels</p>
-    <button class="text-blue-600 dark:text-blue-400 text-[12px] font-medium hover:underline">Voir tout</button>
-</div>
+                    <a href="javascript:void(0)" onclick="switchPage('groups'); toggleSidebar();"
+                        class="flex flex-col items-center group">
+                        <div
+                            class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-1 group-active:scale-90 transition-transform">
+                            <i class="fas fa-users text-cyan-500 text-[20px]"></i>
+                        </div>
+                        <span class="text-[12px] font-medium text-slate-900 dark:text-slate-200">Canaux</span>
+                    </a>
 
-<div class="grid grid-cols-3 gap-1 px-2 mb-6">
+                    <a href="javascript:void(0)" onclick="switchPage('events'); toggleSidebar();"
+                        class="flex flex-col items-center group">
+                        <div
+                            class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-1 group-active:scale-90 transition-transform">
+                            <i class="fas fa-calendar-day text-red-500 text-[20px]"></i>
+                        </div>
+                        <span class="text-[12px] font-medium text-slate-900 dark:text-slate-200">Événements</span>
+                    </a>
 
-    <a href="javascript:void(0)" onclick="switchPage('certification'); toggleSidebar();" class="flex flex-col items-center p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all group">
-        <div class="w-11 h-11 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-2 group-active:scale-95 transition-transform">
-            <i class="fas fa-check-circle text-sky-500 text-[18px]"></i>
-        </div>
-        <span class="text-[12px] font-medium text-slate-900 dark:text-slate-200">Vérifié</span>
-    </a>
+                    <a href="javascript:void(0)" onclick="switchPage('stats'); toggleSidebar();"
+                        class="flex flex-col items-center group">
+                        <div
+                            class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-1 group-active:scale-90 transition-transform">
+                            <i class="fas fa-chart-simple text-emerald-500 text-[20px]"></i>
+                        </div>
+                        <span class="text-[12px] font-medium text-slate-900 dark:text-slate-200">Tableau bord</span>
+                    </a>
 
-</div>
+                </div>
 
-    <!-- FOOTER -->
-    <div class="p-4 border-t border-slate-100 dark:border-slate-800 mt-auto">
-    
-    <a onclick="switchPage('settings'); toggleSidebar();" 
-       class="flex items-center gap-3 p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer">
-        <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
-            <i class="fas fa-cog text-sm"></i>
-        </div>
-        <span class="text-[13px] font-semibold">Paramètres et confidentialité</span>
-    </a>
+                <div class="flex items-center justify-between px-4 mb-3">
+                    <p class="text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tight">Outils
+                        professionnels</p>
+                    <button class="text-blue-600 dark:text-blue-400 text-[12px] font-medium hover:underline">Voir
+                        tout</button>
+                </div>
 
-    <a onclick="confirmSocialLogout()" 
-       class="flex items-center gap-3 p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all cursor-pointer mt-1">
-        <div class="w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center">
-            <i class="fas fa-sign-out-alt text-sm"></i>
-        </div>
-        <span class="text-[13px] font-semibold">Se déconnecter</span>
-    </a>
-    
-    <div class="mt-4 flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl shadow-inner">
-        <button onclick="setTheme('light')" id="btn-light-menu" 
-            class="flex-1 flex items-center justify-center gap-2 py-2 text-[11px] font-bold rounded-lg transition-all
+                <div class="grid grid-cols-3 gap-1 px-2 mb-6">
+
+                    <a href="javascript:void(0)" onclick="switchPage('certification'); toggleSidebar();"
+                        class="flex flex-col items-center p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all group">
+                        <div
+                            class="w-11 h-11 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-2 group-active:scale-95 transition-transform">
+                            <i class="fas fa-check-circle text-sky-500 text-[18px]"></i>
+                        </div>
+                        <span class="text-[12px] font-medium text-slate-900 dark:text-slate-200">Vérifié</span>
+                    </a>
+
+                </div>
+
+                <!-- FOOTER -->
+                <div class="p-4 border-t border-slate-100 dark:border-slate-800 mt-auto">
+
+                    <a onclick="switchPage('settings'); toggleSidebar();"
+                        class="flex items-center gap-3 p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer">
+                        <div
+                            class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
+                            <i class="fas fa-cog text-sm"></i>
+                        </div>
+                        <span class="text-[13px] font-semibold">Paramètres et confidentialité</span>
+                    </a>
+
+                    <a onclick="confirmSocialLogout()"
+                        class="flex items-center gap-3 p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all cursor-pointer mt-1">
+                        <div class="w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center">
+                            <i class="fas fa-sign-out-alt text-sm"></i>
+                        </div>
+                        <span class="text-[13px] font-semibold">Se déconnecter</span>
+                    </a>
+
+                    <div class="mt-4 flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl shadow-inner">
+                        <button onclick="setTheme('light')" id="btn-light-menu" class="flex-1 flex items-center justify-center gap-2 py-2 text-[11px] font-bold rounded-lg transition-all
             bg-white dark:bg-transparent text-slate-900 dark:text-slate-400 shadow-sm dark:shadow-none">
-            <i class="fas fa-sun"></i> Clair
-        </button>
-        
-        <button onclick="setTheme('dark')" id="btn-dark-menu" 
-            class="flex-1 flex items-center justify-center gap-2 py-2 text-[11px] font-bold rounded-lg transition-all
+                            <i class="fas fa-sun"></i> Clair
+                        </button>
+
+                        <button onclick="setTheme('dark')" id="btn-dark-menu" class="flex-1 flex items-center justify-center gap-2 py-2 text-[11px] font-bold rounded-lg transition-all
             bg-transparent dark:bg-[#242526] text-slate-500 dark:text-white dark:shadow-sm">
-            <i class="fas fa-moon"></i> Sombre
-        </button>
-    </div>
-</div>
-</div>
+                            <i class="fas fa-moon"></i> Sombre
+                        </button>
+                    </div>
+                </div>
         </div>
+    </div>
 
     <!-- HEADERS -->
     <!-- MOBILE HEADER -->
     <div class="sm:hidden fixed top-0 w-full z-[400] px-4 py-1 transition-all duration-300" id="mobile-header">
         <div class="flex items-center justify-between gap-3">
-            <button onclick="toggleSidebar()" class="flex items-center justify-center w-11 h-11 bg-white/90 border border-slate-200 rounded-xl shadow-sm backdrop-blur-md active:scale-95 transition-all group" aria-label="Menu"><i class="fas fa-bars text-slate-700 group-hover:text-indigo-600 transition-colors"></i></button>
-            <div class="flex-1 h-11 bg-white/90 border border-slate-200 rounded-xl flex items-center justify-center px-4 shadow-sm backdrop-blur-md"><span class="font-bold text-lg tracking-tight"><span class="text-indigo-600">Link</span>o</span></div>
+            <button onclick="toggleSidebar()"
+                class="flex items-center justify-center w-11 h-11 bg-white/90 border border-slate-200 rounded-xl shadow-sm backdrop-blur-md active:scale-95 transition-all group"
+                aria-label="Menu"><i
+                    class="fas fa-bars text-slate-700 group-hover:text-indigo-600 transition-colors"></i></button>
+            <div
+                class="flex-1 h-11 bg-white/90 border border-slate-200 rounded-xl flex items-center justify-center px-4 shadow-sm backdrop-blur-md">
+                <span class="font-bold text-lg tracking-tight"><span class="text-indigo-600">Link</span>o</span>
+            </div>
             <!-- BOUTON NOTIFICATIONS (Remplace le bouton menu hamburger) -->
-<button onclick="switchPage('notifications')" class="flex items-center justify-center w-11 h-11 bg-white/90 border border-slate-200 rounded-xl shadow-sm backdrop-blur-md active:scale-95 transition-all group relative" aria-label="Notifications">
-    <i class="fas fa-bell text-slate-700 group-hover:text-indigo-600 transition-colors"></i>
-    
-    <!-- BADGE ROUGE (Caché par défaut) -->
-    <span id="notif-badge-count" class="hidden absolute top-0 right-0 w-5 h-5 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white shadow-sm">0</span>
-</button>
+            <button onclick="switchPage('notifications')"
+                class="flex items-center justify-center w-11 h-11 bg-white/90 border border-slate-200 rounded-xl shadow-sm backdrop-blur-md active:scale-95 transition-all group relative"
+                aria-label="Notifications">
+                <i class="fas fa-bell text-slate-700 group-hover:text-indigo-600 transition-colors"></i>
+
+                <!-- BADGE ROUGE (Caché par défaut) -->
+                <span id="notif-badge-count"
+                    class="hidden absolute top-0 right-0 w-5 h-5 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white shadow-sm">0</span>
+            </button>
         </div>
     </div>
 
-<!-- MOBILE DOCK -->
-<div class="mobile-dock md:hidden fixed bottom-0 left-0 w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 h-[65px] flex items-center justify-around z-[9999] m-0 p-0">
-    
-    <!-- 1. EXPLORER (Accueil) -->
-    <a onclick="switchPage('home')" class="flex flex-col items-center justify-center w-full h-full cursor-pointer py-1">
-        <i class="fas fa-house text-[22px] text-slate-900 dark:text-white"></i>
-        <span class="text-[10px] font-semibold text-slate-900 dark:text-white mt-1">Explorer</span>
-    </a>
+    <!-- MOBILE DOCK -->
+    <div
+        class="mobile-dock md:hidden fixed bottom-0 left-0 w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 h-[65px] flex items-center justify-around z-[9999] m-0 p-0">
 
-    <!-- 2. MARKETPLACE -->
-    <a onclick="switchPage('marketplace')" class="flex flex-col items-center justify-center w-full h-full cursor-pointer py-1">
-        <i class="far fa-compass text-[22px] text-slate-500"></i>
-        <span class="text-[10px] font-medium text-slate-500 mt-1">Marketplace</span>
-    </a>
+        <!-- 1. EXPLORER (Accueil) -->
+        <a onclick="switchPage('home')"
+            class="flex flex-col items-center justify-center w-full h-full cursor-pointer py-1">
+            <i class="fas fa-house text-[22px] text-slate-900 dark:text-white"></i>
+            <span class="text-[10px] font-semibold text-slate-900 dark:text-white mt-1">Explorer</span>
+        </a>
 
-    <!-- 3. PUBLIER -->
-    <div class="flex items-center justify-center w-full h-full py-1">
-        <a href="javascript:void(0)" onclick="openNewPostModal()" class="flex flex-col items-center justify-center cursor-pointer">
-            <div class="border-2 border-slate-900 dark:border-white rounded-[8px] w-[40px] h-[28px] flex items-center justify-center bg-slate-100 dark:bg-slate-800">
-                <i class="fas fa-plus text-slate-900 dark:text-white text-[14px]"></i>
+        <!-- 2. MARKETPLACE -->
+        <a onclick="switchPage('marketplace')"
+            class="flex flex-col items-center justify-center w-full h-full cursor-pointer py-1">
+            <i class="far fa-compass text-[22px] text-slate-500"></i>
+            <span class="text-[10px] font-medium text-slate-500 mt-1">Marketplace</span>
+        </a>
+
+        <!-- 3. PUBLIER -->
+        <div class="flex items-center justify-center w-full h-full py-1">
+            <a href="javascript:void(0)" onclick="openNewPostModal()"
+                class="flex flex-col items-center justify-center cursor-pointer">
+                <div
+                    class="border-2 border-slate-900 dark:border-white rounded-[8px] w-[40px] h-[28px] flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+                    <i class="fas fa-plus text-slate-900 dark:text-white text-[14px]"></i>
+                </div>
+                <span class="text-[10px] font-medium text-slate-500 mt-1"></span>
+            </a>
+        </div>
+
+        <!-- 4. MESSAGE -->
+        <a href="javascript:void(0)" onclick="switchPage('messages')"
+            class="flex flex-col items-center justify-center w-full h-full cursor-pointer py-1 relative">
+            <i class="far fa-paper-plane text-[22px] text-slate-500"></i>
+            <span class="text-[10px] font-medium text-slate-500 mt-1">Message</span>
+            <span id="msg-badge-count"
+                class="hidden absolute top-0 right-4 bg-red-500 text-white text-[10px] font-bold px-1 rounded-full min-w-[15px] h-4 border-2 border-white dark:border-slate-900">0</span>
+        </a>
+
+        <!-- 5. PROFIL -->
+        <a href="javascript:void(0)" onclick="switchPage('profile-social')"
+            class="flex flex-col items-center justify-center w-full h-full cursor-pointer py-1">
+            <div class="w-6 h-6 rounded-full border border-slate-300 overflow-hidden">
+                <img id="dock-avatar-img" src="" alt="" class="w-full h-full object-cover hidden">
+                <i id="dock-avatar-icon"
+                    class="fas fa-user text-slate-500 flex items-center justify-center h-full text-xs"></i>
             </div>
-            <span class="text-[10px] font-medium text-slate-500 mt-1"></span>
+            <span class="text-[10px] font-medium text-slate-500 mt-1">Profil</span>
         </a>
     </div>
 
-    <!-- 4. MESSAGE -->
-    <a href="javascript:void(0)" onclick="switchPage('messages')" class="flex flex-col items-center justify-center w-full h-full cursor-pointer py-1 relative">
-        <i class="far fa-paper-plane text-[22px] text-slate-500"></i>
-        <span class="text-[10px] font-medium text-slate-500 mt-1">Message</span>
-        <span id="msg-badge-count" class="hidden absolute top-0 right-4 bg-red-500 text-white text-[10px] font-bold px-1 rounded-full min-w-[15px] h-4 border-2 border-white dark:border-slate-900">0</span>
-    </a>
-
-    <!-- 5. PROFIL -->
-    <a href="javascript:void(0)" onclick="switchPage('profile-social')" class="flex flex-col items-center justify-center w-full h-full cursor-pointer py-1">
-        <div class="w-6 h-6 rounded-full border border-slate-300 overflow-hidden">
-            <img id="dock-avatar-img" src="" alt="" class="w-full h-full object-cover hidden">
-            <i id="dock-avatar-icon" class="fas fa-user text-slate-500 flex items-center justify-center h-full text-xs"></i>
-        </div>
-        <span class="text-[10px] font-medium text-slate-500 mt-1">Profil</span>
-    </a>
-</div>
-
     <!-- MAIN CONTENT WRAPPER -->
-   <!-- PAGE 1: ACCUEIL (FEED GLOBAL) -->
-<div id="home-view" class="page-view">
-    <section class="max-w-sl mx-auto ">
-    <!-- SECTION STORIES -->
-<div id="stories-bar" class="stories-container max-w-2xl mx-auto">
-    <!-- Le JavaScript va injecter le bouton "Votre Story" et les autres ici -->
-    <input type="file" id="story-upload-input" accept="image/*,video/*" class="hidden" onchange="handleStoryUpload(this)">
-</div>
-       <!-- Zone Centrale (Pause) -->
-<div class="w-1/3 h-full" 
-     onmousedown="pauseStory()" 
-     onmouseup="resumeStory()" 
-     ontouchstart="pauseStory()" 
-     ontouchend="resumeStory()">
-</div> 
-      <!-- NOUVEAU WRAPPER (FIXE) -->
-<div class="fixed-explorer-header px-4 py-3">
-    
-    <!-- HEADER DU FEED -->
-    <div class="flex items-center justify-between mb-2">
-        <h1 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-            Explorez
-        </h1>
-        <button onclick="toggleSearch()" class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-4 py-2 rounded-full text-sm font-bold shadow-sm hover:bg-slate-200 transition flex items-center gap-2">
-            <i class="fas fa-search"></i>
-        </button>
-    </div>
+    <!-- PAGE 1: ACCUEIL (FEED GLOBAL) -->
+    <div id="home-view" class="page-view">
+        <section class="max-w-sl mx-auto ">
+            <!-- SECTION STORIES -->
+            <div id="stories-bar" class="stories-container max-w-2xl mx-auto">
+                <!-- Le JavaScript va injecter le bouton "Votre Story" et les autres ici -->
+                <input type="file" id="story-upload-input" accept="image/*,video/*" class="hidden"
+                    onchange="handleStoryUpload(this)">
+            </div>
+            <!-- Zone Centrale (Pause) -->
+            <div class="w-1/3 h-full" onmousedown="pauseStory()" onmouseup="resumeStory()" ontouchstart="pauseStory()"
+                ontouchend="resumeStory()">
+            </div>
+            <!-- NOUVEAU WRAPPER (FIXE) -->
+            <div class="fixed-explorer-header px-4 py-3">
 
-    <!-- BARRE DE RECHERCHE -->
-    <div id="feed-search-bar" class="hidden mb-3 overflow-hidden transition-all duration-300">
-        <div class="relative">
-            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-            <input type="text" id="feed-search-input" placeholder="Rechercher..." class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-full py-2 pl-9 pr-4 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
-        </div>
-    </div>
+                <!-- HEADER DU FEED -->
+                <div class="flex items-center justify-between mb-2">
+                    <h1 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                        Explorez
+                    </h1>
+                    <button onclick="toggleSearch()"
+                        class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-4 py-2 rounded-full text-sm font-bold shadow-sm hover:bg-slate-200 transition flex items-center gap-2">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
 
-    <!-- BOUTONS DE TRI -->
-    <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1" id="sort-container">
-        <button onclick="handleSortClick(this, 'recent')" class="sort-btn flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 text-[14px] font-semibold transition-all">
-            <i class="fas fa-bolt-lightning text-sm"></i>
-            <span class="btn-text">Actualités</span>
-        </button>
-        <button onclick="handleSortClick(this, 'popular')" class="sort-btn flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[14px] font-semibold transition-all">
-            <i class="fas fa-arrow-trend-up text-sm text-indigo-500"></i>
-            <span class="btn-text hidden">Tendances</span>
-        </button>
-        <button onclick="handleSortClick(this, 'shorts')" class="sort-btn flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[14px] font-semibold transition-all">
-            <i class="fas fa-clapperboard text-sm text-pink-500"></i>
-            <span class="btn-text hidden">Shorts</span>
-        </button>
-    </div>
-</div>
+                <!-- BARRE DE RECHERCHE -->
+                <div id="feed-search-bar" class="hidden mb-3 overflow-hidden transition-all duration-300">
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <!-- Dans la barre "Explorez" -->
+                        <input type="text" id="global-search-input" placeholder="       Rechercher..."
+                            class="w-full bg-slate-100 dark:bg-slate-800 rounded-full py-2 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                            onfocus="openSearchOverlay()" oninput="handleGlobalSearch(this.value)">
+                    </div>
+                </div>
 
-<!-- ESPACE VIDE (pour ne pas que le contenu soit caché sous la barre fixe) -->
-<div class="spacer-for-fixed-header"></div>
-        <!-- FIN DU WRAPPER STICKY -->
+                <!-- BOUTONS DE TRI -->
+                <div id="header-tabs-container" class="flex gap-2 mt-2 overflow-x-auto">
+                    <button onclick="handleSortClick(this, 'recent')"
+                        class="sort-btn flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 text-[14px] font-semibold transition-all">
+                        <i class="fas fa-bolt-lightning text-sm"></i>
+                        <span class="btn-text">Actualités</span>
+                    </button>
+                    <button onclick="handleSortClick(this, 'popular')"
+                        class="sort-btn flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[14px] font-semibold transition-all">
+                        <i class="fas fa-arrow-trend-up text-sm text-indigo-500"></i>
+                        <span class="btn-text hidden">Tendances</span>
+                    </button>
+                    <button onclick="handleSortClick(this, 'shorts')"
+                        class="sort-btn flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[14px] font-semibold transition-all">
+                        <i class="fas fa-clapperboard text-sm text-pink-500"></i>
+                        <span class="btn-text hidden">Shorts</span>
+                    </button>
+                </div>
+            </div>
 
-        <!-- CONTENEUR DES POSTS -->
-        <div id="global-feed-container">
-             <!-- ... les posts ... -->
-        </div>
-        <!-- AJOUTEZ CE BLOC ICI (Le sentinelle de chargement) -->
-<div id="feed-loader" class="hidden py-8 flex justify-center">
-    <div class="flex items-center gap-2 text-slate-400 text-sm font-bold">
-        <i class="fas fa-circle-notch fa-spin text-indigo-500"></i>
-        Chargement...
-    </div>
-</div>
-    </section>
-</div>
+            <!-- ESPACE VIDE (pour ne pas que le contenu soit caché sous la barre fixe) -->
+            <div class="spacer-for-fixed-header"></div>
+            <!-- FIN DU WRAPPER STICKY -->
 
+            <!-- CONTENEUR DES POSTS -->
+            <div id="global-feed-container">
+                <!-- ... les posts ... -->
+            </div>
+            <!-- AJOUTEZ CE BLOC ICI (Le sentinelle de chargement) -->
+            <div id="feed-loader" class="hidden py-8 flex justify-center">
+                <div class="flex items-center gap-2 text-slate-400 text-sm font-bold">
+                    <i class="fas fa-circle-notch fa-spin text-indigo-500"></i>
+                    Chargement...
+                </div>
+            </div>
+        </section>
+        <!-- OVERLAY DE RECHERCHE (Apparaît sous la barre de recherche) -->
+        <div id="search-overlay" class="fixed inset-0 z-30 bg-white dark:bg-slate-900 hidden overflow-y-auto pt-20">
+            <div class="max-w-2xl mx-auto p-4">
 
-        <!-- PAGE : PROFIL SOCIAL (DESIGN FLAT STYLE CAPTURE) -->
-<div id="profile-social-view" class="page-view">
-    <!-- Container principal fond blanc pour cacher le fond de l'app -->
-    <div class="bg-white min-h-screen max-w-lg mx-auto shadow-sm relative z-20 pb-20">
-        
-        <!-- HEADER : Avatar + Nom + Stats -->
-<div class="p-5 flex items-start gap-5 border-b border-gray-100">
-   <!-- BOUTON DÉCONNEXION (Haut Droit) -->
-    <!-- Il s'affiche en gris, devient rouge au survol -->
-    <button onclick="confirmSocialLogout()" class="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-all" title="Déconnexion">
-        <i class="fas fa-sign-out-alt text-lg"></i>
-    </button> 
-    <!-- 1. AVATAR (Sans le badge absolu dedans) -->
-    <div class="relative">
-        <div class="w-20 h-20 md:w-24 md:h-24 rounded-full border border-gray-200 p-1 bg-white">
-            <img id="social-avatar" src="" alt="Profile" class="w-full h-full object-cover rounded-full hidden">
-            <div id="social-avatar-placeholder" class="w-full h-full bg-gray-100 rounded-full flex items-center justify-center text-gray-300">
-                <i class="fas fa-user text-2xl"></i>
+                <!-- Onglets de filtrage -->
+                <div id="search-tabs-sticky" class="flex gap-4 border-b border-slate-200 dark:border-slate-700 mb-4">
+                    <button onclick="setSearchFilter('top')" id="filter-top"
+                        class="pb-2 text-sm font-bold border-b-2 border-sky-500 text-sky-500">Top</button>
+                    <button onclick="setSearchFilter('people')" id="filter-people"
+                        class="pb-2 text-sm font-medium text-slate-400 hover:text-slate-600">Personnes</button>
+                    <button onclick="setSearchFilter('hashtags')" id="filter-hashtags"
+                        class="pb-2 text-sm font-medium text-slate-400 hover:text-slate-600">Hashtags</button>
+                </div>
+
+                <!-- Contenu Dynamique -->
+                <div id="search-content-area">
+                    <!-- Par défaut: Tendances -->
+                    <div id="trending-section">
+                        <h3 class="text-lg font-bold mb-4 text-slate-800 dark:text-white">Tendances pour vous</h3>
+                        <div id="trending-list" class="space-y-3">
+                            <!-- Rempli par JS -->
+                        </div>
+                    </div>
+
+                    <!-- Résultats Recherche (Caché par défaut) -->
+                    <div id="results-section" class="hidden">
+                        <div id="search-results-list" class="space-y-3">
+                            <!-- Rempli par JS -->
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- 2. INFOS PRINCIPALES -->
-    <div class="flex-1 pt-1">
-        
-        <!-- Conteneur Flex pour aligner le NOM et le BADGE -->
-        <div class="flex items-center gap-1 mb-1">
-            <h1 id="social-fullname" class="text-xl font-bold text-black leading-none">Chargement...</h1>
-            
-            <!-- LE BADGE EST MAINTENANT ICI (Style Facebook : Rond bleu + Check blanc) -->
-            <span id="social-badge-inline" class="hidden ml-1">
-    <!-- Couleur officielle Instagram : #0095F6 -->
-    <i class="fas fa-check-circle text-[#0095F6] text-lg"></i>
-</span>
-        </div>
-        
-        <!-- Stats -->
-        <div class="text-sm text-gray-600 font-medium mb-2">
-            <span id="stat-following">0</span> suivis • 
-            <span id="stat-followers">0</span> abonnés
-        </div>
-        
-        <!-- Bouton Modifier -->
-        <button onclick="openEditProfileModal()" class="px-3 py-1 bg-gray-100 text-xs font-bold text-gray-700 rounded hover:bg-gray-200 transition">
-    Modifier le profil
-</button>
-        <!-- NOUVEAU CONTENEUR POUR LE BOUTON FOLLOW (Caché par défaut) -->
-        <div id="profile-follow-container" class="hidden">
-            <!-- Le bouton sera injecté ici par JS -->
-        </div>
-    </div>
-</div>
 
-        <!-- SECTION INFOS (Liste grise comme sur la capture) -->
-        <div class="bg-gray-50 px-5 py-4 space-y-3 border-b border-gray-200">
-            <!-- Téléphone -->
-            <div class="flex items-center gap-3">
-                <i class="fas fa-phone text-gray-400 w-4 text-center"></i>
-                <span id="social-phone" class="text-sm text-gray-700 font-medium">...</span>
-            </div>
-            <!-- Username -->
-            <div class="flex items-center gap-3">
-                <i class="fas fa-at text-gray-400 w-4 text-center"></i>
-                <span id="social-username" class="text-sm text-gray-700 font-medium">...</span>
-            </div>
-            <!-- Date de naissance -->
-            <div class="flex items-center gap-3">
-                <i class="fas fa-birthday-cake text-gray-400 w-4 text-center"></i>
-                <span id="social-dob" class="text-sm text-gray-700 font-medium">...</span>
-            </div>
-        </div>
+    <!-- PAGE : PROFIL SOCIAL (DESIGN FLAT STYLE CAPTURE) -->
+    <div id="profile-social-view" class="page-view">
+        <!-- Container principal fond blanc pour cacher le fond de l'app -->
+        <div class="bg-white min-h-screen max-w-lg mx-auto shadow-sm relative z-20 pb-20">
 
-        <!-- ONGLETS (Publications / Archivées) -->
-        <div class="flex border-b border-gray-200">
-            <button onclick="switchSocialTab('publications')" class="social-tab-btn flex-1 py-4 text-sm font-bold text-black border-b-2 border-black transition-colors">
-                Publications
+            <!-- HEADER : Avatar + Nom + Stats -->
+            <div class="p-5 flex items-start gap-5 border-b border-gray-100">
+                <!-- BOUTON DÉCONNEXION (Haut Droit) -->
+                <!-- Il s'affiche en gris, devient rouge au survol -->
+                <button onclick="confirmSocialLogout()"
+                    class="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-all"
+                    title="Déconnexion">
+                    <i class="fas fa-sign-out-alt text-lg"></i>
+                </button>
+                <!-- 1. AVATAR (Sans le badge absolu dedans) -->
+                <div class="relative">
+                    <div class="w-20 h-20 md:w-24 md:h-24 rounded-full border border-gray-200 p-1 bg-white">
+                        <img id="social-avatar" src="" alt="Profile"
+                            class="w-full h-full object-cover rounded-full hidden">
+                        <div id="social-avatar-placeholder"
+                            class="w-full h-full bg-gray-100 rounded-full flex items-center justify-center text-gray-300">
+                            <i class="fas fa-user text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. INFOS PRINCIPALES -->
+                <div class="flex-1 pt-1">
+
+                    <!-- Conteneur Flex pour aligner le NOM et le BADGE -->
+                    <div class="flex items-center gap-1 mb-1">
+                        <h1 id="social-fullname" class="text-xl font-bold text-black leading-none">Chargement...</h1>
+
+                        <!-- LE BADGE EST MAINTENANT ICI (Style Facebook : Rond bleu + Check blanc) -->
+                        <span id="social-badge-inline" class="hidden ml-1">
+                            <!-- Couleur officielle Instagram : #0095F6 -->
+                            <i class="fas fa-check-circle text-[#0095F6] text-lg"></i>
+                        </span>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="text-sm text-gray-600 font-medium mb-2">
+                        <span id="stat-following">0</span> suivis •
+                        <span id="stat-followers">0</span> abonnés
+                    </div>
+
+                    <!-- Bouton Modifier -->
+                    <button onclick="openEditProfileModal()"
+                        class="px-3 py-1 bg-gray-100 text-xs font-bold text-gray-700 rounded hover:bg-gray-200 transition">
+                        Modifier le profil
+                    </button>
+                    <!-- NOUVEAU CONTENEUR POUR LE BOUTON FOLLOW (Caché par défaut) -->
+                    <div id="profile-follow-container" class="hidden">
+                        <!-- Le bouton sera injecté ici par JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION INFOS (Liste grise comme sur la capture) -->
+            <div class="bg-gray-50 px-5 py-4 space-y-3 border-b border-gray-200">
+                <!-- Téléphone -->
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-phone text-gray-400 w-4 text-center"></i>
+                    <span id="social-phone" class="text-sm text-gray-700 font-medium">...</span>
+                </div>
+                <!-- Username -->
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-at text-gray-400 w-4 text-center"></i>
+                    <span id="social-username" class="text-sm text-gray-700 font-medium">...</span>
+                </div>
+                <!-- Date de naissance -->
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-birthday-cake text-gray-400 w-4 text-center"></i>
+                    <span id="social-dob" class="text-sm text-gray-700 font-medium">...</span>
+                </div>
+            </div>
+
+            <!-- ONGLETS (Publications / Archivées) -->
+            <div class="flex border-b border-gray-200">
+                <button onclick="switchSocialTab('publications')"
+                    class="social-tab-btn flex-1 py-4 text-sm font-bold text-black border-b-2 border-black transition-colors">
+                    Publications
+                </button>
+                <button onclick="switchSocialTab('archives')"
+                    class="social-tab-btn flex-1 py-4 text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-gray-600 transition-colors">
+                    Publications archivées
+                </button>
+            </div>
+
+            <!-- GRILLE DES PHOTOS (3 Colonnes, écart minime) -->
+            <div id="social-posts-grid" class="grid grid-cols-3 gap-1 bg-gray-100">
+                <!-- Les photos seront injectées ici par JS -->
+                <div class="col-span-3 flex flex-col items-center justify-center py-20 text-gray-400">
+                    <i class="fas fa-camera text-3xl mb-2"></i>
+                    <p class="text-xs">Aucune publication</p>
+                </div>
+            </div>
+
+            <!-- BOUTON AJOUTER FLOTTANT (En bas à droite ou fixe en bas) -->
+            <!-- La capture montre un bouton en bas. Je le place fixe en bas à droite pour l'effet moderne -->
+            <button onclick="openNewPostModal()"
+                class="fixed bottom-6 right-6 md:absolute md:bottom-6 md:right-6 w-14 h-14 btn-sky-yellow text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition-all z-50">
+                <i class="fas fa-plus text-xl"></i>
             </button>
-            <button onclick="switchSocialTab('archives')" class="social-tab-btn flex-1 py-4 text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-gray-600 transition-colors">
-                Publications archivées
-            </button>
-        </div>
 
-        <!-- GRILLE DES PHOTOS (3 Colonnes, écart minime) -->
-        <div id="social-posts-grid" class="grid grid-cols-3 gap-1 bg-gray-100">
-            <!-- Les photos seront injectées ici par JS -->
-            <div class="col-span-3 flex flex-col items-center justify-center py-20 text-gray-400">
-                <i class="fas fa-camera text-3xl mb-2"></i>
-                <p class="text-xs">Aucune publication</p>
+        </div>
+    </div>
+
+    <!-- MODALE AJOUT PHOTO (Simple et blanche) -->
+    <div id="new-post-modal"
+        class="fixed inset-0 z-[9500] hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl">
+            <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 class="font-bold text-black">Nouvelle publication</h3>
+                <button onclick="closeNewPostModal()" class="text-blue-500 font-bold text-sm">Annuler</button>
+            </div>
+            <div class="p-4">
+                <form id="new-post-form" onsubmit="handleNewPost(event)" class="space-y-4">
+
+                    <!-- SÉLECTEUR DE TYPE -->
+                    <div class="flex p-1 bg-slate-100 rounded-lg mb-2">
+                        <button type="button" onclick="setPostType('image')" id="btn-type-image"
+                            class="flex-1 py-2 text-xs font-bold rounded-md bg-white shadow-sm text-slate-900 transition">
+                            Photo
+                        </button>
+                        <button type="button" onclick="setPostType('short')" id="btn-type-short"
+                            class="flex-1 py-2 text-xs font-bold rounded-md text-slate-500 hover:text-slate-900 transition">
+                            Short Vidéo
+                        </button>
+                    </div>
+
+                    <!-- INPUT IMAGE -->
+                    <div id="upload-image-box"
+                        class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:bg-gray-50 transition cursor-pointer"
+                        onclick="document.getElementById('post-file-input').click()">
+                        <input type="file" id="post-file-input" accept="image/*" class="hidden"
+                            onchange="previewFile(this, 'image')">
+                        <i class="fas fa-images text-3xl text-gray-400 mb-2"></i>
+                        <p class="text-xs text-gray-500 font-medium">Choisir une photo</p>
+                    </div>
+
+                    <!-- INPUT VIDÉO (Caché par défaut) -->
+                    <div id="upload-video-box"
+                        class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:bg-gray-50 transition cursor-pointer hidden"
+                        onclick="document.getElementById('post-video-input').click()">
+                        <input type="file" id="post-video-input" accept="video/mp4,video/quicktime,video/x-msvideo"
+                            class="hidden" onchange="previewFile(this, 'video')">
+                        <i class="fas fa-video text-3xl text-gray-400 mb-2"></i>
+                        <p class="text-xs text-gray-500 font-medium">Choisir une vidéo (Max 10 min)</p>
+                        <p id="video-error-msg" class="text-[10px] text-red-500 font-bold mt-2 hidden"></p>
+                    </div>
+
+                    <!-- ZONE DE PRÉVISUALISATION -->
+                    <div id="preview-area"
+                        class="w-full aspect-video bg-black rounded-lg hidden overflow-hidden relative flex items-center justify-center mb-2">
+                        <img id="preview-img-el" class="max-h-full object-contain hidden">
+                        <video id="preview-video-el" class="max-h-full object-contain hidden" controls></video>
+                    </div>
+                    <!-- Ajoutez ceci DANS le formulaire, avant le bouton de publication -->
+                    <div class="mb-4">
+                        <label class="text-xs font-bold text-slate-500 mb-1 block">Visibilité</label>
+                        <select id="post-visibility"
+                            class="w-full bg-slate-100 dark:bg-slate-800 rounded-lg p-2.5 text-sm border-none">
+                            <option value="public">🌍 Public</option>
+                            <option value="friends">👥 Abonnés uniquement</option>
+                            <option value="private">🔒 Privé (Moi uniquement)</option>
+                        </select>
+                    </div>
+                    <textarea id="post-caption" rows="3" placeholder="Écrivez une légende..."
+                        class="w-full text-sm p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 resize-none"></textarea>
+
+                    <input type="hidden" id="current-post-type" value="image">
+
+                    <button type="submit"
+                        class="w-full py-3 font-bold rounded-lg transition bg-indigo-600 text-white hover:bg-indigo-700">
+                        Publier
+                    </button>
+                </form>
             </div>
         </div>
-
-        <!-- BOUTON AJOUTER FLOTTANT (En bas à droite ou fixe en bas) -->
-        <!-- La capture montre un bouton en bas. Je le place fixe en bas à droite pour l'effet moderne -->
-        <button onclick="openNewPostModal()" class="fixed bottom-6 right-6 md:absolute md:bottom-6 md:right-6 w-14 h-14 btn-sky-yellow text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition-all z-50">
-            <i class="fas fa-plus text-xl"></i>
-        </button>
-
     </div>
-</div>
-
-<!-- MODALE AJOUT PHOTO (Simple et blanche) -->
-<div id="new-post-modal" class="fixed inset-0 z-[9500] hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl">
-        <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-            <h3 class="font-bold text-black">Nouvelle publication</h3>
-            <button onclick="closeNewPostModal()" class="text-blue-500 font-bold text-sm">Annuler</button>
-        </div>
-        <div class="p-4">
-          <form id="new-post-form" onsubmit="handleNewPost(event)" class="space-y-4">
-    
-    <!-- SÉLECTEUR DE TYPE -->
-    <div class="flex p-1 bg-slate-100 rounded-lg mb-2">
-        <button type="button" onclick="setPostType('image')" id="btn-type-image" class="flex-1 py-2 text-xs font-bold rounded-md bg-white shadow-sm text-slate-900 transition">
-            Photo
-        </button>
-        <button type="button" onclick="setPostType('short')" id="btn-type-short" class="flex-1 py-2 text-xs font-bold rounded-md text-slate-500 hover:text-slate-900 transition">
-            Short Vidéo
-        </button>
-    </div>
-
-    <!-- INPUT IMAGE -->
-    <div id="upload-image-box" class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:bg-gray-50 transition cursor-pointer" onclick="document.getElementById('post-file-input').click()">
-        <input type="file" id="post-file-input" accept="image/*" class="hidden" onchange="previewFile(this, 'image')">
-        <i class="fas fa-images text-3xl text-gray-400 mb-2"></i>
-        <p class="text-xs text-gray-500 font-medium">Choisir une photo</p>
-    </div>
-
-    <!-- INPUT VIDÉO (Caché par défaut) -->
-    <div id="upload-video-box" class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:bg-gray-50 transition cursor-pointer hidden" onclick="document.getElementById('post-video-input').click()">
-        <input type="file" id="post-video-input" accept="video/mp4,video/quicktime,video/x-msvideo" class="hidden" onchange="previewFile(this, 'video')">
-        <i class="fas fa-video text-3xl text-gray-400 mb-2"></i>
-        <p class="text-xs text-gray-500 font-medium">Choisir une vidéo (Max 10 min)</p>
-        <p id="video-error-msg" class="text-[10px] text-red-500 font-bold mt-2 hidden"></p>
-    </div>
-
-    <!-- ZONE DE PRÉVISUALISATION -->
-    <div id="preview-area" class="w-full aspect-video bg-black rounded-lg hidden overflow-hidden relative flex items-center justify-center mb-2">
-        <img id="preview-img-el" class="max-h-full object-contain hidden">
-        <video id="preview-video-el" class="max-h-full object-contain hidden" controls></video>
-    </div>
-<!-- Ajoutez ceci DANS le formulaire, avant le bouton de publication -->
-<div class="mb-4">
-    <label class="text-xs font-bold text-slate-500 mb-1 block">Visibilité</label>
-    <select id="post-visibility" class="w-full bg-slate-100 dark:bg-slate-800 rounded-lg p-2.5 text-sm border-none">
-        <option value="public">🌍 Public</option>
-        <option value="friends">👥 Abonnés uniquement</option>
-        <option value="private">🔒 Privé (Moi uniquement)</option>
-    </select>
-</div>
-    <textarea id="post-caption" rows="3" placeholder="Écrivez une légende..." class="w-full text-sm p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 resize-none"></textarea>
-    
-    <input type="hidden" id="current-post-type" value="image">
-    
-   <button type="submit" class="w-full py-3 font-bold rounded-lg transition bg-indigo-600 text-white hover:bg-indigo-700">
-    Publier
-</button>
-</form>
-        </div>
-    </div>
-</div>
 
     <!-- VUE : CENTRE DE NOTIFICATIONS -->
-<div id="notifications-view" class="page-view">
-    <section class="max-w-2xl mx-auto h-screen flex flex-col bg-white dark:bg-slate-900">
-        
-        <!-- Header -->
-        <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center sticky top-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur z-10">
-            <h2 class="text-xl font-bold text-slate-900 dark:text-white">Notifications</h2>
-            <button onclick="markAllNotificationsRead()" class="text-xs font-bold text-indigo-600 hover:underline">Tout marquer comme lu</button>
-        </div>
+    <div id="notifications-view" class="page-view">
+        <section class="max-w-2xl mx-auto h-screen flex flex-col bg-white dark:bg-slate-900">
 
-        <!-- Liste des notifications -->
-        <div id="notifications-list-container" class="flex-1 overflow-y-auto">
-            <!-- Injecté par JS -->
-        </div>
-    </section>
-</div>
-        
-    <!-- VUE 1 : LISTE DES MESSAGES (Style Photo 1) -->
-<div id="messages-view" class="page-view">
-    <section class="fixed inset-0 z-50 max-w-2xl mx-auto h-screen flex flex-col translate-y-12">
-        
-        <!-- Header -->
-        <div class="py-1 px-4 border-b border-slate-200 flex justify-between items-center sticky top-0 z-10">
-            <h2 class="text-xl font-bold text-slate-900">Discussions</h2>
-            <button onclick="openNewChatModal()" class="text-indigo-600"><i class="far fa-edit text-lg"></i></button>
-        </div>
-
-        <!-- Liste des conversations -->
-        <div id="chat-list-container" class="flex-1 overflow-y-auto">
-            <!-- Les éléments seront injectés ici par JS -->
-            <div class="flex flex-col items-center justify-center h-full text-slate-400">
-                <i class="fas fa-comments text-4xl mb-3 opacity-20"></i>
-                <p>Aucune discussion pour le moment.</p>
+            <!-- Header -->
+            <div
+                class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center sticky top-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur z-10">
+                <h2 class="text-xl font-bold text-slate-900 dark:text-white">Notifications</h2>
+                <button onclick="markAllNotificationsRead()"
+                    class="text-xs font-bold text-indigo-600 hover:underline">Tout marquer comme lu</button>
             </div>
-        </div>
 
-        <!-- Barre de recherche (Optionnelle) -->
-        <div class="px-4 -translate-y-14 bg-transparent">
-            <div class="relative">
-            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10"></i>
-            
-            <input type="text" 
-                   placeholder="Rechercher une discussion..." 
-                   class="w-full pl-10 pr-4 py-2 rounded-full 
+            <!-- Liste des notifications -->
+            <div id="notifications-list-container" class="flex-1 overflow-y-auto">
+                <!-- Injecté par JS -->
+            </div>
+        </section>
+    </div>
+
+    <!-- VUE 1 : LISTE DES MESSAGES (Style Photo 1) -->
+    <div id="messages-view" class="page-view">
+        <section class="fixed inset-0 z-50 max-w-2xl mx-auto h-screen flex flex-col translate-y-12">
+
+            <!-- Header -->
+            <div class="py-1 px-4 border-b border-slate-200 flex justify-between items-center sticky top-0 z-10">
+                <h2 class="text-xl font-bold text-slate-900">Discussions</h2>
+                <button onclick="openNewChatModal()" class="text-indigo-600"><i
+                        class="far fa-edit text-lg"></i></button>
+            </div>
+
+            <!-- Liste des conversations -->
+            <div id="chat-list-container" class="flex-1 overflow-y-auto">
+                <!-- Les éléments seront injectés ici par JS -->
+                <div class="flex flex-col items-center justify-center h-full text-slate-400">
+                    <i class="fas fa-comments text-4xl mb-3 opacity-20"></i>
+                    <p>Aucune discussion pour le moment.</p>
+                </div>
+            </div>
+
+            <!-- Barre de recherche (Optionnelle) -->
+            <div class="px-4 -translate-y-14 bg-transparent">
+                <div class="relative">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10"></i>
+
+                    <input type="text" placeholder="Rechercher une discussion..." class="w-full pl-10 pr-4 py-2 rounded-full 
                           bg-white/70 dark:bg-slate-800/60 
                           backdrop-blur-md 
                           border border-white/20 dark:border-slate-700/50
                           text-sm shadow-xl 
                           focus:outline-none focus:ring-2 focus:ring-indigo-500/50 
                           dark:text-white transition-all">
-        </div>
-</div>
-    </section>
-</div>
-
-<!-- VUE 2 : DISCUSSION (Structure Fixe) -->
-<div id="chat-view" class="page-view">
-    <!-- Wrapper plein écran -->
-    <section class="fixed inset-0 max-w-2xl mx-auto w-full flex flex-col z-[10000] shadow-2xl">
-        
-        <!-- HEADER FIXE -->
-        <div class="wa-header p-3 flex items-center gap-3 shadow-sm z-10000 flex-shrink-0 border-b border-slate-700">
-            <button onclick="switchPage('messages')" class="text-white/80 hover:text-white">
-                <i class="fas fa-arrow-left text-lg"></i>
-            </button>
-            
-            <div class="flex items-center gap-3 flex-1 cursor-pointer" onclick="viewUserProfile(currentTargetUserId)">
-                <div class="relative">
-                    <img id="chat-header-avatar" src="" class="w-10 h-10 rounded-full object-cover border-2 border-white/20">
-                    <div id="chat-status-dot" class="absolute bottom-0 right-0 w-3 h-3 bg-white rounded-full border-2 border-[#00a884]"></div>
-                </div>
-                <div class="flex flex-col justify-center">
-                    <h3 id="chat-header-name" class="text-sm font-semibold text-white leading-tight">...</h3>
-                    <p id="chat-header-status-text" class="text-[11px] text-emerald-100">En ligne</p>
                 </div>
             </div>
-            
-            <div class="flex gap-4 text-white/90">
-                <i class="fas fa-video cursor-pointer hover:text-white"></i>
-                <i class="fas fa-phone cursor-pointer hover:text-white"></i>
-            </div>
-        </div>
-
-        <!-- MESSAGES (Flex-1 pour prendre l'espace restant) -->
-        <div id="chat-messages-container" class="flex-1 overflow-y-auto p-4 scroll-smooth" style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23000000\' fill-opacity=\'0.03\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');">
-            <!-- Messages injectés ici -->
-        </div>
-
-        <!-- Zone de Réponse (Cachée par défaut) -->
-        <div id="reply-container" class="hidden bg-white dark:bg-slate-800 px-4 py-2 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
-            <div class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-                <i class="fas fa-reply text-indigo-500"></i>
-                <span id="reply-preview-text" class="truncate max-w-[200px]"></span>
-            </div>
-            <button onclick="cancelReply()" class="text-slate-400 hover:text-slate-600">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-
-        <!-- ZONE DE SAISIE -->
-<div class="p-2 flex items-end gap-2 z-20">
-    
-    <!-- Boutons Gauche (Smileys / Fichier) -->
-    <div class="flex gap-1 text-slate-500">
-        <button type="button" class="p-2 hover:bg-slate-200 rounded-full transition">
-            <i class="far fa-smile text-xl"></i>
-        </button>
-        <button type="button" class="p-2 rounded-full transition">
-            <i class="fas fa-paperclip text-xl"></i>
-        </button>
+        </section>
     </div>
-    
-    <!-- Formulaire de saisie -->
-    <form id="chat-form" onsubmit="sendChatMessage(event)" class="flex-1 relative">
-        <input type="text" id="chat-input" placeholder="Écrivez un message..." autocomplete="off"
-               oninput="toggleChatSendButton()" 
-               class="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
-    </form>
 
-    <!-- CONTENEUR DU BOUTON DYNAMIQUE -->
-    <div id="chat-action-btn-wrapper">
-        <!-- BOUTON VOCAL (Par défaut) -->
-        <button type="button" id="voice-btn" 
-                class="w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-all duration-300 btn-sky-yellow"
-                style="color: white !important;"> 
-            <i class="fas fa-microphone text-lg"></i>
-        </button>
-        
-        <!-- BOUTON ENVOYER (Caché par défaut) -->
-        <button type="submit" form="chat-form" id="send-btn" 
-                class="w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-all duration-300 btn-sky-yellow hidden"
-                style="color: white !important;">
-            <i class="fas fa-paper-plane text-lg"></i>
-        </button>
+    <!-- VUE 2 : DISCUSSION (Structure Fixe) -->
+    <div id="chat-view" class="page-view">
+        <!-- Wrapper plein écran -->
+        <section class="fixed inset-0 max-w-2xl mx-auto w-full flex flex-col z-[10000] shadow-2xl">
+
+            <!-- HEADER FIXE -->
+            <div
+                class="wa-header p-3 flex items-center gap-3 shadow-sm z-10000 flex-shrink-0 border-b border-slate-700">
+                <button onclick="switchPage('messages')" class="text-white/80 hover:text-white">
+                    <i class="fas fa-arrow-left text-lg"></i>
+                </button>
+
+                <div class="flex items-center gap-3 flex-1 cursor-pointer"
+                    onclick="viewUserProfile(currentTargetUserId)">
+                    <div class="relative">
+                        <img id="chat-header-avatar" src=""
+                            class="w-10 h-10 rounded-full object-cover border-2 border-white/20">
+                        <div id="chat-status-dot"
+                            class="absolute bottom-0 right-0 w-3 h-3 bg-white rounded-full border-2 border-[#00a884]">
+                        </div>
+                    </div>
+                    <div class="flex flex-col justify-center">
+                        <h3 id="chat-header-name" class="text-sm font-semibold text-white leading-tight">...</h3>
+                        <p id="chat-header-status-text" class="text-[11px] text-emerald-100">En ligne</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 text-white/90">
+                    <i class="fas fa-video cursor-pointer hover:text-white"></i>
+                    <i class="fas fa-phone cursor-pointer hover:text-white"></i>
+                </div>
+            </div>
+
+            <!-- MESSAGES (Flex-1 pour prendre l'espace restant) -->
+            <div id="chat-messages-container" class="flex-1 overflow-y-auto p-4 scroll-smooth"
+                style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23000000\' fill-opacity=\'0.03\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');">
+                <!-- Messages injectés ici -->
+            </div>
+
+            <!-- Zone de Réponse (Cachée par défaut) -->
+            <div id="reply-container"
+                class="hidden bg-white dark:bg-slate-800 px-4 py-2 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                <div class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                    <i class="fas fa-reply text-indigo-500"></i>
+                    <span id="reply-preview-text" class="truncate max-w-[200px]"></span>
+                </div>
+                <button onclick="cancelReply()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- ZONE DE SAISIE -->
+            <div class="p-2 flex items-end gap-2 z-20">
+
+                <!-- Boutons Gauche (Smileys / Fichier) -->
+                <div class="flex gap-1 text-slate-500">
+                    <button type="button" class="p-2 hover:bg-slate-200 rounded-full transition">
+                        <i class="far fa-smile text-xl"></i>
+                    </button>
+                    <button type="button" class="p-2 rounded-full transition">
+                        <i class="fas fa-paperclip text-xl"></i>
+                    </button>
+                </div>
+
+                <!-- Formulaire de saisie -->
+                <form id="chat-form" onsubmit="sendChatMessage(event)" class="flex-1 relative">
+                    <input type="text" id="chat-input" placeholder="Écrivez un message..." autocomplete="off"
+                        oninput="toggleChatSendButton()"
+                        class="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                </form>
+
+                <!-- CONTENEUR DU BOUTON DYNAMIQUE -->
+                <div id="chat-action-btn-wrapper">
+                    <!-- BOUTON VOCAL (Par défaut) -->
+                    <button type="button" id="voice-btn"
+                        class="w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-all duration-300 btn-sky-yellow"
+                        style="color: white !important;">
+                        <i class="fas fa-microphone text-lg"></i>
+                    </button>
+
+                    <!-- BOUTON ENVOYER (Caché par défaut) -->
+                    <button type="submit" form="chat-form" id="send-btn"
+                        class="w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-all duration-300 btn-sky-yellow hidden"
+                        style="color: white !important;">
+                        <i class="fas fa-paper-plane text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
     </div>
-</div>
-    </section>
-</div>
     <!-- deuxième donné en haut -->
 
-   <!-- MODALE NOUVELLE DISCUSSION -->
-<div id="new-chat-modal" class="fixed inset-0 z-[10000] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-slate-900 w-full max-w-md h-[80vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
-        
-        <!-- Header -->
-        <div class="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
-            <h3 class="font-bold text-lg">Nouvelle discussion</h3>
-            <button onclick="closeNewChatModal()" class="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
-        </div>
+    <!-- MODALE NOUVELLE DISCUSSION -->
+    <div id="new-chat-modal"
+        class="fixed inset-0 z-[10000] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div
+            class="bg-white dark:bg-slate-900 w-full max-w-md h-[80vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
 
-        <!-- Liste des contacts -->
-        <div id="new-chat-list" class="flex-1 overflow-y-auto p-2">
-            <!-- Les contacts seront injectés ici -->
-        </div>
-    </div>
-</div> 
-
-        <!-- MODAL MODE ZEN -->
-<div id="zen-mode-modal">
-    <!-- Bouton Fermer -->
-    <button onclick="closeZenMode()" class="zen-close-btn">
-        <i class="fas fa-times text-xl"></i>
-    </button>
-
-    <!-- Conteneur Vidéo -->
-    <div class="zen-video-container">
-        <video id="zen-video-player" controls></video>
-    </div>
-
-    <!-- Contrôles superposés (Style TikTok) -->
-    <div class="zen-controls-overlay">
-        <div class="flex flex-col gap-4">
-            <button class="text-white text-2xl hover:text-indigo-400 transition"><i class="fas fa-heart"></i></button>
-            <button class="text-white text-2xl hover:text-indigo-400 transition"><i class="fas fa-comment-dots"></i></button>
-            <button class="text-white text-2xl hover:text-indigo-400 transition"><i class="fas fa-share"></i></button>
-        </div>
-        <div class="mt-4 bg-black/50 px-4 py-2 rounded-full text-white text-xs font-bold">
-            Mode Lecture Zen
-        </div>
-    </div>
-</div>
-        <!-- STRUCTURE HTML DE LA MODALE -->
-<div id="post-modal-overlay" class="fixed inset-0 z-[99999] bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-white dark:bg-slate-900 w-full max-w-5xl h-[90vh] rounded-2xl flex flex-col md:flex-row overflow-hidden shadow-2xl relative">
-        
-        <!-- Gauche : Média -->
-        <div id="modal-media-area" class="flex-1 bg-black flex items-center justify-center">
-             <!-- Injecté par JS -->
-        </div>
-
-        <!-- Droite : Infos -->
-        <div class="w-full md:w-[400px] flex flex-col border-l border-slate-100 dark:border-slate-700">
             <!-- Header -->
-            <div class="p-4 border-b dark:border-slate-700 flex justify-between items-center">
-                <div id="modal-user-info" class="flex items-center gap-3"></div>
-                <div class="flex items-center gap-2 relative">
-                    <button onclick="window.toggleModalMenu()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-500">
-                        <i class="fas fa-ellipsis-h"></i>
-                    </button>
-                    <div id="modal-dropdown-menu" class="post-dropdown-menu hidden absolute top-10 right-0 bg-white dark:bg-slate-800 shadow-xl rounded-lg w-48 py-1 border dark:border-slate-700 z-50"></div>
-                    <button onclick="window.closePostModal()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-500">
-                        <i class="fas fa-times"></i>
-                    </button>
+            <div class="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                <h3 class="font-bold text-lg">Nouvelle discussion</h3>
+                <button onclick="closeNewChatModal()"
+                    class="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+            </div>
+
+            <!-- Liste des contacts -->
+            <div id="new-chat-list" class="flex-1 overflow-y-auto p-2">
+                <!-- Les contacts seront injectés ici -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL MODE ZEN -->
+    <div id="zen-mode-modal">
+        <!-- Bouton Fermer -->
+        <button onclick="closeZenMode()" class="zen-close-btn">
+            <i class="fas fa-times text-xl"></i>
+        </button>
+
+        <!-- Conteneur Vidéo -->
+        <div class="zen-video-container">
+            <video id="zen-video-player" controls></video>
+        </div>
+
+        <!-- Contrôles superposés (Style TikTok) -->
+        <div class="zen-controls-overlay">
+            <div class="flex flex-col gap-4">
+                <button class="text-white text-2xl hover:text-indigo-400 transition"><i
+                        class="fas fa-heart"></i></button>
+                <button class="text-white text-2xl hover:text-indigo-400 transition"><i
+                        class="fas fa-comment-dots"></i></button>
+                <button class="text-white text-2xl hover:text-indigo-400 transition"><i
+                        class="fas fa-share"></i></button>
+            </div>
+            <div class="mt-4 bg-black/50 px-4 py-2 rounded-full text-white text-xs font-bold">
+                Mode Lecture Zen
+            </div>
+        </div>
+    </div>
+    <!-- STRUCTURE HTML DE LA MODALE -->
+    <div id="post-modal-overlay"
+        class="fixed inset-0 z-[99999] bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div
+            class="bg-white dark:bg-slate-900 w-full max-w-5xl h-[90vh] rounded-2xl flex flex-col md:flex-row overflow-hidden shadow-2xl relative">
+
+            <!-- Gauche : Média -->
+            <div id="modal-media-area" class="flex-1 bg-black flex items-center justify-center">
+                <!-- Injecté par JS -->
+            </div>
+
+            <!-- Droite : Infos -->
+            <div class="w-full md:w-[400px] flex flex-col border-l border-slate-100 dark:border-slate-700">
+                <!-- Header -->
+                <div class="p-4 border-b dark:border-slate-700 flex justify-between items-center">
+                    <div id="modal-user-info" class="flex items-center gap-3"></div>
+                    <div class="flex items-center gap-2 relative">
+                        <button onclick="window.toggleModalMenu()"
+                            class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-500">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                        <div id="modal-dropdown-menu"
+                            class="post-dropdown-menu hidden absolute top-10 right-0 bg-white dark:bg-slate-800 shadow-xl rounded-lg w-48 py-1 border dark:border-slate-700 z-50">
+                        </div>
+                        <button onclick="window.closePostModal()"
+                            class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-500">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- Corps -->
+                <div id="modal-comments-container" class="flex-1 overflow-y-auto p-4"></div>
+                <!-- Footer -->
+                <div class="p-4 border-t dark:border-slate-700">
+                    <form onsubmit="window.submitModalComment(event)" class="flex gap-2">
+                        <input type="text" id="modal-comment-input" placeholder="Commenter..."
+                            class="flex-1 text-sm outline-none bg-transparent">
+                        <button type="submit" class="text-indigo-600 font-bold text-xs">Envoyer</button>
+                    </form>
                 </div>
             </div>
-            <!-- Corps -->
-            <div id="modal-comments-container" class="flex-1 overflow-y-auto p-4"></div>
-            <!-- Footer -->
-            <div class="p-4 border-t dark:border-slate-700">
-                <form onsubmit="window.submitModalComment(event)" class="flex gap-2">
-                    <input type="text" id="modal-comment-input" placeholder="Commenter..." class="flex-1 text-sm outline-none bg-transparent">
-                    <button type="submit" class="text-indigo-600 font-bold text-xs">Envoyer</button>
+        </div>
+    </div>
+
+    <!-- MODALE MODIFICATION PROFIL (Style Page Complète) -->
+    <div id="edit-profile-modal"
+        class="fixed inset-0 z-[9999] hidden bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+        <div
+            class="bg-white dark:bg-slate-900 w-full max-w-lg h-full md:h-[90vh] md:rounded-2xl flex flex-col shadow-2xl overflow-hidden">
+
+            <!-- HEADER -->
+            <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+                <button onclick="closeEditProfileModal()"
+                    class="text-slate-600 dark:text-slate-300 hover:text-slate-900">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+                <h3 class="font-bold text-lg text-slate-900 dark:text-white">Modifier le profil</h3>
+                <button onclick="submitEditProfile()" class="text-indigo-600 font-bold text-sm hover:text-indigo-800">
+                    Enregistrer
+                </button>
+            </div>
+
+            <!-- CONTENU (Scrollable) -->
+            <div class="flex-1 overflow-y-auto p-6 space-y-8">
+
+                <!-- SECTION AVATAR -->
+                <div class="flex flex-col items-center gap-4">
+                    <div class="relative">
+                        <img id="edit-avatar-preview" src="https://ui-avatars.com/api/?name=John+Doe&background=random"
+                            class="w-24 h-24 rounded-full object-cover border-4 border-slate-100 shadow-sm">
+                        <!-- Bouton Changement Photo -->
+                        <label
+                            class="absolute bottom-0 right-0 w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-indigo-700 transition shadow-lg border-2 border-white">
+                            <i class="fas fa-camera text-white text-xs"></i>
+                            <input type="file" id="edit-avatar-input" accept="image/*" class="hidden"
+                                onchange="previewEditAvatar(this)">
+                        </label>
+                    </div>
+                    <button onclick="document.getElementById('edit-avatar-input').click()"
+                        class="text-indigo-600 font-semibold text-sm hover:underline">
+                        Changer la photo de profil
+                    </button>
+                </div>
+
+                <!-- FORMULAIRE -->
+                <form id="edit-profile-form" class="space-y-5">
+
+                    <!-- Nom Complet -->
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Nom complet</label>
+                        <input type="text" id="edit-name" placeholder="Votre nom"
+                            class="mt-1 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white">
+                    </div>
+
+                    <!-- Username -->
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Nom
+                            d'utilisateur</label>
+                        <div
+                            class="mt-1 flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500">
+                            <span class="pl-4 text-slate-400">@</span>
+                            <input type="text" id="edit-username" placeholder="username"
+                                class="flex-1 bg-transparent px-2 py-3 focus:outline-none text-slate-900 dark:text-white">
+                        </div>
+                    </div>
+
+                    <!-- Bio -->
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Bio</label>
+                        <textarea id="edit-bio" rows="3" placeholder="Parlez-nous de vous..."
+                            class="mt-1 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none text-slate-900 dark:text-white"></textarea>
+                    </div>
+
+                    <!-- Téléphone -->
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Téléphone</label>
+                        <input type="tel" id="edit-phone" placeholder="+243 ..."
+                            class="mt-1 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white">
+                    </div>
+                    <!-- Date de naissance -->
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Date de
+                            naissance</label>
+                        <input type="date" id="edit-dob"
+                            class="mt-1 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white">
+                    </div>
                 </form>
             </div>
         </div>
     </div>
-</div>
-
-    <!-- MODALE MODIFICATION PROFIL (Style Page Complète) -->
-<div id="edit-profile-modal" class="fixed inset-0 z-[9999] hidden bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-slate-900 w-full max-w-lg h-full md:h-[90vh] md:rounded-2xl flex flex-col shadow-2xl overflow-hidden">
-        
-        <!-- HEADER -->
-        <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
-            <button onclick="closeEditProfileModal()" class="text-slate-600 dark:text-slate-300 hover:text-slate-900">
-                <i class="fas fa-times text-xl"></i>
-            </button>
-            <h3 class="font-bold text-lg text-slate-900 dark:text-white">Modifier le profil</h3>
-            <button onclick="submitEditProfile()" class="text-indigo-600 font-bold text-sm hover:text-indigo-800">
-                Enregistrer
-            </button>
-        </div>
-
-        <!-- CONTENU (Scrollable) -->
-        <div class="flex-1 overflow-y-auto p-6 space-y-8">
-            
-            <!-- SECTION AVATAR -->
-            <div class="flex flex-col items-center gap-4">
-                <div class="relative">
-                    <img id="edit-avatar-preview" src="https://ui-avatars.com/api/?name=John+Doe&background=random" class="w-24 h-24 rounded-full object-cover border-4 border-slate-100 shadow-sm">
-                    <!-- Bouton Changement Photo -->
-                    <label class="absolute bottom-0 right-0 w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-indigo-700 transition shadow-lg border-2 border-white">
-                        <i class="fas fa-camera text-white text-xs"></i>
-                        <input type="file" id="edit-avatar-input" accept="image/*" class="hidden" onchange="previewEditAvatar(this)">
-                    </label>
-                </div>
-                <button onclick="document.getElementById('edit-avatar-input').click()" class="text-indigo-600 font-semibold text-sm hover:underline">
-                    Changer la photo de profil
-                </button>
-            </div>
-
-            <!-- FORMULAIRE -->
-            <form id="edit-profile-form" class="space-y-5">
-                
-                <!-- Nom Complet -->
-                <div>
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Nom complet</label>
-                    <input type="text" id="edit-name" placeholder="Votre nom" 
-                           class="mt-1 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white">
-                </div>
-
-                <!-- Username -->
-                <div>
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Nom d'utilisateur</label>
-                    <div class="mt-1 flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500">
-                        <span class="pl-4 text-slate-400">@</span>
-                        <input type="text" id="edit-username" placeholder="username" 
-                               class="flex-1 bg-transparent px-2 py-3 focus:outline-none text-slate-900 dark:text-white">
-                    </div>
-                </div>
-
-                <!-- Bio -->
-                <div>
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Bio</label>
-                    <textarea id="edit-bio" rows="3" placeholder="Parlez-nous de vous..." 
-                              class="mt-1 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none text-slate-900 dark:text-white"></textarea>
-                </div>
-
-                <!-- Téléphone -->
-                <div>
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Téléphone</label>
-                    <input type="tel" id="edit-phone" placeholder="+243 ..." 
-                           class="mt-1 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white">
-                </div>
-                <!-- Date de naissance -->
-<div>
-    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Date de naissance</label>
-    <input type="date" id="edit-dob" 
-           class="mt-1 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white">
-</div>
-            </form>
-        </div>
-    </div>
-</div>
 </body>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./js/app.js" defer></script>
+
 </html>
