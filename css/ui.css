@@ -1577,7 +1577,7 @@ body.dark-mode #chat-input {
     top: 40px; /* Juste sous le header mobile (qui fait 47px de haut) */
     left: 0;
     right: 0;
-    z-index: 100;
+    z-index: 100 !important ;
     margin-top: 0px !important; /* Pas de marge au-dessus, c'est géré par le margin-bottom des stories */
     padding-top: 12px !important; /* Espace interne confortable */
 }/* Au-dessus du fond header (z-5), mais sous le header principal si nécessaire */
@@ -1697,3 +1697,14 @@ body.dark-mode .fixed-explorer-header {
 #profile-social-view {
     padding-bottom: 80px !important; /* Espace pour la barre du bas */
 }
+
+/* --- CORRECTION CHEVAUCHEMENT RECHERCHE --- */
+
+/* 2. L'overlay de recherche doit être EN DESSOUS du header */
+#search-overlay {
+    z-index: 40 !important; /* Inférieur au header (50), supérieur au reste */
+    /* On agrandit le padding-top pour descendre les boutons sous la barre */
+    padding-top: 8rem !important; /* Environ 130px pour être sous la barre de recherche */
+    padding-bottom: 100px; /* Espace pour le dock */
+}
+
