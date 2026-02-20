@@ -6229,10 +6229,11 @@ let currentShortIndex = 0;
 window.loadShortsView = async function() {
     const container = document.getElementById('shorts-container');
     if (!container) return;
+    
     // --- NOUVEAU : Cacher la barre du bas ---
     const dock = document.querySelector('.mobile-dock');
     if (dock) dock.classList.add('dock-hidden');
-    
+
     container.innerHTML = `<div class="flex items-center justify-center h-full text-white"><i class="fas fa-spinner fa-spin text-3xl"></i></div>`;
 
     try {
@@ -6253,7 +6254,7 @@ window.loadShortsView = async function() {
             return;
         }
 
-        container.innerHTML = shortsDataCache.map((post, index) => {
+                container.innerHTML = shortsDataCache.map((post, index) => {
             const user = post.profiles || {};
             const likes = post.post_likes?.[0]?.count || 0;
             const comments = post.post_comments?.[0]?.count || 0;
@@ -6272,7 +6273,7 @@ window.loadShortsView = async function() {
                         <source src="${post.video_url}" type="video/mp4">
                     </video>
                     
-                    <!-- Icône Play/Pause (Cachée par défaut, apparaît au clic) -->
+                    <!-- Icône Play/Pause (Cachée par défaut) -->
                     <div class="short-pause-icon hidden">
                         <i class="fas fa-play"></i>
                     </div>
@@ -6281,41 +6282,61 @@ window.loadShortsView = async function() {
                 <!-- Barre de progression -->
                 <div class="short-progress-bar"><div class="short-progress-fill" id="progress-${post.id}"></div></div>
 
-                <!-- ACTIONS À DROITE -->
+                                <!-- ACTIONS À DROITE -->
                 <div class="short-actions-left">
-                    <!-- Like -->
-                    <div class="short-action-btn" onclick="toggleShortLike('${post.id}', this)">
+                    <!-- LIKE (Correction: stopPropagation + maj compteur) -->
+                    <div class="short-action-btn" onclick="event.stopPropagation(); toggleShortLike('${post.id}', this)">
                         <i class="fas fa-heart"></i>
                         <span class="like-count">${formatNumber(likes)}</span>
                     </div>
                     
-                    <!-- Commentaires (OUVERTURE SUR PLACE) -->
-                    <div class="short-action-btn" onclick="openShortComments('${post.id}')">
+                    <!-- COMMENTAIRES -->
+                    <div class="short-action-btn" onclick="event.stopPropagation(); openShortComments('${post.id}')">
                         <i class="fas fa-comment-dots"></i>
                         <span>${formatNumber(comments)}</span>
                     </div>
 
-                    <!-- Favori -->
-                    <div class="short-action-btn" onclick="toggleShortFavorite('${post.id}', this)">
+                    <!-- FAVORI -->
+                    <div class="short-action-btn" onclick="event.stopPropagation(); toggleShortFavorite('${post.id}', this)">
                         <i class="fas fa-bookmark"></i>
                         <span>Sauver</span>
                     </div>
                     
-                    <!-- Partager -->
-                    <div class="short-action-btn" onclick="sharePost('${post.id}')">
+                    <!-- PARTAGER -->
+                    <div class="short-action-btn" onclick="event.stopPropagation(); sharePost('${post.id}')">
                         <i class="fas fa-share"></i>
                         <span>Partager</span>
                     </div>
+
+                    <!-- 3 POINTS -->
+                    <div class="short-action-btn relative" onclick="event.stopPropagation(); toggleShortMenu('${post.id}')">
+                        <i class="fas fa-ellipsis-h"></i>
+                        <span>Plus</span>
+                    </div>
                 </div>
 
-                <!-- INFOS EN BAS -->
+                <!-- MENU DÉROULANT (Caché par défaut) -->
+                <div id="short-menu-${post.id}" class="short-dropdown-menu hidden">
+                    <div class="short-menu-item" onclick="reportPost('${post.id}')">
+                        <i class="fas fa-flag text-red-500"></i> Signaler
+                    </div>
+                    <div class="short-menu-item" onclick="copyLink('${post.id}')">
+                        <i class="fas fa-link"></i> Copier le lien
+                    </div>
+                    <div class="short-menu-item" onclick="notInterested('${post.id}')">
+                        <i class="fas fa-eye-slash"></i> Pas intéressé
+                    </div>
+                </div>
+
+                 <!-- INFOS EN BAS -->
                 <div class="short-info-bottom">
                     <div class="short-author-row">
-                        <img src="${user.avatar_url || 'https://via.placeholder.com/40'}" class="short-author-avatar">
+                        <img src="${user.avatar_url || 'https://api.dicebear.com/7.x/initials/svg?seed=MonUtilisateur'}" class="short-author-avatar">
                         <span class="short-author-name">${user.full_name}</span>
                          ${user.is_certified ? '<i class="fas fa-check-circle text-blue-400 text-sm"></i>' : ''}
                         <button class="short-follow-btn" onclick="event.stopPropagation(); toggleFollow('${user.id}', this)">Suivre</button>
                     </div>
+                    <!-- La classe short-caption gère le bloquage à 2 lignes via CSS -->
                     <p class="short-caption">${post.caption || ''}</p>
                 </div>
             </div>
@@ -6366,30 +6387,67 @@ function initShortsObserver() {
     });
 }
 
-// 3. Action Like
+// --- FONCTION LIKE AMÉLIORÉE ---
 window.toggleShortLike = async function(postId, element) {
+    // 1. Récupérer l'utilisateur
     const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return showToast("Connectez-vous", "error");
+    if (!user) return showToast("Connectez-vous pour aimer", "error");
 
-    // Requête BDD
-    const { data: existing } = await supabaseClient.from('post_likes').select('*').eq('post_id', postId).eq('user_id', user.id).maybeSingle();
+    // 2. Préparer l'interface (Optimiste)
+    const countSpan = element.querySelector('.like-count');
+    const icon = element.querySelector('i');
     
-    if (existing) {
-        await supabaseClient.from('post_likes').delete().eq('id', existing.id);
+    // On lit le chiffre actuel (on enlève le "K" ou "M" pour le calcul si besoin, ici on fait simple)
+    let currentCount = parseInt(countSpan.innerText) || 0;
+    const isCurrentlyLiked = element.classList.contains('liked');
+
+    // Mise à jour immédiate visuelle (avant la BDD pour que ça paraisse instantané)
+    if (isCurrentlyLiked) {
         element.classList.remove('liked');
+        icon.style.color = ''; // Retour à la couleur par défaut (blanc)
+        countSpan.innerText = Math.max(0, currentCount - 1);
     } else {
-        await supabaseClient.from('post_likes').insert([{ post_id: postId, user_id: user.id }]);
         element.classList.add('liked');
+        icon.style.color = '#fe2c55'; // Rouge TikTok
+        countSpan.innerText = currentCount + 1;
+        // Petite animation
+        icon.classList.add('animate-heart-pop');
+        setTimeout(() => icon.classList.remove('animate-heart-pop'), 300);
+    }
+
+    // 3. Interagir avec la Base de Données
+    try {
+        if (isCurrentlyLiked) {
+            // Supprimer le like
+            await supabaseClient
+                .from('post_likes')
+                .delete()
+                .match({ post_id: postId, user_id: user.id });
+        } else {
+            // Ajouter le like
+            await supabaseClient
+                .from('post_likes')
+                .insert([{ 
+                    post_id: postId, 
+                    user_id: user.id,
+                    reaction_type: 'like' // Important pour les stats
+                }]);
+        }
+    } catch (err) {
+        console.error("Erreur like:", err);
+        // En cas d'erreur, on annule le changement visuel
+        if (isCurrentlyLiked) {
+            element.classList.add('liked');
+            icon.style.color = '#fe2c55';
+            countSpan.innerText = currentCount;
+        } else {
+            element.classList.remove('liked');
+            icon.style.color = '';
+            countSpan.innerText = currentCount;
+        }
+        showToast("Erreur lors du like", "error");
     }
 }
-
-// 4. Intégration dans la navigation
-// Ajoutez ce cas dans votre fonction switchPage(pageId) existante :
-/*
-if (pageId === 'shorts') {
-    loadShortsView();
-}
-*/
 
 function handleSortClick(element, filterType) {
     // 1. Gestion du style visuel des boutons
@@ -6599,36 +6657,89 @@ window.closeShortComments = function() {
     if(sheet) sheet.classList.remove('active');
 }
 
-// Charger les commentaires dans le panneau
+// Charger les commentaires avec réactions et réponses
 async function loadShortComments(postId) {
     const container = document.getElementById('short-comments-list');
     container.innerHTML = '<div class="text-center p-4"><i class="fas fa-spinner fa-spin"></i></div>';
 
+    const { data: { user } } = await supabaseClient.auth.getUser();
+
+    // 1. Récupérer les commentaires avec le compte des likes
     const { data: comments, error } = await supabaseClient
         .from('post_comments')
-        .select('*, profiles(id, full_name, avatar_url)')
+        .select('*, profiles(id, full_name, avatar_url), comment_likes(count)') // On compte les likes
         .eq('post_id', postId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: true }); // Chronologique pour les fils
 
     if (error) {
-        container.innerHTML = '<p class="text-red-400 text-center">Erreur</p>';
+        container.innerHTML = '<p class="text-red-400 text-center p-4">Erreur de chargement</p>';
         return;
     }
 
-    if(comments.length === 0) {
-        container.innerHTML = '<p class="text-center text-slate-400">Soyez le premier à commenter !</p>';
+    if (!comments || comments.length === 0) {
+        container.innerHTML = '<p class="text-center text-slate-400 py-10">Soyez le premier à commenter !</p>';
         return;
     }
 
-    container.innerHTML = comments.map(c => `
-        <div class="flex gap-3 mb-4">
-            <img src="${c.profiles?.avatar_url}" class="w-9 h-9 rounded-full">
-            <div>
-                <span class="font-bold text-sm">${c.profiles?.full_name}</span>
-                <p class="text-sm text-slate-300">${c.content}</p>
+    // 2. Séparer les commentaires parents des réponses
+    const parents = comments.filter(c => !c.parent_comment_id);
+    const children = comments.filter(c => c.parent_comment_id);
+
+    // 3. Fonction de rendu HTML
+    const renderComment = (c, isReply = false) => {
+        const likes = c.comment_likes?.[0]?.count || 0;
+        const isMyComment = user && user.id === c.user_id;
+        const time = getTimeAgo(new Date(c.created_at));
+        const avatar = c.profiles?.avatar_url || 'https://via.placeholder.com/40';
+        const userName = c.profiles?.full_name || 'User';
+
+        return `
+        <div class="flex gap-3 mb-4 ${isReply ? 'ml-10 mt-2' : ''}" data-comment-id="${c.id}">
+            <img src="${avatar}" class="w-8 h-8 rounded-full flex-shrink-0">
+            <div class="flex-1">
+                <div class="bg-slate-700/50 rounded-xl px-3 py-2 inline-block">
+                    <span class="font-bold text-sm text-white">${userName}</span>
+                    <p class="text-sm text-slate-300">${c.content}</p>
+                </div>
+                
+                <!-- Actions -->
+                <div class="flex items-center gap-4 mt-1 text-[10px] text-slate-400 ml-2">
+                    <span>${time}</span>
+                    
+                    <!-- BOUTON J'AIME (LIKE) -->
+                    <button onclick="likeShortComment('${c.id}', '${postId}')" class="font-bold hover:text-white flex items-center gap-1">
+                        <i class="far fa-heart text-xs"></i> ${likes > 0 ? likes : ''}
+                    </button>
+                    
+                    <!-- BOUTON RÉPONDRE -->
+                    <button onclick="replyToShortComment('${c.id}', '${userName}')" class="font-bold hover:text-white">
+                        Répondre
+                    </button>
+                    
+                    <!-- SUPPRIMER (Si c'est mon commentaire) -->
+                    ${isMyComment ? `
+                        <button onclick="deleteShortComment('${c.id}', '${postId}')" class="text-red-400 hover:text-red-300 font-bold">
+                            Supprimer
+                        </button>
+                    ` : ''}
+                </div>
             </div>
-        </div>
-    `).join('');
+        </div>`;
+    };
+
+    // 4. Construction du HTML final (Parents + Enfants)
+    let html = '';
+    parents.forEach(p => {
+        html += renderComment(p);
+        
+        // Trouver les réponses à ce commentaire
+        const replies = children.filter(ch => ch.parent_comment_id === p.id);
+        replies.forEach(r => {
+            html += renderComment(r, true); // true = isReply (donc décalé à droite)
+        });
+    });
+
+    container.innerHTML = html;
 }
 
 // Envoyer un commentaire depuis le panneau
@@ -6648,4 +6759,84 @@ window.submitShortComment = async function(postId) {
     input.value = '';
     loadShortComments(postId); // Recharge la liste
     showToast("Commentaire publié !", "success");
+}
+
+// --- A. LIKER UN COMMENTAIRE ---
+window.likeShortComment = async function(commentId, postId) {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return showToast("Connectez-vous", "error");
+
+    // Vérifier si on a déjà liké
+    const { data: existing } = await supabaseClient
+        .from('comment_likes')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('comment_id', commentId)
+        .maybeSingle();
+
+    if (existing) {
+        // Dislike
+        await supabaseClient.from('comment_likes').delete().eq('id', existing.id);
+    } else {
+        // Like
+        await supabaseClient.from('comment_likes').insert([{ user_id: user.id, comment_id: commentId }]);
+    }
+
+    // Recharger pour mettre à jour le compteur
+    loadShortComments(postId);
+}
+
+// --- B. PRÉPARER UNE RÉPONSE ---
+window.replyToShortComment = function(commentId, userName) {
+    const input = document.getElementById('short-comment-input');
+    const sheet = document.getElementById('short-comments-sheet');
+    
+    // Stocker l'ID du parent pour l'envoi
+    sheet.dataset.replyTo = commentId;
+    
+    // Changer le placeholder
+    input.placeholder = `Réponse à ${userName}...`;
+    input.focus();
+    
+    // Ajouter un bouton d'annulation visuel si besoin (optionnel)
+    // Ici, on efface simplement le champ pour annuler
+}
+
+// --- C. ENVOYER COMMENTAIRE OU RÉPONSE (MODIFIÉ) ---
+window.submitShortComment = async function(postId) {
+    const input = document.getElementById('short-comment-input');
+    const content = input.value.trim();
+    if(!content) return;
+
+    const sheet = document.getElementById('short-comments-sheet');
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    
+    // Récupérer l'ID de réponse s'il existe
+    const parentId = sheet.dataset.replyTo || null;
+
+    const { error } = await supabaseClient.from('post_comments').insert([{
+        post_id: postId,
+        user_id: user.id,
+        content: content,
+        parent_comment_id: parentId // Null si c'est un commentaire normal
+    }]);
+
+    if (!error) {
+        input.value = '';
+        input.placeholder = "Ajouter un commentaire...";
+        delete sheet.dataset.replyTo; // Reset le mode réponse
+        loadShortComments(postId); // Recharge la liste
+        showToast("Publié !", "success");
+    } else {
+        showToast("Erreur d'envoi", "error");
+    }
+}
+
+// --- D. SUPPRIMER MON COMMENTAIRE ---
+window.deleteShortComment = async function(commentId, postId) {
+    if(!confirm("Supprimer ce commentaire ?")) return;
+    
+    await supabaseClient.from('post_comments').delete().eq('id', commentId);
+    loadShortComments(postId);
+    showToast("Supprimé", "success");
 }
