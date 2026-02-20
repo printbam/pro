@@ -3833,188 +3833,141 @@ function closeZenMode() {
 // --- VARIABLES GLOBALES MODALE ---
 let currentModalPostId = null;
 
-// --- NOUVELLE VERSION ROBUSTE OPEN POST MODAL ---
-async function openPostModal(postId) {
-    console.log("Ouverture modale pour:", postId);
+// --- SYSTÈME MODAL PRO (INSTAGRAM STYLE) ---
+
+// 1. Fonction Ouvrir
+window.openPostModal = async function(postId) {
     const overlay = document.getElementById('post-modal-overlay');
     if (!overlay) return;
 
-    // 1. On affiche le conteneur immédiatement avec un style inline fort
-    overlay.classList.remove('hidden');
+    // Loader
+    overlay.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-black/90"><i class="fas fa-spinner fa-spin text-4xl text-white"></i></div>`;
+    
+    // IMPORTANT : On ajoute la classe 'active' pour forcer le CSS
     overlay.classList.add('active');
-    overlay.style.cssText = "display: flex !important; opacity: 1 !important; z-index: 99999 !important; pointer-events: auto !important;";
-
-    // 2. On bloque le scroll du body
     document.body.style.overflow = 'hidden';
 
-    // 3. On injecte un loader le temps du chargement
-    overlay.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-black/90"><i class="fas fa-spinner fa-spin text-4xl text-white"></i></div>`;
-
     try {
-        // Récupération des données
         const { data: { user } } = await supabaseClient.auth.getUser();
-        const { data: post, error } = await supabaseClient.from('posts').select('*').eq('id', postId).single();
+        const { data: post, error } = await supabaseClient.from('posts').select('*, profiles(id, full_name, avatar_url)').eq('id', postId).single();
         if (error) throw error;
 
-        const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', post.user_id).single();
-        currentModalPostId = postId;
-        const isMyPost = (user && user.id === post.user_id);
+        const { data: reactions } = await supabaseClient.from('post_likes').select('reaction_type, profiles!user_id(id, full_name, avatar_url)').eq('post_id', postId);
+        const { data: comments } = await supabaseClient.from('post_comments').select('*, profiles(id, full_name, avatar_url)').eq('post_id', postId).order('created_at', { ascending: false });
+        
+        const author = post.profiles || {};
+        const isMyPost = (user && post.user_id === user.id);
 
-        // 4. Injection du HTML final
-        // Note: J'ai réduit les arrondis ici aussi pour la modale (rounded-2xl au lieu de 3xl)
+        // HTML Média
+        const mediaHtml = post.is_short 
+            ? `<video src="${post.video_url}" controls autoplay class="max-h-full max-w-full"></video>`
+            : `<img src="${post.image_url}" class="max-h-full max-w-full object-contain">`;
+
+        // HTML Réactions
+        let reactionsHtml = '';
+        if (reactions && reactions.length > 0) {
+            reactionsHtml = `<div class="p-3 border-b dark:border-slate-700 flex flex-wrap gap-2">
+                ${reactions.slice(0, 10).map(r => `
+                    <img src="${r.profiles?.avatar_url}" title="${r.profiles?.full_name}" class="w-7 h-7 rounded-full border-2 border-white shadow-sm">
+                `).join('')}
+                ${reactions.length > 10 ? `<span class="text-xs font-bold text-slate-400 self-center ml-2">+${reactions.length - 10}</span>` : ''}
+            </div>`;
+        }
+
+        // HTML Commentaires
+        let commentsHtml = (comments && comments.length > 0) 
+            ? comments.map(c => `
+                <div class="flex gap-2 mb-3">
+                    <img src="${c.profiles?.avatar_url}" class="w-8 h-8 rounded-full">
+                    <div class="bg-slate-100 dark:bg-slate-800 rounded-xl px-3 py-2">
+                        <span class="font-bold text-sm">${c.profiles?.full_name}</span>
+                        <p class="text-sm text-slate-600 dark:text-slate-300">${c.content}</p>
+                    </div>
+                </div>`).join('')
+            : '<p class="text-center text-slate-400 text-xs py-10">Aucun commentaire.</p>';
+
+        // Menu Dropdown (si c'est mon post)
+        let menuHtml = '';
+        if (isMyPost) {
+            menuHtml = `
+            <div id="modal-menu-dropdown" class="absolute top-12 right-4 bg-white dark:bg-slate-800 rounded-lg shadow-xl w-48 py-2 hidden z-50 border dark:border-slate-600">
+                <div onclick="alert('Suppression!'); closeModalPro();" class="px-4 py-2 text-sm text-red-500 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer">Supprimer</div>
+            </div>`;
+        }
+
+        // Injection Finale
         overlay.innerHTML = `
-            <div class="bg-white dark:bg-slate-900 w-full max-w-5xl h-[90vh] rounded-2xl flex flex-col md:flex-row overflow-hidden shadow-2xl relative" onclick="event.stopPropagation()">
+            <div class="modal-instagrant" onclick="event.stopPropagation()">
                 
-                <!-- PARTIE GAUCHE : MEDIA -->
-                <div class="flex-1 bg-black flex items-center justify-center relative">
-                    ${post.is_short && post.video_url
-                ? `<video src="${post.video_url}" controls autoplay class="max-h-full max-w-full"></video>`
-                : `<img src="${post.image_url}" class="max-h-full max-w-full object-contain">`
-            }
+                <!-- BOUTONS DU HAUT -->
+                <div class="modal-top-controls">
+                    <button onclick="closeModalPro()" class="modal-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    ${isMyPost ? `
+                    <div class="relative">
+                        <button onclick="toggleModalMenu()" class="modal-btn">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                        ${menuHtml}
+                    </div>` : ''}
                 </div>
 
-                <!-- PARTIE DROITE : INFOS -->
-                <div class="w-full md:w-[400px] flex flex-col border-l border-slate-100 dark:border-slate-700">
-                    <!-- Header -->
-                    <div class="p-4 border-b dark:border-slate-700 flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <img src="${profile?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg'}" class="w-10 h-10 rounded-full">
-                            <div>
-                                <div class="font-bold text-sm text-slate-900 dark:text-white">${profile?.full_name || 'Utilisateur'}</div>
-                                <div class="text-xs text-slate-400">${typeof getTimeAgo === 'function' ? getTimeAgo(new Date(post.created_at)) : ''}</div>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2 relative">
-                            <button onclick="toggleModalMenu()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500">
-                                <i class="fas fa-ellipsis-h"></i>
-                            </button>
-                            <div id="modal-dropdown-menu" class="post-dropdown-menu hidden absolute top-10 right-0 bg-white dark:bg-slate-800 shadow-xl rounded-lg w-48 py-1 border dark:border-slate-700 z-50"></div>
-                            <button onclick="closePostModal()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500">
-                                <i class="fas fa-times"></i>
-                            </button>
+                <!-- MEDIA -->
+                <div class="modal-media-area">${mediaHtml}</div>
+
+                <!-- INFOS -->
+                <div class="modal-details-area">
+                    <div class="p-4 border-b dark:border-slate-700 flex items-center gap-3">
+                        <img src="${author.avatar_url}" class="w-10 h-10 rounded-full">
+                        <div class="flex-1">
+                            <h4 class="font-bold text-sm text-slate-900 dark:text-white">${author.full_name}</h4>
+                            <span class="text-xs text-slate-400">${getTimeAgo(new Date(post.created_at))}</span>
                         </div>
                     </div>
-                    <!-- Corps -->
-                    <div id="modal-comments-container" class="flex-1 overflow-y-auto p-4">
-                        <p class="text-sm mb-4 text-slate-700 dark:text-slate-300">
-                            <span class="font-bold text-slate-900 dark:text-white mr-2">${profile?.full_name || 'User'}</span> 
-                            ${post.caption || ''}
-                        </p>
-                        <div id="modal-comments-list" class="space-y-3 text-sm"></div>
-                    </div>
-                    <!-- Footer -->
-                    <div class="p-4 border-t dark:border-slate-700">
-                        <form onsubmit="submitModalComment(event)" class="flex items-center gap-2">
-                            <input type="text" id="modal-comment-input" placeholder="Commenter..." class="flex-1 text-sm outline-none bg-transparent">
-                            <button type="submit" class="text-indigo-600 font-bold text-xs">Envoyer</button>
+                    ${post.caption ? `<div class="p-4 text-sm border-b dark:border-slate-700">${post.caption}</div>` : ''}
+                    ${reactionsHtml}
+                    <div class="flex-1 overflow-y-auto p-4">${commentsHtml}</div>
+                    <div class="p-3 border-t dark:border-slate-700">
+                        <form onsubmit="submitModalComment(event, '${postId}')" class="flex gap-2">
+                            <input type="text" placeholder="Ajouter un commentaire..." class="flex-1 bg-slate-50 dark:bg-slate-700 rounded-full px-4 py-2 text-sm outline-none">
+                            <button type="submit" class="text-indigo-600 font-bold text-sm">Envoyer</button>
                         </form>
                     </div>
                 </div>
             </div>
         `;
-
-        renderModalMenu(isMyPost, post.user_id);
-
     } catch (err) {
-        console.error("Erreur modale:", err);
-        closePostModal();
-        showToast("Impossible de charger cette publication", "error");
+        console.error(err);
+        overlay.innerHTML = `<div class="text-white text-center p-10">Erreur de chargement.<br><button onclick="closeModalPro()" class="mt-4 bg-white text-black px-4 py-2 rounded">Fermer</button></div>`;
     }
 }
 
-// 2. Fermer la modale
-function closePostModal() {
+// 2. Fonction Fermer (Globale)
+window.closeModalPro = function() {
     const overlay = document.getElementById('post-modal-overlay');
     if (overlay) {
+        // IMPORTANT : On retire la classe 'active'
         overlay.classList.remove('active');
-        overlay.classList.add('hidden');
         overlay.innerHTML = '';
-    }
-    document.body.style.overflow = 'auto';
-}
-
-// 3. Générer le menu (FONCTION MANQUANTE CORRIGÉE)
-function renderModalMenu(isOwner, targetUserId) {
-    const menu = document.getElementById('modal-dropdown-menu');
-    if (!menu) return;
-
-    if (isOwner) {
-        menu.innerHTML = `
-            <div onclick="deletePostAction()" class="post-dropdown-item danger">
-                <i class="fas fa-trash-alt"></i> Supprimer
-            </div>`;
-    } else {
-        menu.innerHTML = `
-            <div onclick="reportPostAction()" class="post-dropdown-item danger">
-                <i class="fas fa-flag"></i> Signaler
-            </div>`;
+        document.body.style.overflow = 'auto';
     }
 }
 
-// 4. Actions simples
-function toggleModalMenu() {
-    const menu = document.getElementById('modal-dropdown-menu');
+// 3. Fonction Menu
+window.toggleModalMenu = function() {
+    const menu = document.getElementById('modal-menu-dropdown');
     if (menu) menu.classList.toggle('hidden');
 }
 
-async function deletePostAction() {
-    if (!confirm("Supprimer ?")) return;
-    await supabaseClient.from('posts').delete().eq('id', currentModalPostId);
-    showToast("Supprimé", "success");
-    closePostModal();
-    if (typeof loadGlobalFeed === 'function') loadGlobalFeed();
-}
+// 4. Fermeture en cliquant dehors
+document.getElementById('post-modal-overlay')?.addEventListener('click', function(e) {
+    // Si on clique sur le fond noir (l'overlay lui-même) et pas sur la carte blanche
+    if (e.target.id === 'post-modal-overlay') {
+        closeModalPro();
+    }
+});
 
-function reportPostAction() {
-    showToast("Signalé", "success");
-    closePostModal();
-}
-
-async function submitModalComment(e) {
-    e.preventDefault();
-    const input = document.getElementById('modal-comment-input');
-    const content = input.value.trim();
-    if (!content) return;
-
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    await supabaseClient.from('post_comments').insert([{ user_id: user.id, post_id: currentModalPostId, content: content }]);
-    input.value = '';
-    showToast("Commenté", "success");
-    openPostModal(currentModalPostId); // Recharge
-}
-
-// 5. Attacher les fonctions au window pour être sûr qu'elles sont accessibles globalement
-window.openPostModal = openPostModal;
-window.closePostModal = closePostModal;
-window.toggleModalMenu = toggleModalMenu;
-window.deletePostAction = deletePostAction;
-window.reportPostAction = reportPostAction;
-window.submitModalComment = submitModalComment;
-
-function handleSortClick(element, filterType) {
-    const allButtons = document.querySelectorAll('.sort-btn');
-
-    allButtons.forEach(btn => {
-        // Reset Styles : Gris + Carré/Cercle (px-3 pour icône seule)
-        btn.classList.remove('bg-blue-50', 'text-blue-600', 'dark:bg-blue-900/30', 'dark:text-blue-400');
-        btn.classList.add('bg-slate-100', 'text-slate-600', 'dark:bg-slate-800', 'dark:text-slate-300');
-        btn.classList.replace('px-4', 'px-3');
-
-        const textSpan = btn.querySelector('.btn-text');
-        if (textSpan) textSpan.classList.add('hidden');
-    });
-
-    // Active Style : Bleu + Largeur auto (px-4 pour texte + icône)
-    element.classList.remove('bg-slate-100', 'text-slate-600', 'dark:bg-slate-800', 'dark:text-slate-300');
-    element.classList.add('bg-blue-50', 'text-blue-600', 'dark:bg-blue-900/30', 'dark:text-blue-400');
-    element.classList.replace('px-3', 'px-4');
-
-    const activeText = element.querySelector('.btn-text');
-    if (activeText) activeText.classList.remove('hidden');
-
-    // Appel des fonctions de tri
-    filterType === 'shorts' ? filterFeed('shorts') : sortFeed(filterType);
-}
 // --- CHARGER LES INFOS DANS LE MENU SIDEBAR ---
 async function loadSidebarUser() {
     try {
