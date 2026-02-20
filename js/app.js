@@ -1852,31 +1852,34 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
                     <div onclick="reportPost('${post.id}')" class="post-dropdown-item danger"><i class="fas fa-flag"></i> Signaler</div>`;
             }
 
-            // Média HTML
+            // Dans loadGlobalFeed, remplacez le bloc 'if (post.is_short && post.video_url)' par ceci :
+
             if (post.is_short && post.video_url) {
-    mediaHtml = `
-    <div onclick="openVideoPlayer('${post.video_url}', '${post.id}')" 
-         class="relative bg-slate-900 flex justify-center overflow-hidden group rounded-2xl mb-4 shadow-lg border border-slate-200/10 cursor-pointer" 
-         onmouseenter="if(this.querySelector('video')) this.querySelector('video').play()"
-         onmouseleave="if(this.querySelector('video')) { this.querySelector('video').pause(); this.querySelector('video').currentTime = 0; }">
+                mediaHtml = `
+    <div onclick="event.stopPropagation(); switchPage('shorts')" 
+         class="relative bg-slate-900 flex justify-center overflow-hidden group rounded-2xl mb-4 shadow-lg border border-slate-200/10 cursor-pointer aspect-[9/16] max-h-[500px]">
         
+        <!-- Badge Vidéo -->
         <div class="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-2 py-1 bg-black/50 backdrop-blur-md rounded-lg text-white text-[10px] font-bold tracking-wider uppercase">
-            <i class="fas fa-bolt text-yellow-400"></i> Vidéo
+            <i class="fas fa-play text-white"></i> Vidéo
         </div>
         
-        <video src="${post.video_url}" class="w-full aspect-[9/16] max-h-[650px] object-cover transition-transform duration-700 group-hover:scale-105" loop muted playsinline preload="metadata"></video>
+        <!-- Miniature/Vidéo (en boucle muette pour la prévisualisation) -->
+        <video src="${post.video_url}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loop muted playsinline preload="metadata"
+               onmouseenter="this.play()" onmouseleave="this.pause(); this.currentTime=0;"></video>
         
-        <div class="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <div class="w-16 h-16 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white shadow-2xl">
+        <!-- Bouton Play central au survol -->
+        <div class="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+            <div class="w-16 h-16 flex items-center justify-center rounded-full bg-white/30 backdrop-blur-md text-white shadow-2xl">
                 <i class="fas fa-play text-2xl ml-1"></i>
             </div>
         </div>
     </div>`;
-} 
-// Si c'est une image
-else if (post.image_url) {
-    mediaHtml = `<img src="${post.image_url}" onclick="openPostModal('${post.id}')" class="w-full h-auto object-cover rounded-lg mb-1 cursor-pointer hover:opacity-95 transition" loading="lazy" alt="Post">`;
-}
+            }
+            // Si c'est une image
+            else if (post.image_url) {
+                mediaHtml = `<img src="${post.image_url}" onclick="openPostModal('${post.id}')" class="w-full h-auto object-cover rounded-lg mb-1 cursor-pointer hover:opacity-95 transition" loading="lazy" alt="Post">`;
+            }
             // Création de l'élément Article (Node DOM)
             const article = document.createElement('article');
             article.className = 'bg-white dark:bg-black overflow-hidden border-b border-slate-100 dark:border-slate-800';
@@ -6226,7 +6229,10 @@ let currentShortIndex = 0;
 window.loadShortsView = async function() {
     const container = document.getElementById('shorts-container');
     if (!container) return;
-
+    // --- NOUVEAU : Cacher la barre du bas ---
+    const dock = document.querySelector('.mobile-dock');
+    if (dock) dock.classList.add('dock-hidden');
+    
     container.innerHTML = `<div class="flex items-center justify-center h-full text-white"><i class="fas fa-spinner fa-spin text-3xl"></i></div>`;
 
     try {
@@ -6247,7 +6253,6 @@ window.loadShortsView = async function() {
             return;
         }
 
-        // Générer le HTML
         container.innerHTML = shortsDataCache.map((post, index) => {
             const user = post.profiles || {};
             const likes = post.post_likes?.[0]?.count || 0;
@@ -6261,15 +6266,22 @@ window.loadShortsView = async function() {
                     <i class="fas fa-times"></i>
                 </div>
 
-                <!-- Vidéo -->
-                <video class="short-video-player" loop playsinline muted preload="metadata" poster="${post.image_url || ''}">
-                    <source src="${post.video_url}" type="video/mp4">
-                </video>
+                <!-- CONTENEUR VIDEO + CLIQUE POUR PAUSE -->
+                <div class="short-video-wrapper" onclick="toggleVideoPause(this)">
+                    <video class="short-video-player" loop playsinline muted preload="metadata">
+                        <source src="${post.video_url}" type="video/mp4">
+                    </video>
+                    
+                    <!-- Icône Play/Pause (Cachée par défaut, apparaît au clic) -->
+                    <div class="short-pause-icon hidden">
+                        <i class="fas fa-play"></i>
+                    </div>
+                </div>
 
                 <!-- Barre de progression -->
                 <div class="short-progress-bar"><div class="short-progress-fill" id="progress-${post.id}"></div></div>
 
-                <!-- ACTIONS À GAUCHE -->
+                <!-- ACTIONS À DROITE -->
                 <div class="short-actions-left">
                     <!-- Like -->
                     <div class="short-action-btn" onclick="toggleShortLike('${post.id}', this)">
@@ -6277,10 +6289,16 @@ window.loadShortsView = async function() {
                         <span class="like-count">${formatNumber(likes)}</span>
                     </div>
                     
-                    <!-- Commentaires -->
-                    <div class="short-action-btn" onclick="openPostModal('${post.id}')">
+                    <!-- Commentaires (OUVERTURE SUR PLACE) -->
+                    <div class="short-action-btn" onclick="openShortComments('${post.id}')">
                         <i class="fas fa-comment-dots"></i>
                         <span>${formatNumber(comments)}</span>
+                    </div>
+
+                    <!-- Favori -->
+                    <div class="short-action-btn" onclick="toggleShortFavorite('${post.id}', this)">
+                        <i class="fas fa-bookmark"></i>
+                        <span>Sauver</span>
                     </div>
                     
                     <!-- Partager -->
@@ -6295,8 +6313,8 @@ window.loadShortsView = async function() {
                     <div class="short-author-row">
                         <img src="${user.avatar_url || 'https://via.placeholder.com/40'}" class="short-author-avatar">
                         <span class="short-author-name">${user.full_name}</span>
-                        ${user.is_certified ? '<i class="fas fa-check-circle text-blue-400 text-sm"></i>' : ''}
-                        <button class="short-follow-btn" onclick="toggleFollow('${user.id}', this)">Suivre</button>
+                         ${user.is_certified ? '<i class="fas fa-check-circle text-blue-400 text-sm"></i>' : ''}
+                        <button class="short-follow-btn" onclick="event.stopPropagation(); toggleFollow('${user.id}', this)">Suivre</button>
                     </div>
                     <p class="short-caption">${post.caption || ''}</p>
                 </div>
@@ -6448,4 +6466,186 @@ window.closeZenMode = function() {
         modal.classList.remove('active');
     }
     document.body.style.overflow = 'auto';
+}
+
+// --- FONCTIONS POUR LES NOUVEAUX BOUTONS ---
+
+// 1. Ajouter aux Favoris (Sauvegarder)
+window.toggleShortFavorite = async function(postId, element) {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return showToast("Connectez-vous pour sauvegarder", "error");
+
+    // Simulation de l'action (à connecter à votre table 'saved_posts')
+    // Ici on toggle juste la classe visuelle pour l'exemple
+    const isSaved = element.classList.contains('saved');
+    
+    if (isSaved) {
+        // Logique de suppression BDD ici
+        element.classList.remove('saved');
+        showToast("Retiré des enregistrements", "success");
+    } else {
+        // Logique d'ajout BDD ici
+        element.classList.add('saved');
+        showToast("Vidéo enregistrée !", "success");
+    }
+}
+
+// 2. Ouvrir/Fermer le Menu Options
+window.toggleShortMenu = function(postId) {
+    // Fermer tous les autres menus ouverts
+    document.querySelectorAll('.short-dropdown-menu').forEach(menu => {
+        if (menu.id !== `short-menu-${postId}`) {
+            menu.classList.add('hidden');
+        }
+    });
+
+    // Toggle le menu actuel
+    const menu = document.getElementById(`short-menu-${postId}`);
+    if (menu) {
+        menu.classList.toggle('hidden');
+    }
+}
+
+// 3. Fermer le menu si on clique ailleurs
+// (Ajoutez cet écouteur global une seule fois)
+document.addEventListener('click', function(e) {
+    // Si on clique en dehors d'un bouton "plus" et d'un menu
+    if (!e.target.closest('.short-action-btn[onclick*="toggleShortMenu"]') && !e.target.closest('.short-dropdown-menu')) {
+        document.querySelectorAll('.short-dropdown-menu').forEach(menu => menu.classList.add('hidden'));
+    }
+});
+
+// 4. Action "Pas intéressé"
+window.notInterested = function(postId) {
+    document.getElementById(`short-menu-${postId}`)?.classList.add('hidden');
+    showToast("Nous ne vous montrerons plus cette vidéo", "info");
+    // Optionnel : logic pour cacher la carte vidéo
+}
+
+// 5. Copier le lien
+window.copyLink = function(postId) {
+    const url = window.location.origin + '?post=' + postId;
+    navigator.clipboard.writeText(url);
+    document.getElementById(`short-menu-${postId}`)?.classList.add('hidden');
+    showToast("Lien copié !", "success");
+}
+
+// --- 1. GESTION DE LA PAUSE (TAP SUR ÉCRAN) ---
+window.toggleVideoPause = function(wrapperElement) {
+    const video = wrapperElement.querySelector('video');
+    const pauseIcon = wrapperElement.querySelector('.short-pause-icon');
+    
+    if (video.paused) {
+        video.play();
+        // On montre l'icône Play brièvement pour dire "Ca reprend"
+        pauseIcon.innerHTML = '<i class="fas fa-play"></i>'; 
+    } else {
+        video.pause();
+        // On montre l'icône Pause pour dire "C'est arrêté"
+        pauseIcon.innerHTML = '<i class="fas fa-pause"></i>';
+    }
+    
+    // Animation de l'icône (Apparaît puis disparaît)
+    pauseIcon.classList.remove('show'); // Reset
+    void pauseIcon.offsetWidth; // Force reflow
+    pauseIcon.classList.add('show');
+}
+
+// --- 2. GESTION DU PANNEAU COMMENTAIRES (SUR PLACE) ---
+window.openShortComments = function(postId) {
+    // Créer ou récupérer le panneau
+    let sheet = document.getElementById('short-comments-sheet');
+    
+    // Si le panneau n'existe pas encore dans le HTML, on le crée
+    if (!sheet) {
+        sheet = document.createElement('div');
+        sheet.id = 'short-comments-sheet';
+        sheet.className = 'short-comments-sheet';
+        // On ajoute un overlay noir derrière pour fermer en cliquant dehors
+        sheet.onclick = (e) => {
+            if(e.target.id === 'short-comments-sheet') closeShortComments();
+        };
+        
+        // Structure du panneau
+        sheet.innerHTML = `
+            <div class="short-comments-header">
+                <h3 class="font-bold">Commentaires</h3>
+                <button class="short-comments-close" onclick="closeShortComments()"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="short-comments-list" class="short-comments-list">
+                <!-- Charge les commentaires ici -->
+            </div>
+            <div class="short-comments-input">
+                <input type="text" id="short-comment-input" placeholder="Ajouter un commentaire...">
+                <button onclick="submitShortComment('${postId}')">Envoyer</button>
+            </div>
+        `;
+        
+        document.body.appendChild(sheet);
+    }
+    
+    // Mettre à jour l'ID du post actuel pour l'envoi
+    sheet.dataset.currentPost = postId;
+
+    // Charger les commentaires
+    loadShortComments(postId);
+
+    // Afficher le panneau (Ajout classe active)
+    setTimeout(() => sheet.classList.add('active'), 10);
+}
+
+window.closeShortComments = function() {
+    const sheet = document.getElementById('short-comments-sheet');
+    if(sheet) sheet.classList.remove('active');
+}
+
+// Charger les commentaires dans le panneau
+async function loadShortComments(postId) {
+    const container = document.getElementById('short-comments-list');
+    container.innerHTML = '<div class="text-center p-4"><i class="fas fa-spinner fa-spin"></i></div>';
+
+    const { data: comments, error } = await supabaseClient
+        .from('post_comments')
+        .select('*, profiles(id, full_name, avatar_url)')
+        .eq('post_id', postId)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        container.innerHTML = '<p class="text-red-400 text-center">Erreur</p>';
+        return;
+    }
+
+    if(comments.length === 0) {
+        container.innerHTML = '<p class="text-center text-slate-400">Soyez le premier à commenter !</p>';
+        return;
+    }
+
+    container.innerHTML = comments.map(c => `
+        <div class="flex gap-3 mb-4">
+            <img src="${c.profiles?.avatar_url}" class="w-9 h-9 rounded-full">
+            <div>
+                <span class="font-bold text-sm">${c.profiles?.full_name}</span>
+                <p class="text-sm text-slate-300">${c.content}</p>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Envoyer un commentaire depuis le panneau
+window.submitShortComment = async function(postId) {
+    const input = document.getElementById('short-comment-input');
+    const content = input.value.trim();
+    if(!content) return;
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    
+    await supabaseClient.from('post_comments').insert([{
+        post_id: postId,
+        user_id: user.id,
+        content: content
+    }]);
+
+    input.value = '';
+    loadShortComments(postId); // Recharge la liste
+    showToast("Commentaire publié !", "success");
 }
