@@ -93,23 +93,41 @@ let currentInvoiceData = null;
 
 /* --- NAVIGATION SPA --- */
 function switchPage(pageId) {
+    // 1. Gestion des liens actifs
     document.querySelectorAll('.nav-link-pro').forEach(link => link.classList.remove('active'));
     const links = document.querySelectorAll(`a[onclick="switchPage('${pageId}')"]`);
     links.forEach(l => l.classList.add('active'));
+
+    // 2. Gestion de l'affichage des pages
     document.querySelectorAll('.page-view').forEach(view => {
         view.classList.remove('active');
         setTimeout(() => { if (!view.classList.contains('active')) view.style.display = 'none'; }, 400);
     });
     const target = document.getElementById(pageId + '-view');
     if (target) {
-        target.style.display = 'block'; setTimeout(() => target.classList.add('active'), 10); window.scrollTo(0, 0);
+        target.style.display = 'block'; 
+        setTimeout(() => target.classList.add('active'), 10); 
+        window.scrollTo(0, 0);
     }
+
+    // 3. Fermer la sidebar si ouverte
     const sidebarOverlay = document.getElementById('sidebar-overlay');
     if (!sidebarOverlay.classList.contains('invisible')) toggleSidebar();
 
-    // --- AJOUTEZ CECI : GESTION DU DOCK (BARRE DU BAS) ---
-    const dock = document.querySelector('.mobile-dock');
+    // 4. GESTION DU FOND HEADER (UNIQUEMENT SUR HOME)
+    const headerBg = document.querySelector('.header-bg-extension');
+    if (headerBg) {
+        if (pageId === 'home') {
+            // On affiche le fond blanc/noir uni sur l'accueil
+            headerBg.style.display = 'block';
+        } else {
+            // On le cache sur toutes les autres pages (Profil, Messages, Notifs...)
+            headerBg.style.display = 'none';
+        }
+    }
 
+    // 5. GESTION DU DOCK (BARRE DU BAS)
+    const dock = document.querySelector('.mobile-dock');
     if (pageId === 'messages' || pageId === 'chat') {
         // Si on est sur Messages ou Chat, on cache le dock
         dock.classList.add('dock-hidden');
@@ -118,30 +136,30 @@ function switchPage(pageId) {
         dock.classList.remove('dock-hidden');
     }
 
+    // 6. Chargement des données spécifiques aux pages
     if (pageId === 'admin') {
-        loadAdminArticles(); // Charge les articles
-        loadAdminUsers();   // <--- AJOUTEZ CETTE LIGNE C'EST CRUCIAL
+        loadAdminArticles();
+        loadAdminUsers();
     }
+    
     if (pageId === 'profile-social') {
         loadSocialProfile();
     }
-    // Chargement Notifications
+
     if (pageId === 'notifications') {
         loadNotifications();
     }
-    // Charger le Feed si on va sur l'accueil
+
     if (pageId === 'home') {
         loadGlobalFeed();
     }
 
-    // Charger le Profil Social si on va sur le profil
-    if (pageId === 'profile-social') {
-        loadSocialProfile();
-    }
-
-    // --- AJOUTEZ CECI POUR LES MESSAGES ---
     if (pageId === 'messages') {
-        loadChatList(); // Charge la liste des discussions (Style Photo 1)
+        loadChatList();
+    }
+    // Dans switchPage(pageId)
+    if (pageId === 'shorts') {
+        loadShortsView();
     }
 }
 
@@ -6193,4 +6211,191 @@ function handleToastClick(type, postId, actorId) {
     }
     // Fermer le toast actuel
     event.currentTarget.closest('.toast').remove();
+}
+
+// --- VARIABLES GLOBALES SHORTS ---
+let currentShortObserver = null;
+let shortsDataCache = [];
+let currentShortIndex = 0;
+
+// 1. Charger et Afficher les Shorts
+window.loadShortsView = async function() {
+    const container = document.getElementById('shorts-container');
+    if (!container) return;
+
+    container.innerHTML = `<div class="flex items-center justify-center h-full text-white"><i class="fas fa-spinner fa-spin text-3xl"></i></div>`;
+
+    try {
+        // Récupérer uniquement les vidéos (is_short = true)
+        const { data: shorts, error } = await supabaseClient
+            .from('posts')
+            .select('*, profiles(id, full_name, avatar_url, is_certified), post_likes(count), post_comments(count)')
+            .eq('is_short', true)
+            .order('created_at', { ascending: false })
+            .limit(20); // Charge par lot de 20
+
+        if (error) throw error;
+        
+        shortsDataCache = shorts || [];
+        
+        if (shortsDataCache.length === 0) {
+            container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-white"><i class="fas fa-video-slash text-4xl mb-4 opacity-50"></i><p>Aucune vidéo pour le moment</p></div>`;
+            return;
+        }
+
+        // Générer le HTML
+        container.innerHTML = shortsDataCache.map((post, index) => {
+            const user = post.profiles || {};
+            const likes = post.post_likes?.[0]?.count || 0;
+            const comments = post.post_comments?.[0]?.count || 0;
+            
+            return `
+            <div class="short-card" data-index="${index}" data-post-id="${post.id}">
+                
+                <!-- Bouton Fermer -->
+                <div class="short-close-btn" onclick="switchPage('home')">
+                    <i class="fas fa-times"></i>
+                </div>
+
+                <!-- Vidéo -->
+                <video class="short-video-player" loop playsinline muted preload="metadata" poster="${post.image_url || ''}">
+                    <source src="${post.video_url}" type="video/mp4">
+                </video>
+
+                <!-- Barre de progression -->
+                <div class="short-progress-bar"><div class="short-progress-fill" id="progress-${post.id}"></div></div>
+
+                <!-- ACTIONS À GAUCHE -->
+                <div class="short-actions-left">
+                    <!-- Like -->
+                    <div class="short-action-btn" onclick="toggleShortLike('${post.id}', this)">
+                        <i class="fas fa-heart"></i>
+                        <span class="like-count">${formatNumber(likes)}</span>
+                    </div>
+                    
+                    <!-- Commentaires -->
+                    <div class="short-action-btn" onclick="openPostModal('${post.id}')">
+                        <i class="fas fa-comment-dots"></i>
+                        <span>${formatNumber(comments)}</span>
+                    </div>
+                    
+                    <!-- Partager -->
+                    <div class="short-action-btn" onclick="sharePost('${post.id}')">
+                        <i class="fas fa-share"></i>
+                        <span>Partager</span>
+                    </div>
+                </div>
+
+                <!-- INFOS EN BAS -->
+                <div class="short-info-bottom">
+                    <div class="short-author-row">
+                        <img src="${user.avatar_url || 'https://via.placeholder.com/40'}" class="short-author-avatar">
+                        <span class="short-author-name">${user.full_name}</span>
+                        ${user.is_certified ? '<i class="fas fa-check-circle text-blue-400 text-sm"></i>' : ''}
+                        <button class="short-follow-btn" onclick="toggleFollow('${user.id}', this)">Suivre</button>
+                    </div>
+                    <p class="short-caption">${post.caption || ''}</p>
+                </div>
+            </div>
+            `;
+        }).join('');
+
+        // Démarrer l'observateur pour la lecture auto
+        initShortsObserver();
+
+    } catch (err) {
+        console.error("Erreur chargement shorts:", err);
+        container.innerHTML = `<div class="text-white text-center p-10">Erreur de chargement</div>`;
+    }
+}
+
+// 2. Observateur pour Play/Pause automatique
+function initShortsObserver() {
+    if (currentShortObserver) currentShortObserver.disconnect();
+
+    const options = { root: document.getElementById('shorts-container'), threshold: 0.6 };
+    
+    currentShortObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            const video = entry.target.querySelector('video');
+            const progressBar = entry.target.querySelector('.short-progress-fill');
+            
+            if (entry.isIntersecting) {
+                // PLAY
+                video.play().catch(() => {}); // Ignore les erreurs de mute
+                video.muted = false; // On peut tenter d'unmute (les navigateurs bloquent souvent)
+                
+                // Mise à jour progression
+                video.ontimeupdate = () => {
+                    const percent = (video.currentTime / video.duration) * 100;
+                    if(progressBar) progressBar.style.width = `${percent}%`;
+                };
+            } else {
+                // PAUSE
+                video.pause();
+                video.currentTime = 0; // Rembobiner pour le prochain passage
+            }
+        });
+    }, options);
+
+    // Observer toutes les cartes
+    document.querySelectorAll('.short-card').forEach(card => {
+        currentShortObserver.observe(card);
+    });
+}
+
+// 3. Action Like
+window.toggleShortLike = async function(postId, element) {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return showToast("Connectez-vous", "error");
+
+    // Requête BDD
+    const { data: existing } = await supabaseClient.from('post_likes').select('*').eq('post_id', postId).eq('user_id', user.id).maybeSingle();
+    
+    if (existing) {
+        await supabaseClient.from('post_likes').delete().eq('id', existing.id);
+        element.classList.remove('liked');
+    } else {
+        await supabaseClient.from('post_likes').insert([{ post_id: postId, user_id: user.id }]);
+        element.classList.add('liked');
+    }
+}
+
+// 4. Intégration dans la navigation
+// Ajoutez ce cas dans votre fonction switchPage(pageId) existante :
+/*
+if (pageId === 'shorts') {
+    loadShortsView();
+}
+*/
+
+function handleSortClick(element, filterType) {
+    // 1. Gestion du style visuel des boutons
+    const allButtons = document.querySelectorAll('.sort-btn');
+    allButtons.forEach(btn => {
+        btn.classList.remove('bg-blue-50', 'text-blue-600', 'dark:bg-blue-900/30', 'dark:text-blue-400');
+        btn.classList.remove('bg-pink-50', 'text-pink-600');
+        btn.classList.add('bg-slate-100', 'text-slate-600', 'dark:bg-slate-800', 'dark:text-slate-300');
+        
+        const textSpan = btn.querySelector('.btn-text');
+        if (textSpan) textSpan.classList.add('hidden');
+    });
+
+    // Style actif pour le bouton cliqué
+    element.classList.remove('bg-slate-100', 'text-slate-600', 'dark:bg-slate-800', 'dark:text-slate-300');
+    const activeText = element.querySelector('.btn-text');
+    if (activeText) activeText.classList.remove('hidden');
+
+    // 2. LOGIQUE DE NAVIGATION
+    if (filterType === 'shorts') {
+        // IMPORTANT : On change de page vers l'interface TikTok
+        switchPage('shorts'); 
+    } else {
+        // Pour 'recent' ou 'popular', on reste sur l'accueil et on trie
+        switchPage('home'); // S'assure qu'on est sur l'accueil
+        sortFeed(filterType);
+        
+        // Style spécifique pour actif
+        element.classList.add('bg-blue-50', 'text-blue-600', 'dark:bg-blue-900/30', 'dark:text-blue-400');
+    }
 }
