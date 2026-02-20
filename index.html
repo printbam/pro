@@ -790,33 +790,14 @@
         </div>
     </div>
 
-    <!-- MODAL MODE ZEN -->
-    <div id="zen-mode-modal">
-        <!-- Bouton Fermer -->
-        <button onclick="closeZenMode()" class="zen-close-btn">
-            <i class="fas fa-times text-xl"></i>
-        </button>
-
-        <!-- Conteneur Vidéo -->
-        <div class="zen-video-container">
-            <video id="zen-video-player" controls></video>
-        </div>
-
-        <!-- Contrôles superposés (Style TikTok) -->
-        <div class="zen-controls-overlay">
-            <div class="flex flex-col gap-4">
-                <button class="text-white text-2xl hover:text-indigo-400 transition"><i
-                        class="fas fa-heart"></i></button>
-                <button class="text-white text-2xl hover:text-indigo-400 transition"><i
-                        class="fas fa-comment-dots"></i></button>
-                <button class="text-white text-2xl hover:text-indigo-400 transition"><i
-                        class="fas fa-share"></i></button>
-            </div>
-            <div class="mt-4 bg-black/50 px-4 py-2 rounded-full text-white text-xs font-bold">
-                Mode Lecture Zen
-            </div>
-        </div>
+    <!-- VUE : SHORTS / REELS (STYLE TIKTOK) -->
+<div id="shorts-view" class="page-view">
+    <!-- Conteneur principal Snap Scroll -->
+    <div id="shorts-container" class="shorts-scroll-container">
+        <!-- Les vidéos seront injectées ici par JS -->
     </div>
+</div>
+
     <!-- STRUCTURE HTML DE LA MODALE -->
     <div id="post-modal-overlay"
         class="fixed inset-0 z-[99999] bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
