@@ -3830,22 +3830,18 @@ function closeZenMode() {
     document.body.style.overflow = 'auto'; // Réactive le scroll
 }
 
-// --- VARIABLES GLOBALES MODALE ---
-let currentModalPostId = null;
+// --- VARIABLE GLOBALE POUR LA RÉPONSE ---
+let currentReplyTarget = null;
 
-// --- SYSTÈME MODAL PRO (INSTAGRAM STYLE) ---
-
-// 1. Fonction Ouvrir
+// --- 1. FONCTION PRINCIPALE : OUVERTURE MODAL ---
 window.openPostModal = async function(postId) {
     const overlay = document.getElementById('post-modal-overlay');
     if (!overlay) return;
 
-    // Loader
     overlay.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-black/90"><i class="fas fa-spinner fa-spin text-4xl text-white"></i></div>`;
-    
-    // IMPORTANT : On ajoute la classe 'active' pour forcer le CSS
     overlay.classList.add('active');
     document.body.style.overflow = 'hidden';
+    currentReplyTarget = null; // Reset le mode réponse
 
     try {
         const { data: { user } } = await supabaseClient.auth.getUser();
@@ -3853,71 +3849,53 @@ window.openPostModal = async function(postId) {
         if (error) throw error;
 
         const { data: reactions } = await supabaseClient.from('post_likes').select('reaction_type, profiles!user_id(id, full_name, avatar_url)').eq('post_id', postId);
-        const { data: comments } = await supabaseClient.from('post_comments').select('*, profiles(id, full_name, avatar_url)').eq('post_id', postId).order('created_at', { ascending: false });
         
+        // Récupération commentaires avec compte des likes
+        const { data: comments } = await supabaseClient
+            .from('post_comments')
+            .select('*, profiles(id, full_name, avatar_url), comment_likes(count)') // On compte les likes
+            .eq('post_id', postId)
+            .order('created_at', { ascending: true }); // Chronologique pour les fils de discussion
+
         const author = post.profiles || {};
         const isMyPost = (user && post.user_id === user.id);
 
-        // HTML Média
         const mediaHtml = post.is_short 
             ? `<video src="${post.video_url}" controls autoplay class="max-h-full max-w-full"></video>`
             : `<img src="${post.image_url}" class="max-h-full max-w-full object-contain">`;
 
-        // HTML Réactions
+        // Réactions du Post
         let reactionsHtml = '';
         if (reactions && reactions.length > 0) {
             reactionsHtml = `<div class="p-3 border-b dark:border-slate-700 flex flex-wrap gap-2">
                 ${reactions.slice(0, 10).map(r => `
-                    <img src="${r.profiles?.avatar_url}" title="${r.profiles?.full_name}" class="w-7 h-7 rounded-full border-2 border-white shadow-sm">
+                    <img src="${r.profiles?.avatar_url || 'https://api.dicebear.com/7.x/initials/svg?seed=MonUtilisateur'}" title="${r.profiles?.full_name}" class="w-7 h-7 rounded-full border-2 border-white shadow-sm">
                 `).join('')}
                 ${reactions.length > 10 ? `<span class="text-xs font-bold text-slate-400 self-center ml-2">+${reactions.length - 10}</span>` : ''}
             </div>`;
         }
 
-        // HTML Commentaires
-        let commentsHtml = (comments && comments.length > 0) 
-            ? comments.map(c => `
-                <div class="flex gap-2 mb-3">
-                    <img src="${c.profiles?.avatar_url}" class="w-8 h-8 rounded-full">
-                    <div class="bg-slate-100 dark:bg-slate-800 rounded-xl px-3 py-2">
-                        <span class="font-bold text-sm">${c.profiles?.full_name}</span>
-                        <p class="text-sm text-slate-600 dark:text-slate-300">${c.content}</p>
-                    </div>
-                </div>`).join('')
-            : '<p class="text-center text-slate-400 text-xs py-10">Aucun commentaire.</p>';
+        // 4. Rendu des Commentaires (Fonction séparée pour clarté)
+        const commentsHtml = renderCommentsTree(comments, user);
 
-        // Menu Dropdown (si c'est mon post)
-        let menuHtml = '';
-        if (isMyPost) {
-            menuHtml = `
-            <div id="modal-menu-dropdown" class="absolute top-12 right-4 bg-white dark:bg-slate-800 rounded-lg shadow-xl w-48 py-2 hidden z-50 border dark:border-slate-600">
-                <div onclick="alert('Suppression!'); closeModalPro();" class="px-4 py-2 text-sm text-red-500 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer">Supprimer</div>
-            </div>`;
-        }
-
-        // Injection Finale
+        // Injection HTML
         overlay.innerHTML = `
             <div class="modal-instagrant" onclick="event.stopPropagation()">
-                
-                <!-- BOUTONS DU HAUT -->
                 <div class="modal-top-controls">
-                    <button onclick="closeModalPro()" class="modal-btn">
-                        <i class="fas fa-times"></i>
-                    </button>
+                    <button onclick="closeModalPro()" class="modal-btn"><i class="fas fa-times"></i></button>
                     ${isMyPost ? `
                     <div class="relative">
-                        <button onclick="toggleModalMenu()" class="modal-btn">
-                            <i class="fas fa-ellipsis-h"></i>
-                        </button>
-                        ${menuHtml}
+                        <button onclick="toggleModalMenu()" class="modal-btn"><i class="fas fa-ellipsis-h"></i></button>
+                        <div id="modal-menu-dropdown" class="absolute top-12 right-4 bg-white dark:bg-slate-800 rounded-lg shadow-xl w-48 py-2 hidden z-50 border">
+                            <div onclick="alert('Suppression!'); closeModalPro();" class="px-4 py-2 text-sm text-red-500 font-semibold hover:bg-slate-50 cursor-pointer">Supprimer</div>
+                        </div>
                     </div>` : ''}
                 </div>
 
-                <!-- MEDIA -->
                 <div class="modal-media-area">${mediaHtml}</div>
 
-                <!-- INFOS -->
                 <div class="modal-details-area">
+                    <!-- Auteur -->
                     <div class="p-4 border-b dark:border-slate-700 flex items-center gap-3">
                         <img src="${author.avatar_url}" class="w-10 h-10 rounded-full">
                         <div class="flex-1">
@@ -3925,12 +3903,25 @@ window.openPostModal = async function(postId) {
                             <span class="text-xs text-slate-400">${getTimeAgo(new Date(post.created_at))}</span>
                         </div>
                     </div>
+                    
                     ${post.caption ? `<div class="p-4 text-sm border-b dark:border-slate-700">${post.caption}</div>` : ''}
                     ${reactionsHtml}
-                    <div class="flex-1 overflow-y-auto p-4">${commentsHtml}</div>
-                    <div class="p-3 border-t dark:border-slate-700">
+
+                    <!-- Liste Commentaires -->
+                    <div id="modal-comments-list" class="flex-1 overflow-y-auto p-4">
+                        ${commentsHtml}
+                    </div>
+
+                    <!-- Zone de saisie -->
+                    <div class="p-3 border-t dark:border-slate-700 bg-white dark:bg-slate-900">
+                        <!-- Indicateur de réponse -->
+                        <div id="reply-indicator" class="hidden mb-2 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full flex justify-between items-center">
+                            <span class="text-xs text-indigo-600">Réponse à <strong id="reply-name"></strong></span>
+                            <button onclick="cancelReply()" class="text-slate-400 hover:text-red-500"><i class="fas fa-times text-xs"></i></button>
+                        </div>
+                        
                         <form onsubmit="submitModalComment(event, '${postId}')" class="flex gap-2">
-                            <input type="text" placeholder="Ajouter un commentaire..." class="flex-1 bg-slate-50 dark:bg-slate-700 rounded-full px-4 py-2 text-sm outline-none">
+                            <input type="text" id="modal-comment-input" placeholder="Ajouter un commentaire..." class="flex-1 bg-slate-50 dark:bg-slate-700 rounded-full px-4 py-2 text-sm outline-none">
                             <button type="submit" class="text-indigo-600 font-bold text-sm">Envoyer</button>
                         </form>
                     </div>
@@ -3943,30 +3934,160 @@ window.openPostModal = async function(postId) {
     }
 }
 
-// 2. Fonction Fermer (Globale)
-window.closeModalPro = function() {
-    const overlay = document.getElementById('post-modal-overlay');
-    if (overlay) {
-        // IMPORTANT : On retire la classe 'active'
-        overlay.classList.remove('active');
-        overlay.innerHTML = '';
-        document.body.style.overflow = 'auto';
-    }
-}
-
-// 3. Fonction Menu
+// Fonction pour ouvrir/fermer le menu des 3 points
 window.toggleModalMenu = function() {
     const menu = document.getElementById('modal-menu-dropdown');
-    if (menu) menu.classList.toggle('hidden');
+    if (menu) {
+        menu.classList.toggle('hidden');
+    }
 }
 
-// 4. Fermeture en cliquant dehors
-document.getElementById('post-modal-overlay')?.addEventListener('click', function(e) {
-    // Si on clique sur le fond noir (l'overlay lui-même) et pas sur la carte blanche
-    if (e.target.id === 'post-modal-overlay') {
-        closeModalPro();
+// --- 2. FONCTION : RENDU DES COMMENTAIRES (ARBORESCENCE) ---
+// --- 2. FONCTION : RENDU DES COMMENTAIRES (AVEC FALLBACK IMAGE) ---
+function renderCommentsTree(comments, currentUser) {
+    if (!comments || comments.length === 0) return '<p class="text-center text-slate-400 text-xs py-10">Aucun commentaire.</p>';
+
+    const parents = comments.filter(c => !c.parent_comment_id);
+    const children = comments.filter(c => c.parent_comment_id);
+
+    const render = (comment, isReply = false) => {
+        const likeCount = comment.comment_likes?.[0]?.count || 0;
+        const isMyComment = currentUser && currentUser.id === comment.user_id;
+        const time = getTimeAgo(new Date(comment.created_at));
+        const replies = children.filter(c => c.parent_comment_id === comment.id);
+        
+        // CORRECTION : Image par défaut si null
+        const avatar = comment.profiles?.avatar_url || `https://ui-avatars.com/api/?name=${comment.profiles?.full_name || 'User'}&background=random`;
+        const userName = comment.profiles?.full_name || 'Utilisateur';
+
+        return `
+        <div class="flex gap-2 mb-3 ${isReply ? 'ml-8 mt-2' : ''}" data-comment-id="${comment.id}">
+            <img src="${avatar}" class="w-8 h-8 rounded-full flex-shrink-0">
+            <div class="flex-1">
+                <div class="bg-slate-100 dark:bg-slate-800 rounded-xl px-3 py-2 inline-block">
+                    <span class="font-bold text-sm">${userName}</span>
+                    <p class="text-sm text-slate-700 dark:text-slate-300">${comment.content}</p>
+                </div>
+                
+                <!-- Actions -->
+                <div class="flex items-center gap-4 mt-1 text-[10px] text-slate-500 ml-2">
+                    <span>${time}</span>
+                    <button onclick="likeComment('${comment.id}')" class="font-bold hover:text-slate-800 dark:hover:text-white">
+                        J'aime ${likeCount > 0 ? `(${likeCount})` : ''}
+                    </button>
+                    <button onclick="setupReply('${comment.id}', '${userName}')" class="font-bold hover:text-slate-800 dark:hover:text-white">
+                        Répondre
+                    </button>
+                    ${isMyComment ? `
+                        <button onclick="deleteComment('${comment.id}')" class="text-red-400 hover:text-red-600 font-bold">
+                            Supprimer
+                        </button>
+                    ` : ''}
+                </div>
+
+                <!-- Réponses -->
+                ${replies.length > 0 ? replies.map(r => render(r, true)).join('') : ''}
+            </div>
+        </div>`;
+    };
+
+    return parents.map(c => render(c)).join('');
+}
+
+// --- 3. ACTIONS COMMENTAIRES ---
+
+// A. Envoyer un commentaire ou une réponse
+window.submitModalComment = async function(e, postId) {
+    e.preventDefault();
+    const input = document.getElementById('modal-comment-input');
+    const content = input.value.trim();
+    if (!content) return;
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    
+    // Insertion
+    const { error } = await supabaseClient.from('post_comments').insert([{
+        post_id: postId,
+        user_id: user.id,
+        content: content,
+        parent_comment_id: currentReplyTarget // Null si c'est un commentaire normal
+    }]);
+
+    if (!error) {
+        input.value = '';
+        cancelReply(); // Enlève le mode réponse
+        // Recharger la liste (Simple et efficace)
+        // On peut aussi faire un rechargement partiel, mais pour garantir l'ordre :
+        openPostModal(postId); // Re-render complet
+    } else {
+        alert("Erreur lors de l'envoi");
     }
-});
+}
+
+// B. Préparer le mode réponse
+window.setupReply = function(commentId, userName) {
+    currentReplyTarget = commentId;
+    const indicator = document.getElementById('reply-indicator');
+    const nameSpan = document.getElementById('reply-name');
+    const input = document.getElementById('modal-comment-input');
+
+    indicator.classList.remove('hidden');
+    nameSpan.innerText = userName;
+    input.placeholder = `Répondre à ${userName}...`;
+    input.focus();
+}
+
+// C. Annuler la réponse
+window.cancelReply = function() {
+    currentReplyTarget = null;
+    document.getElementById('reply-indicator')?.classList.add('hidden');
+    const input = document.getElementById('modal-comment-input');
+    if(input) input.placeholder = "Ajouter un commentaire...";
+}
+
+// D. Liker un commentaire
+window.likeComment = async function(commentId) {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return alert("Connectez-vous");
+
+    // Vérifier si déjà liké
+    const { data: existing } = await supabaseClient
+        .from('comment_likes')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('comment_id', commentId)
+        .maybeSingle();
+
+    if (existing) {
+        // Dislike
+        await supabaseClient.from('comment_likes').delete().eq('id', existing.id);
+    } else {
+        // Like
+        await supabaseClient.from('comment_likes').insert([{ user_id: user.id, comment_id: commentId }]);
+    }
+    
+    // Pour voir le changement instantané, on peut manipuler le DOM ici, ou recharger
+    // Pour faire simple, on force un petit refresh visuel du bouton
+    // (Optionnel : openPostModal mettrait à jour tout le bloc)
+}
+
+// E. Supprimer un commentaire
+window.deleteComment = async function(commentId) {
+    if(!confirm("Supprimer ce commentaire ?")) return;
+    
+    const { error } = await supabaseClient.from('post_comments').delete().eq('id', commentId);
+    if(!error) {
+        // Suppression visuelle fluide
+        const el = document.querySelector(`[data-comment-id="${commentId}"]`);
+        if(el) el.remove();
+    }
+}
+
+// F. Fermeture Modal (Rappel)
+window.closeModalPro = function() {
+    document.getElementById('post-modal-overlay')?.classList.remove('active');
+    document.body.style.overflow = 'auto';
+}
 
 // --- CHARGER LES INFOS DANS LE MENU SIDEBAR ---
 async function loadSidebarUser() {
