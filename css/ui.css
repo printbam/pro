@@ -1897,7 +1897,7 @@ body.dark-mode .modal-top-controls .modal-btn:hover { background: rgba(255,255,2
 /* Barre d'actions À DROITE */
 .short-actions-left { /* On garde le nom de classe mais on change la position */
     position: absolute;
-    right: 22px !important; /* Collé à droite */
+    right: 9px !important; /* Collé à droite */
     left: auto !important;  /* Enlève le gauche */
     bottom: 50px;          /* Au-dessus de la barre de nav */
     display: flex;
@@ -2213,3 +2213,4 @@ body.dark-mode .short-menu-item:hover {
     width: 28px !important;
     height: 28px !important;
 }
+
