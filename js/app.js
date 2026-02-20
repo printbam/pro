@@ -1,5998 +1,955 @@
-// --- DÉBUT DU SCRIPT ---
-
-// 1. Configuration Supabase (Déjà présente, gardez-la)
-const SUPABASE_URL = 'https://lqqtvumwdixlhamwmqii.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxcXR2dW13ZGl4bGhhbXdtcWlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyOTQ1NjMsImV4cCI6MjA4NTg3MDU2M30.QKTBQbZ78iRVyM1o-hhtAPkWP23h_vXAMA3zrfuzipY'; // Votre clé
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-// --- STORE GLOBAL (CENTRALISÉ) ---
-const AppState = {
-    user: null,
-    profile: null,
-    blockedUsers: new Set(),
-    chats: [],
-    reactions: new Map(), // postId -> reactionType
-
-    // Méthode pour mettre à jour et notifier (basique)
-    update(key, value) {
-        this[key] = value;
-        // Ici vous pourriez déclencher des événements personnalisés si nécessaire
-        console.log(`[AppState] Mis à jour: ${key}`);
-    }
-};
-
-// 2. Variables Globales de gestion (CRUCIAL : Doivent être définies ici)
-const userReactions = new Map(); // Stocke les réactions de l'utilisateur (postId -> type)
-let chatInterval = null;
-let currentTargetUserId = null;
-let searchDebounceTimer = null;
-let globalMessageListener = null;
-let globalNotifListener = null;
-let myChatIdsCache = new Set(); // Cache des IDs de chat de l'utilisateur
-let chatStatusInterval = null;
-let isViewingOwnStory = false; // Variable globale pour l'état
-
-// 3. Configuration des Réactions (Doit être accessible pour le Feed)
-const REACTIONS = [
-    { type: 'like', icon: 'fa-heart', color: 'text-red-500' },
-    { type: 'support', icon: 'fa-hand-holding-heart', color: 'text-pink-500' },
-    { type: 'curious', icon: 'fa-eye', color: 'text-blue-500' },
-    { type: 'bravo', icon: 'fa-trophy', color: 'text-yellow-500' }
-];
-
-const REACTION_STYLES = {
-    like: { icon: 'fa-heart', color: 'text-red-500' },
-    support: { icon: 'fa-hand-holding-heart', color: 'text-pink-500' },
-    curious: { icon: 'fa-eye', color: 'text-blue-500' },
-    bravo: { icon: 'fa-trophy', color: 'text-yellow-500' }
-};
-
-// --- Suite du code (Variables Feed, etc.) ---
-let feedOffset = 0;
-const FEED_BATCH_SIZE = 10;
-let isLoadingFeed = false;
-let hasMorePosts = true;
-let feedObserver = null;
-// ... Le reste de votre code existant suit ici ...
-
-// --- VARIABLES DU TERMINAL (Si elles n'existent pas déjà) ---
-let currentStep = 1;
-let options = { reliure: false, plastique: false };
-
-// --- FONCTION MANQUANTE À AJOUTER ---
-function updateControls() {
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    // On récupère la langue actuelle pour les textes
-    const lang = localStorage.getItem('printbam-lang') || 'fr';
-
-    // Gestion du bouton RETOUR
-    if (prevBtn) {
-        prevBtn.style.visibility = currentStep === 1 ? 'hidden' : 'visible';
-    }
-
-    // Gestion du bouton SUIVANT / CONFIRMER
-    if (nextBtn) {
-        if (currentStep === 3) {
-            nextBtn.innerText = translations[lang]?.term_confirm || "Confirmer le Paiement";
-        } else {
-            nextBtn.innerText = translations[lang]?.term_continue || "Continuer";
-        }
-    }
-}
-function setTheme(theme) {
-    if (theme === 'dark') {
-        document.documentElement.classList.add('dark');
-    } else {
-        document.documentElement.classList.remove('dark');
-    }
-}
-
-/* --- PRO FEATURES VARIABLES --- */
-let currentInvoiceData = null;
-
-/* --- NAVIGATION SPA --- */
-function switchPage(pageId) {
-    document.querySelectorAll('.nav-link-pro').forEach(link => link.classList.remove('active'));
-    const links = document.querySelectorAll(`a[onclick="switchPage('${pageId}')"]`);
-    links.forEach(l => l.classList.add('active'));
-    document.querySelectorAll('.page-view').forEach(view => {
-        view.classList.remove('active');
-        setTimeout(() => { if (!view.classList.contains('active')) view.style.display = 'none'; }, 400);
-    });
-    const target = document.getElementById(pageId + '-view');
-    if (target) {
-        target.style.display = 'block'; setTimeout(() => target.classList.add('active'), 10); window.scrollTo(0, 0);
-    }
-    const sidebarOverlay = document.getElementById('sidebar-overlay');
-    if (!sidebarOverlay.classList.contains('invisible')) toggleSidebar();
-
-    // --- AJOUTEZ CECI : GESTION DU DOCK (BARRE DU BAS) ---
-    const dock = document.querySelector('.mobile-dock');
-
-    if (pageId === 'messages' || pageId === 'chat') {
-        // Si on est sur Messages ou Chat, on cache le dock
-        dock.classList.add('dock-hidden');
-    } else {
-        // Sinon (Accueil, Profil, etc.), on l'affiche
-        dock.classList.remove('dock-hidden');
-    }
-
-    if (pageId === 'admin') {
-        loadAdminArticles(); // Charge les articles
-        loadAdminUsers();   // <--- AJOUTEZ CETTE LIGNE C'EST CRUCIAL
-    }
-    if (pageId === 'profile-social') {
-        loadSocialProfile();
-    }
-    // Chargement Notifications
-    if (pageId === 'notifications') {
-        loadNotifications();
-    }
-    // Charger le Feed si on va sur l'accueil
-    if (pageId === 'home') {
-        loadGlobalFeed();
-    }
-
-    // Charger le Profil Social si on va sur le profil
-    if (pageId === 'profile-social') {
-        loadSocialProfile();
-    }
-
-    // --- AJOUTEZ CECI POUR LES MESSAGES ---
-    if (pageId === 'messages') {
-        loadChatList(); // Charge la liste des discussions (Style Photo 1)
-    }
-}
-
-/* --- MARKETPLACE LOGIC --- */
-function filterMarket(category) {
-    const items = document.querySelectorAll('.market-item');
-    const btns = document.querySelectorAll('.filter-btn');
-
-    btns.forEach(btn => {
-        btn.classList.remove('btn-sky-yellow', 'text-white', 'shadow-md');
-        btn.classList.add('bg-white', 'border', 'border-slate-200', 'text-slate-600');
-    });
-
-    event.target.classList.remove('bg-white', 'border', 'border-slate-200', 'text-slate-600');
-    event.target.classList.add('btn-sky-yellow', 'text-white', 'shadow-md');
-
-    items.forEach(item => {
-        if (category === 'all' || item.getAttribute('data-category') === category) {
-            item.style.display = 'flex';
-            setTimeout(() => item.style.opacity = '1', 10);
-        } else {
-            item.style.display = 'none';
-            item.style.opacity = '0';
-        }
-    });
-}
-
-function searchMarketplace(query) {
-    const items = document.querySelectorAll('.market-item');
-    const lowerQuery = query.toLowerCase();
-
-    items.forEach(item => {
-        const title = item.querySelector('h3').innerText.toLowerCase();
-        const desc = item.querySelector('p').innerText.toLowerCase();
-
-        if (title.includes(lowerQuery) || desc.includes(lowerQuery)) {
-            item.style.display = 'flex';
-        } else {
-            item.style.display = 'none';
-        }
-    });
-}
-
-/* --- TRACKING ORDER (AVEC DATE & WHATSAPP) --- */
-function openTrackModal(id, date) {
-    // Store ID for invoice generation
-    currentInvoiceData = orders.find(o => o.id === id);
-
-    document.getElementById('track-id').innerText = id;
-    document.getElementById('track-date').innerText = date;
-
-    // CALCUL DE LA DATE DE LIVRAISON ESTIMÉE (+2 jours)
-    try {
-        // Conversion de la date FR (DD/MM/YYYY) vers ISO
-        const orderDate = new Date(date.split('/').reverse().join('-'));
-        const estDate = new Date(orderDate);
-        estDate.setDate(estDate.getDate() + 2);
-
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        document.getElementById('estimated-delivery-date').innerText = estDate.toLocaleDateString('fr-FR', options);
-
-        // Mise à jour visuelle de la timeline
-        document.getElementById('est-date-label').innerText = estDate.toLocaleDateString('fr-FR');
-    } catch (e) {
-        document.getElementById('estimated-delivery-date').innerText = "En attente de confirmation";
-    }
-
-    const modal = document.getElementById('track-modal');
-    const bg = modal.querySelector('div:first-child');
-    const panel = modal.querySelector('div:last-child');
-
-    modal.classList.remove('invisible');
-    setTimeout(() => {
-        bg.classList.replace('opacity-0', 'opacity-100');
-        panel.classList.replace('translate-x-full', 'translate-x-0');
-    }, 10);
-}
-
-function closeTrackModal() {
-    const modal = document.getElementById('track-modal');
-    const bg = modal.querySelector('div:first-child');
-    const panel = modal.querySelector('div:last-child');
-
-    bg.classList.replace('opacity-100', 'opacity-0');
-    panel.classList.replace('translate-x-0', 'translate-x-full');
-    setTimeout(() => { modal.classList.add('invisible'); }, 500);
-}
-
-/* --- WHATSAPP INTEGRATION --- */
-function shareOrderOnWhatsApp() {
-    // Numéro commercial par défaut
-    const supportPhone = "243810000000";
-
-    const orderId = document.getElementById('track-id').innerText;
-    const clientName = currentInvoiceData ? currentInvoiceData.item : "Client";
-
-    const message = `Bonjour Printbam,%0A%0AJe suis le client "${clientName}" concernant la commande *#${orderId}*.%0A%0APourriez-vous me donner des news sur l'avancement ?%0AMerci.`;
-
-    const url = `https://wa.me/${supportPhone}?text=${message}`;
-    window.open(url, '_blank');
-}
-
-/* --- INVOICE GENERATION --- */
-function openInvoice() {
-    if (!currentInvoiceData) return;
-    document.getElementById('inv-id').innerText = currentInvoiceData.id;
-    document.getElementById('inv-date').innerText = currentInvoiceData.date;
-
-    const detailStr = currentInvoiceData.details;
-    let itemsHtml = '';
-    let unitPrice = Math.round(currentInvoiceData.amount / 2);
-
-    itemsHtml += `<tr><td class="font-bold">${detailStr}</td><td class="text-center">1</td><td class="text-right">${unitPrice} FC</td><td class="text-right font-bold">${currentInvoiceData.amount} FC</td></tr>`;
-
-    document.getElementById('inv-items').innerHTML = itemsHtml;
-    document.getElementById('inv-total').innerText = currentInvoiceData.amount.toLocaleString() + " FC";
-
-    const modal = document.getElementById('invoice-modal');
-    modal.classList.add('active');
-}
-
-function closeInvoice() {
-    document.getElementById('invoice-modal').classList.remove('active');
-}
-
-/* --- INPUT MASKING --- */
-function formatPhone(input) {
-    let value = input.value.replace(/\D/g, '');
-    if (value.length > 0 && !value.startsWith('243')) value = '243' + value;
-    if (value.length > 12) value = value.substring(0, 12);
-
-    let formatted = '';
-    if (value.length > 0) formatted = '+' + value.substring(0, 3);
-    if (value.length > 3) formatted += ' ' + value.substring(3, 6);
-    if (value.length > 6) formatted += ' ' + value.substring(6, 9);
-    if (value.length > 9) formatted += ' ' + value.substring(9, 12);
-
-    input.value = formatted;
-}
-
-/* --- TERMINAL --- */
-function openTerminal() {
-    const term = document.getElementById('terminal-wrapper');
-    if (!term) return;
-
-    // 1. On affiche et on débloque les interactions
-    term.style.display = 'block';
-    term.removeAttribute('inert');
-    term.setAttribute('aria-hidden', 'false');
-
-    // 2. On bloque le scroll du site derrière
-    document.body.style.overflow = 'hidden';
-
-    // 3. Sécurité : on force le focus sur le bouton de fermeture
-    setTimeout(() => {
-        const closeBtn = document.getElementById('close-terminal-btn');
-        if (closeBtn) closeBtn.focus();
-    }, 100);
-}
-
-function closeTerminal() {
-    const term = document.getElementById('terminal-wrapper');
-    if (!term) return;
-
-    // 1. On cache et on verrouille
-    term.style.display = 'none';
-    term.setAttribute('inert', '');
-    term.setAttribute('aria-hidden', 'true');
-
-    // 2. On rend le scroll au site
-    document.body.style.overflow = 'auto';
-
-    // 3. On nettoie le focus pour éviter l'erreur console
-    if (document.activeElement) document.activeElement.blur();
-}
-/* --- TRANSLATIONS --- */
-const translations = {
-    fr: {
-        nav_navigation: "Navigation", nav_home: "Accueil", nav_market: "Marketplace", nav_services: "Services", nav_account: "Compte", nav_orders: "Mes Commandes", nav_settings: "Paramètres", nav_help: "Aide", nav_login: "Connexion", btn_start: "Démarrer",
-        hero_title_part1: "L'infrastructure", hero_title_part2: "documentaire", hero_title_highlight: "haute performance.", hero_desc: "Digitalisez vos flux, nous matérialisons l'excellence avec une", btn_print_now: "Imprimer maintenant", btn_demo: "Voir la démo", nav_about: "À propos",
-        feat_arch_title: "Architecture Documentaire", feat_arch_desc: "Traitement architectural de vos documents. Précision au millimètre pour vos manuscrits exigeants et mémoires académiques.", feat_delivery: "Livraison Express", feat_badge_title: "Badges PVC", feat_badge_desc: "Cartes de service haute définition avec protection thermique et codage magnétique.", feat_cloud_title: "Infrastructure Cloud", feat_cloud_desc: "Envoyez vos fichiers de n'importe où. Notre réseau sécurisé s'occupe du traitement et de l'impression.",
-        portfolio_title: "Standards d'Excellence.", card1_cat: "Rapports", card1_title: "Rapports Institutionnels", card1_desc: "Papier couché 120g avec reliure thermique invisible pour une finition premium.", card2_cat: "Identité Visuelle", card2_title: "Cartes de Membre", card2_desc: "Impression sublimation haute résistance avec hologramme de sécurité personnalisé.", card3_cat: "Technique", card3_title: "Plans & Blueprints", card3_desc: "Traçage grand format A0/A1 haute précision sur papier technique translucide.",
-        cta_title: "Prêt pour l'impression ?", btn_launch_order: "Lancer une commande", footer_about: "L'infrastructure d'impression cloud leader en Afrique centrale. Fiabilité, rapidité et sécurité pour vos documents.", footer_services: "Services", footer_company: "Entreprise", footer_contact: "Contact", settings_profile: "Votre Profil", settings_notifs: "Notifications push", settings_lang: "Langue", settings_save: "Sauvegarder", btn_send: "Envoyer",
-        market_desc: "Découvrez nos packs pré-configurés pour vos besoins professionnels et académiques. Une qualité constante, une livraison rapide.", mkt_item1_title: "Pack Mémoire Standard", mkt_item1_desc: "Impression N&B + Reliure Spirale + 2 Exemplaires.", mkt_item2_title: "Pack Badges Pro", mkt_item2_desc: "50 Cartes PVC recto-verso avec personnalisation.", mkt_item3_title: "Kit Communication", mkt_item3_desc: "100 Affiches A3 + 500 Flyers A5.", mkt_item4_title: "Personnalisation", mkt_item4_desc: "T-shirts, Mugs et Objets publicitaires.",
-        services_title: "Services & Tarifs", services_desc: "Une tarification transparente et compétitive pour tous vos projets d'impression.", srv_pricing: "Grille Tarifaire (Prix unitaire)", srv_format: "Format", srv_bw: "Noir & Blanc", srv_color: "Couleur", srv_premium: "Premium", srv_binding: "Reliure", srv_binding_desc: "Spirale métallique, Thermocollée ou Cannelée.", srv_laminate: "Plastification", srv_laminate_desc: "Protection matte ou brillante.", srv_cut: "Découpe & Massicot", srv_cut_desc: "Découpe précise au millimètre.",
-        term_config: "1. Config", term_send: "2. Envoi", term_pay: "3. Pay", term_config_title: "Configuration", term_upload_placeholder: "Cliquez ou glissez votre document ici", term_doc_detected: "Document détecté", term_format: "Format", term_color: "Couleur", term_bw: "Noir & Blanc", term_color_hd: "Couleur HD", term_finish: "Finition & Protection", term_binding: "Reliure", term_laminate: "Plastifier", term_pages: "Pages", term_copies: "Exemplaires", term_type: "Type", term_recto: "Recto Seul", term_recto_verso: "Recto / Verso", term_dest_title: "Destination", term_ph_name: "Nom complet", term_ph_phone: "WhatsApp (ex: +243...)", term_ph_addr: "Adresse complète de livraison", term_payment: "Paiement", term_total: "Total Commande", term_currency: "FC", term_printing: "Impression", term_finishes: "Finitions", term_back: "Retour", term_continue: "Continuer", term_confirm: "Confirmer le Paiement", term_uploading: "Envoi sécurisé...", term_confirmed: "Confirmé !", term_redirect: "Redirection vers l'accueil..."
-    },
-    en: {
-        nav_navigation: "Navigation", nav_home: "Home", nav_market: "Marketplace", nav_services: "Services", nav_account: "Account", nav_orders: "My Orders", nav_settings: "Settings", nav_help: "Help", nav_login: "Login", btn_start: "Get Started",
-        hero_title_part1: "The high-performance", hero_title_part2: "document", hero_title_highlight: "infrastructure.", hero_desc: "Digitize your workflows, we materialize excellence with", btn_print_now: "Print Now", btn_demo: "View Demo",
-        feat_arch_title: "Document Architecture", feat_arch_desc: "Architectural processing of your documents. Millimeter precision for demanding manuscripts and academic theses.", feat_delivery: "Express Delivery", feat_badge_title: "PVC Badges", feat_badge_desc: "High definition service cards with thermal protection and magnetic coding.", feat_cloud_title: "Cloud Infrastructure", feat_cloud_desc: "Send files from anywhere. Our secure network takes care of processing and printing.",
-        portfolio_title: "Standards of Excellence.", card1_cat: "Reports", card1_title: "Institutional Reports", card1_desc: "120g coated paper with invisible thermal binding for a premium finish.", card2_cat: "Visual Identity", card2_title: "Membership Cards", card2_desc: "High resistance sublimation printing with personalized security hologram.", card3_cat: "Technical", card3_title: "Plans & Blueprints", card3_desc: "Large format A0/A1 high precision tracing on translucent technical paper.",
-        cta_title: "Ready to print?", btn_launch_order: "Launch an Order", footer_about: "The leading cloud printing infrastructure in Central Africa. Reliability, speed and security for your documents.", footer_services: "Services", footer_company: "Company", footer_contact: "Contact", settings_profile: "Your Profile", settings_notifs: "Push Notifications", settings_lang: "Language", settings_save: "Save", btn_send: "Send", nav_about: "About",
-        market_desc: "Discover our pre-configured packs for your professional and academic needs. Constant quality, rapid delivery.", mkt_item1_title: "Standard Thesis Pack", mkt_item1_desc: "B&W Printing + Spiral Binding + 2 Copies.", mkt_item2_title: "Pro Badges Pack", mkt_item2_desc: "50 Double-sided PVC cards with customization.", mkt_item3_title: "Communication Kit", mkt_item3_desc: "100 A3 Posters + 500 A5 Flyers.", mkt_item4_title: "Customization", mkt_item4_desc: "T-shirts, Mugs and Promotional items.",
-        services_title: "Services & Pricing", services_desc: "Transparent and competitive pricing for all your printing projects.", srv_pricing: "Price Grid (Unit Price)", srv_format: "Format", srv_bw: "Black & White", srv_color: "Color", srv_premium: "Premium", srv_binding: "Binding", srv_binding_desc: "Metal spiral, Thermal or Canneled binding.", srv_laminate: "Lamination", srv_laminate_desc: "Matte or Glossy protection.", srv_cut: "Cutting & Guillotine", srv_cut_desc: "Precise cutting to millimeter.",
-        term_config: "1. Config", term_send: "2. Send", term_pay: "3. Pay", term_config_title: "Configuration", term_upload_placeholder: "Click or drag your document here", term_doc_detected: "Document Detected", term_format: "Format", term_color: "Color", term_bw: "Black & White", term_color_hd: "Color HD", term_finish: "Finish & Protection", term_binding: "Binding", term_laminate: "Laminate", term_pages: "Pages", term_copies: "Copies", term_type: "Type", term_recto: "Single Sided", term_recto_verso: "Double Sided", term_dest_title: "Destination", term_ph_name: "Full Name", term_ph_phone: "WhatsApp (ex: +243...)", term_ph_addr: "Full Delivery Address", term_payment: "Payment", term_total: "Total Order", term_currency: "FC", term_printing: "Printing", term_finishes: "Finishes", term_back: "Back", term_continue: "Continue", term_confirm: "Confirm Payment", term_uploading: "Secure upload...", term_confirmed: "Confirmed!", term_redirect: "Redirecting to home..."
-    },
-    ln: { nav_navigation: "Boluki", nav_home: "Esika", nav_market: "Bisika", nav_services: "Misala", nav_account: "Bokomi", nav_orders: "Mikanda", nav_about: "Na ntina na biso", nav_settings: "Ndimi", nav_help: "Lisungi", nav_login: "Kokota", btn_start: "Yuka", hero_title_part1: "Bokoli ya", hero_title_part2: "bukundu", hero_title_highlight: "ya makasi.", hero_desc: "Botia bisusu na nzela ya électronique, biso tokobi kobimisa eloko ya makasi na", btn_print_now: "Kobima Sika", btn_demo: "Tala", feat_arch_title: "Bokoli ya Mbete", feat_arch_desc: "Botia ya mbete ya mikanda na yo.", feat_delivery: "Komesa Mbote", feat_badge_title: "Ba Badge PVC", feat_badge_desc: "Ba carte ya service.", feat_cloud_title: "Sistème ya Cloud", feat_cloud_desc: "Tinda ba fichier awa.", portfolio_title: "Ndimi ya Makasi.", cta_title: "Oyo ozali kokoba ?", btn_launch_order: "Sima Commande", term_config: "1. Config", term_send: "2. Tinda", term_pay: "3. Kobimisa", term_config_title: "Configuration", term_upload_placeholder: "Kokota kobimisa buku na awa", term_doc_detected: "Buku ekomi", term_format: "Format", term_color: "Couleur", term_bw: "Noir & Blanc", term_color_hd: "Couleur HD", term_finish: "Mikongo & Protection", term_binding: "Reliure", term_laminate: "Plastifier", term_pages: "Pages", term_copies: "Exemplaires", term_type: "Type", term_recto: "Recto Seul", term_recto_verso: "Recto / Verso", term_dest_title: "Destination", term_ph_name: "Nkombo mobimba", term_ph_phone: "WhatsApp", term_ph_addr: "Adrese", term_payment: "Kobimisa", term_total: "Total Commande", term_currency: "FC", term_printing: "Kobima", term_finishes: "Mikongo", term_back: "Kozwa", term_continue: "Kosukola", term_confirm: "Kobimisa", term_uploading: "Tinda...", term_confirmed: "Confirmé !", term_redirect: "Kozwa...", market_desc: "Bolia ba packs...", services_title: "Services & Tarifs", services_desc: "Prix transparente...", srv_pricing: "Grille Tarifaire", srv_format: "Format", srv_bw: "Noir & Blanc", srv_color: "Couleur", srv_premium: "Premium", srv_binding: "Reliure", srv_binding_desc: "Spirale, etc...", srv_laminate: "Plastification", srv_laminate_desc: "Protection...", srv_cut: "Découpe", srv_cut_desc: "Découpe...", mkt_item1_title: "Pack Mémoire", mkt_item1_desc: "Kobima + Reliure...", mkt_item2_title: "Pack Badges", mkt_item2_desc: "50 Cartes...", mkt_item3_title: "Kit Comm", mkt_item3_desc: "Affiches...", mkt_item4_title: "Perso", mkt_item4_desc: "T-shirts...", nav_orders: "Mikanda", nav_settings: "Ndimi", nav_help: "Aide", settings_lang: "Lokota", settings_save: "Tia", btn_send: "Tinda", settings_profile: "Lingomba na yo", settings_notifs: "Notifications", footer_about: "Bokoli...", footer_services: "Misala", footer_company: "Kompani", footer_contact: "Komisa" },
-    tu: { nav_navigation: "Buvui", nav_about: "Bidi bitangila benu", nav_home: "Kadi", nav_market: "Kabuadi", nav_services: "Miyila", nav_account: "Ditumbu", nav_orders: "Babui", nav_settings: "Mwididi", nav_help: "Lubulayi", nav_login: "Kuluka", btn_start: "Yuka", term_config: "1. Config", term_send: "2. Tuma", term_pay: "3. Dija", term_config_title: "Configuration", term_upload_placeholder: "Kokota tuma buku na awa", term_doc_detected: "Buku dijwidi", term_format: "Format", term_color: "Couleur", term_bw: "Noir & Blanc", term_color_hd: "Couleur HD", term_finish: "Midi & Dija", term_binding: "Reliure", term_laminate: "Lamina", term_pages: "Makon", term_copies: "Kadisadi", term_type: "Mutundu", term_recto: "Tshitshi", term_recto_verso: "Tshitshi / Mutundu", term_dest_title: "Muadi", term_ph_name: "Dina mobimba", term_ph_phone: "WhatsApp", term_ph_addr: "Adrese", term_payment: "Kulipa", term_total: "Total Commande", term_currency: "FC", term_printing: "Kubaja", term_finishes: "Midi", term_back: "Kubajikula", term_continue: "Kosuka", term_confirm: "Kulipa", term_uploading: "Kutuma...", term_confirmed: "Bwakaji !", term_redirect: "Kujikula...", hero_title_part1: "Buvui ya", hero_title_part2: "mutundu", hero_title_highlight: "wa bule.", hero_desc: "Dija masalu a eletronique, twa ku buka butashi wa bule na", btn_print_now: "Bubaja Ubu", btn_demo: "Laja", portfolio_title: "Ndimi wa Bule.", cta_title: "Waba udi bubaja ?", btn_launch_order: "Simula Babui", term_config_title: "Configuration", term_upload_placeholder: "Kokota tuma buku na awa", term_doc_detected: "Buku dijwidi", term_format: "Format", term_color: "Couleur", term_bw: "Noir & Blanc", term_color_hd: "Couleur HD", term_finish: "Midi & Dija", term_binding: "Reliure", term_laminate: "Lamina", term_pages: "Makon", term_copies: "Kadisadi", term_type: "Mutundu", term_recto: "Tshitshi", term_recto_verso: "Tshitshi / Mutundu", term_dest_title: "Muadi", term_ph_name: "Dina mobimba", term_ph_phone: "WhatsApp", term_ph_addr: "Adrese", term_payment: "Kulipa", term_total: "Total Commande", term_currency: "FC", term_printing: "Kubaja", term_finishes: "Midi", term_back: "Kubajikula", term_continue: "Kosuka", term_confirm: "Kulipa", term_uploading: "Kutuma...", term_confirmed: "Bwakaji !", term_redirect: "Kujikula..." },
-    sw: { nav_navigation: "Miondoko", nav_home: "Nyumbani", nav_about: "Kuhusu sisi", nav_market: "Soko", nav_services: "Huduma", nav_account: "Akaunti", nav_orders: "Oda", nav_settings: "Mipangilio", nav_help: "Msaada", nav_login: "Ingia", btn_start: "Anza", term_config: "1. Config", term_send: "2. Tuma", term_pay: "3. Lipia", term_config_title: "Mipangilio", term_upload_placeholder: "Bofya au paka faili hapa", term_doc_detected: "Faili Imeibainwa", term_format: "Ukubwa", term_color: "Rangi", term_bw: "Nyeusi & Njivu", term_color_hd: "Rangi HD", term_finish: "Maliza & Kinga", term_binding: "Uunganishaji", term_laminate: "Lamine", term_pages: "Ukurasa", term_copies: "Nakala", term_type: "Aina", term_recto: "Upande Mmoja", term_recto_verso: "Upande Wote", term_dest_title: "Mahali", term_ph_name: "Jina Kamili", term_ph_phone: "WhatsApp", term_ph_addr: "Anwani ya Kupokelea", term_payment: "Lipa", term_total: "Jumla ya Oda", term_currency: "FC", term_printing: "Uchapishaji", term_finishes: "Mikwabo", term_back: "Nyuma", term_continue: "Endelea", term_confirm: "Thibitisha Lipa", term_uploading: "Kutuma salama...", term_confirmed: "Imethibitishwa!", term_redirect: "Kurudi nyumbani...", hero_title_part1: "Miundombinu ya", hero_title_part2: "waraka", hero_title_highlight: "ya nguvu.", hero_desc: "Badilisha mtiririko wako, sisi tunato ubora wa", btn_print_now: "Chapisha Sasa", btn_demo: "Tazama Demo", portfolio_title: "Vigezo vya Ubora.", cta_title: "Uko tayari kuchapisha?", btn_launch_order: "Anza Oda", term_config_title: "Mipangilio", term_upload_placeholder: "Bofya au paka faili hapa", term_doc_detected: "Faili Imeibainwa", term_format: "Ukubwa", term_color: "Rangi", term_bw: "Nyeusi & Njivu", term_color_hd: "Rangi HD", term_finish: "Maliza & Kinga", term_binding: "Uunganishaji", term_laminate: "Lamine", term_pages: "Ukurasa", term_copies: "Nakala", term_type: "Aina", term_recto: "Upande Mmoja", term_recto_verso: "Upande Wote", term_dest_title: "Mahali", term_ph_name: "Jina Kamili", term_ph_phone: "WhatsApp", term_ph_addr: "Anwani ya Kupokelea", term_payment: "Lipa", term_total: "Jumla ya Oda", term_currency: "FC", term_printing: "Uchapishaji", term_finishes: "Mikwabo", term_back: "Nyuma", term_continue: "Endelea", term_confirm: "Thibitisha Lipa", term_uploading: "Kutuma salama...", term_confirmed: "Imethibitishwa!", term_redirect: "Kurudi nyumbani..." },
-    kg: { nav_navigation: "Zina", nav_home: "Mboka", nav_market: "Mpemba", nav_services: "Nsadila", nav_account: "Ntangu", nav_orders: "Bisalu", nav_settings: "Nkidila", nav_help: "Lusadisu", nav_login: "Vata", btn_start: "Yuka", term_config: "1. Config", term_send: "2. Tuma", term_pay: "3. Lipa", term_config_title: "Configuration", term_upload_placeholder: "Kokota tuma buku na awa", term_doc_detected: "Buku dijwidi", term_format: "Format", term_color: "Couleur", term_bw: "Noir & Blanc", term_color_hd: "Couleur HD", term_finish: "Kusala & Kinga", term_binding: "Reliure", term_laminate: "Lamina", term_pages: "Makon", term_copies: "Kadisadi", term_type: "Aina", term_recto: "Tshitshi", term_recto_verso: "Tshitshi / Mutundu", term_dest_title: "Muadi", term_ph_name: "Dina mobimba", term_ph_phone: "WhatsApp", term_ph_addr: "Adrese", term_payment: "Lipa", term_total: "Total Commande", term_currency: "FC", term_printing: "Kubaja", term_finishes: "Midi", term_back: "Kubajikula", term_continue: "Kosuka", term_confirm: "Kulipa", term_uploading: "Kutuma...", term_confirmed: "Bwakaji !", term_redirect: "Kujikula...", hero_title_part1: "Bukundu wa", hero_title_part2: "nkandu", hero_title_highlight: "wa nene.", hero_desc: "Tia zina a eletronique, biso twa ku kanga mpete wa nene na", btn_print_now: "Buka Mboka", btn_demo: "Vata", portfolio_title: "Nkidila wa Nene.", cta_title: "Yaka udi buka ?", btn_launch_order: "Yuka Bisalu", term_config_title: "Configuration", term_upload_placeholder: "Kokota tuma buku na awa", term_doc_detected: "Buku dijwidi", term_format: "Format", term_color: "Couleur", term_bw: "Noir & Blanc", term_color_hd: "Couleur HD", term_finish: "Kusala & Kinga", term_binding: "Reliure", term_laminate: "Lamina", term_pages: "Makon", term_copies: "Kadisadi", term_type: "Aina", term_recto: "Tshitshi", term_recto_verso: "Tshitshi / Mutundu", term_dest_title: "Muadi", term_ph_name: "Dina mobimba", term_ph_phone: "WhatsApp", term_ph_addr: "Adrese", term_payment: "Lipa", term_total: "Total Commande", term_currency: "FC", term_printing: "Kubaja", term_finishes: "Midi", term_back: "Kubajikula", term_continue: "Kosuka", term_confirm: "Kulipa", term_uploading: "Kutuma...", term_confirmed: "Bwakaji !", term_redirect: "Kujikula..." }
-};
-
-// Initialisation de l'observateur au chargement de la page
-function setupInfiniteScroll() {
-    const loader = document.getElementById('feed-loader');
-
-    // Si un observateur existe déjà, on le déconnecte
-    if (feedObserver) {
-        feedObserver.disconnect();
-    }
-
-    if (loader) {
-        // Création de l'observateur
-        feedObserver = new IntersectionObserver((entries) => {
-            // Si le loader est visible dans l'écran
-            if (entries[0].isIntersecting) {
-                loadMoreFeed();
-            }
-        }, {
-            rootMargin: '300px' // Déclenche 200px avant le vrai bas de page
-        });
-
-        feedObserver.observe(loader);
-    }
-}
-function changeLanguage(lang) {
-    localStorage.setItem('printbam-lang', lang);
-    updateLanguage(lang);
-    const langNames = { 'fr': 'Français', 'en': 'English', 'ln': 'Lingala', 'tu': 'Tshiluba', 'sw': 'Swahili', 'kg': 'Kikongo' };
-    showToast(`Langue : ${langNames[lang]}`, 'success');
-}
-
-function updateLanguage(lang) {
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (translations[lang] && translations[lang][key]) el.textContent = translations[lang][key];
-    });
-    document.querySelectorAll('[data-placeholder]').forEach(el => {
-        const key = el.getAttribute('data-placeholder');
-        if (translations[lang] && translations[lang][key]) el.placeholder = translations[lang][key];
-    });
-    const terminalWrapper = document.getElementById('terminal-wrapper');
-    if (terminalWrapper) {
-        terminalWrapper.querySelectorAll('[data-i18n]').forEach(el => {
-            const key = el.getAttribute('data-i18n');
-            if (translations[lang] && translations[lang][key]) el.textContent = translations[lang][key];
-        });
-        const btnRV = document.getElementById('btnRV');
-        if (btnRV) {
-            const isV = document.getElementById('rectoVerso').value === "true";
-            btnRV.innerText = isV ? (translations[lang]?.term_recto_verso || "Recto / Verso") : (translations[lang]?.term_recto || "Recto Seul");
-        }
-        updateControls();
-    }
-    if (translations[lang] && translations[lang].typewriter_words) window.currentWords = translations[lang].typewriter_words;
-}
-
-function setTheme(theme, save = true) {
-    const btnLight = document.getElementById('btn-light');
-    const btnDark = document.getElementById('btn-dark');
-    const body = document.body;
-    if (theme === 'dark') {
-        body.classList.add('dark-mode');
-        if (btnDark) { btnDark.classList.remove('text-slate-500', 'bg-transparent'); btnDark.classList.add('bg-white', 'text-slate-800', 'shadow-sm'); }
-        if (btnLight) { btnLight.classList.add('text-slate-500', 'bg-transparent'); btnLight.classList.remove('bg-white', 'text-slate-800', 'shadow-sm'); }
-    } else {
-        body.classList.remove('dark-mode');
-        if (btnLight) { btnLight.classList.remove('text-slate-500', 'bg-transparent'); btnLight.classList.add('bg-white', 'text-slate-800', 'shadow-sm'); }
-        if (btnDark) { btnDark.classList.add('text-slate-500', 'bg-transparent'); btnDark.classList.remove('bg-white', 'text-slate-800', 'shadow-sm'); }
-    }
-    if (save) localStorage.setItem('printbam-theme', theme);
-}
-
-function toggleSidebar() {
-    const mainContent = document.getElementById('main-content'); const panel = document.getElementById('sidebar-panel'); const overlay = document.getElementById('sidebar-overlay'); const bg = document.getElementById('sidebar-bg'); const dock = document.querySelector('.mobile-dock'); const isOpen = !overlay.classList.contains('invisible');
-    if (!isOpen) {
-        overlay.classList.remove('invisible');
-        setTimeout(() => { bg.classList.replace('opacity-0', 'opacity-100'); panel.classList.replace('-translate-x-full', 'translate-x-0'); panel.classList.replace('opacity-0', 'opacity-100'); }, 10);
-        // --- NOUVEAU CODE ---
-        if (mainContent) {
-            // On retire 'transform' pour que 'position: sticky' fonctionne !
-            // mainContent.style.transform = 'translateX(280px) scale(0.95)'; // <-- Supprimez ou commentezz ceci
-
-            mainContent.style.filter = 'blur(2px) brightness(0.9)';
-            mainContent.style.pointerEvents = 'none'; // Important : empêche de cliquer sur le contenu flouté
-        }
-        if (dock) dock.style.setProperty('display', 'none', 'important');
-    } else {
-        bg.classList.replace('opacity-100', 'opacity-0'); panel.classList.replace('translate-x-0', '-translate-x-full'); panel.classList.replace('opacity-100', 'opacity-0');
-        if (mainContent) { mainContent.style.transform = ''; mainContent.style.filter = ''; mainContent.style.borderRadius = ''; mainContent.style.pointerEvents = 'auto'; }
-        if (dock) dock.style.removeProperty('display');
-        setTimeout(() => { overlay.classList.add('invisible'); }, 500);
-    }
-}
-function genericToggle(overlayId, panelId, bgClass) {
-    const overlay = document.getElementById(overlayId); const panel = document.getElementById(panelId); const bg = overlay.querySelector(bgClass);
-    if (overlay.classList.contains('invisible')) {
-        overlay.classList.remove('invisible');
-        setTimeout(() => { bg.classList.replace('opacity-0', 'opacity-100'); panel.classList.replace('translate-x-full', 'translate-x-0'); }, 10);
-    } else {
-        bg.classList.replace('opacity-100', 'opacity-0'); panel.classList.replace('translate-x-0', 'translate-x-full');
-        setTimeout(() => overlay.classList.add('invisible'), 500);
-    }
-}
-function toggleSettings() { genericToggle('settings-overlay', 'settings-panel', 'div:first-child'); updateStats(); }
-function toggleSupport() { genericToggle('support-overlay', 'support-panel', 'div:first-child'); }
-function toggleOrders() { renderOrders(); genericToggle('orders-overlay', 'orders-panel', 'div:first-child'); }
-function toggleAbout() {
-    genericToggle('about-overlay', 'about-panel', 'div:first-child');
-}
-function showToast(message, type = 'success') {
-    const container = document.getElementById('toast-container'); const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    let icon = type === 'success' ? 'fa-check-circle text-green-500' : 'fa-exclamation-circle text-red-500';
-    toast.innerHTML = `<div class="flex items-center gap-3"><i class="fas ${icon} text-lg"></i><span class="font-medium text-slate-700">${message}</span></div><button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>`;
-    container.appendChild(toast);
-    setTimeout(() => { toast.style.animation = 'slideOut 0.3s forwards'; setTimeout(() => toast.remove(), 300); }, 4000);
-}
-
-window.currentWords = window.currentWords || ["précision chirurgicale.", "vitesse absolue.", "sécurité bancaire.", "design élégant."];
-const typeTarget = document.getElementById('typewriter');
-if (typeTarget) {
-    let wordIndex = 0, charIndex = 0, deleting = false;
-    function typeLoop() {
-        const words = window.currentWords; const word = words[wordIndex];
-        typeTarget.textContent = deleting ? word.substring(0, --charIndex) : word.substring(0, ++charIndex);
-        let delay = deleting ? 50 : 100;
-        if (!deleting && charIndex === word.length) { deleting = true; delay = 2000; }
-        if (deleting && charIndex === 0) { deleting = false; wordIndex = (wordIndex + 1) % words.length; delay = 500; }
-        setTimeout(typeLoop, delay);
-    }
-    typeLoop();
-}
-
-function initScrollReveal() {
-    const observer = new IntersectionObserver((entries) => { entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('active'); }); }, { threshold: 0.1 });
-    document.querySelectorAll('.reveal-up').forEach(el => observer.observe(el));
-}
-
-window.addEventListener('scroll', () => {
-    const current = window.scrollY; const nav = document.getElementById('nav-main'); const mobileHeader = document.getElementById('mobile-header');
-    if (nav) {
-        if (current > 20) { nav.classList.add('py-3'); nav.classList.remove('py-6'); nav.style.boxShadow = "0 10px 15px -3px rgba(0,0,0,0.1)"; }
-        else { nav.classList.remove('py-3'); nav.classList.add('py-6'); nav.style.boxShadow = "var(--shadow-soft)"; }
-    }
-    if (mobileHeader) { if (current > 20) mobileHeader.classList.add('header-scrolled'); else mobileHeader.classList.remove('header-scrolled'); }
-});
-
-const bgGrid = document.getElementById('parallax-bg');
-if (bgGrid) {
-    window.addEventListener('mousemove', e => {
-        const moveX = (e.clientX - window.innerWidth / 2) * 0.01;
-        const moveY = (e.clientY - window.innerHeight / 2) * 0.01;
-        bgGrid.style.transform = `translate(${moveX}px, ${moveY}px)`;
-    });
-}
-
-let orders = JSON.parse(localStorage.getItem('printbam_orders')) || [];
-function saveNewOrder(docName, price) {
-    const newOrder = { id: 'PB-' + Math.floor(Math.random() * 9000 + 1000), date: new Date().toLocaleDateString('fr-FR'), item: docName, amount: price, status: 'En cours' };
-    orders.unshift(newOrder); localStorage.setItem('printbam_orders', JSON.stringify(orders));
-}
-function renderOrders() {
-    const list = document.getElementById('orders-list'); const totalDisplay = document.getElementById('total-spent');
-    if (orders.length === 0) { list.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-40 pt-10"><i class="fas fa-box-open text-4xl text-slate-800"></i><p class="text-xs font-bold uppercase tracking-widest text-slate-800">Aucune commande</p></div>`; totalDisplay.innerText = "0 FC"; return; }
-    list.innerHTML = ''; let total = 0;
-    orders.forEach((order, index) => {
-        total += order.amount;
-        list.innerHTML += `
-                    <div class="glass p-4 flex items-center justify-between group hover:border-indigo-200 transition-all cursor-pointer" onclick="openTrackModal('${order.id}', '${order.date}')" style="animation: slideIn 0.3s ease ${index * 0.1}s forwards; opacity: 0; transform: translateY(10px);">
-                        <div class="flex flex-col gap-1">
-                            <span class="text-[10px] font-black text-indigo-600 uppercase">${order.id}</span>
-                            <span class="text-sm font-bold text-slate-900">${order.item}</span>
-                            <span class="text-[10px] text-slate-400">${order.date}</span>
-                        </div>
-                        <div class="flex flex-col items-end gap-2">
-                            <span class="text-sm font-black text-slate-900">${order.amount.toLocaleString()} FC</span>
-                            <span class="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-[8px] font-bold uppercase tracking-tighter border border-indigo-100">${order.status}</span>
-                        </div>
-                    </div>`;
-    });
-    totalDisplay.innerText = total.toLocaleString() + " FC";
-}
-
-function updateStats() {
-    const countDisplay = document.getElementById('stats-orders-count');
-    const spentDisplay = document.getElementById('stats-total-spent');
-
-    if (countDisplay) countDisplay.innerText = orders.length;
-
-    let total = 0;
-    orders.forEach(o => total += o.amount);
-    if (spentDisplay) spentDisplay.innerText = total.toLocaleString('fr-FR');
-}
-
-let clearStep = 0;
-function confirmClearHistory() {
-    const btn = document.getElementById('btn-clear-history');
-    if (clearStep === 0) { clearStep = 1; btn.innerText = "Confirmer ?"; btn.classList.add('bg-red-50', 'border-red-200'); setTimeout(() => { if (clearStep === 1) resetClearBtn(); }, 3000); }
-    else { orders = []; localStorage.removeItem('printbam_orders'); renderOrders(); showToast('Historique vidé', 'success'); resetClearBtn(); }
-}
-function resetClearBtn() {
-    const btn = document.getElementById('btn-clear-history'); clearStep = 0;
-    btn.innerText = "Vider l'historique"; btn.classList.remove('bg-red-50', 'border-red-200');
-}
-function handleSupportSubmit(event) {
-    event.preventDefault(); const btn = document.getElementById('btn-send-support'); const form = document.getElementById('support-form'); const successMsg = document.getElementById('support-success');
-    btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch animate-spin"></i> <span>Transmission...</span>';
-    setTimeout(() => { form.classList.add('hidden'); successMsg.classList.remove('hidden'); form.reset(); btn.disabled = false; btn.innerHTML = '<span data-i18n="btn_send">Envoyer</span><i class="fas fa-paper-plane text-[10px]"></i>'; showToast("Message envoyé au support !", "success"); }, 1500);
-}
-
-/* --- GESTION DU PROFIL UTILISATEUR (AVEC SUPABASE) --- */
-
-// Fonction pour ouvrir/fermer le panneau
-async function toggleProfile() {
-    // Vérification de sécurité via Supabase Auth
-    const isConnected = await checkAuth();
-    if (!isConnected) return;
-
-    genericToggle('profile-overlay', 'profile-panel', 'div:first-child');
-
-    // Charger les données si on ouvre le panneau
-    const overlay = document.getElementById('profile-overlay');
-    if (!overlay.classList.contains('invisible')) {
-        await loadUserProfile();
-    }
-}
-
-// Vérifie si l'utilisateur est connecté via Supabase
-async function checkAuth() {
-    const { data: { user }, error } = await supabaseClient.auth.getUser();
-
-    if (error || !user) {
-        showToast("Veuillez vous connecter pour accéder à cette page.", "error");
-        setTimeout(() => { window.location.href = "login.html"; }, 1000);
-        return false;
-    }
-    return true;
-}
-
-// Charger les infos du profil depuis Supabase
-async function loadUserProfile() {
-    try {
-        // 1. Récupérer l'utilisateur connecté depuis la session
-        const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-
-        if (authError || !user) {
-            console.log("Utilisateur non connecté");
-            return;
-        }
-        checkAdminStatus();
-
-        // 2. Récupérer les données de la table 'profiles'
-        // On utilise 'profile' comme nom de variable pour correspondre à votre suite de code
-        const { data: profile, error } = await supabaseClient
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id) // CORRECTION : On utilise user.id ici
-            .maybeSingle();
-
-        if (error) {
-            console.error("Erreur lors de la récupération :", error.message);
-            return;
-        }
-
-        // 3. Mise à jour de l'interface (DOM)
-        if (profile) {
-            console.log("Profil trouvé :", profile);
-
-            // Remplissage des champs (avec repli sur les métadonnées si profil incomplet)
-            if (document.getElementById('p-name'))
-                document.getElementById('p-name').value = profile.full_name || user.user_metadata.full_name || '';
-
-            if (document.getElementById('p-email'))
-                document.getElementById('p-email').value = user.email || '';
-
-            if (document.getElementById('p-phone')) // Remplacez 'else if' par 'if'
-                document.getElementById('p-phone').value = profile.phone || '';
-
-            if (document.getElementById('p-bio'))
-                document.getElementById('p-bio').value = profile.bio || '';
-
-            // Gestion de l'avatar (Image vs Icon)
-            const imgDisplay = document.getElementById('profile-avatar-img');
-            const iconDisplay = document.getElementById('profile-avatar-icon');
-
-            if (profile.is_certified) {
-                // Afficher l'icône bleue
-                if (imgDisplay) imgDisplay.classList.remove('hidden');
-                iconDisplay.classList.add('hidden');
-            } else {
-                imgDisplay.classList.add('hidden');
-                iconDisplay.classList.remove('hidden');
-            }
-        } else {
-            console.log("Aucun profil trouvé dans la table 'profiles' pour cet ID.");
-        }
-    } catch (err) {
-        console.error("Erreur inattendue :", err);
-    }
-}
-
-// Gestion de l'image de profil (Upload Supabase Storage)
-let avatarFile = null; // Variable temporaire pour stocker le fichier choisi
-
-function handleProfileImage(input) {
-    if (input.files && input.files[0]) {
-        avatarFile = input.files[0]; // On stocke le fichier pour l'upload plus tard
-        const reader = new FileReader();
-        reader.onload = function (e) {
-            const imgDisplay = document.getElementById('profile-avatar-img');
-            const iconDisplay = document.getElementById('profile-avatar-icon');
-
-            imgDisplay.src = e.target.result;
-            imgDisplay.classList.remove('hidden');
-            iconDisplay.classList.add('hidden');
-        }
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-
-// Sauvegarder le profil (Upload image + Update BDD)
-async function saveProfile(e) {
-    e.preventDefault();
-
-    // 1. Gestion de l'état du bouton
-    const btn = e.target.querySelector('button[type="submit"]');
-    const originalText = btn.innerHTML; // Utiliser innerHTML au cas où il y aurait des icônes
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enregistrement...';
-
-    try {
-        // 2. Vérification de l'utilisateur
-        const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-        if (userError || !user) throw new Error("Session expirée. Veuillez vous reconnecter.");
-
-        let avatarUrl = null;
-
-        // 3. Gestion de l'Upload (si avatarFile existe dans votre scope global)
-        // Note : assurez-vous que 'avatarFile' est bien défini quand l'utilisateur choisit un fichier
-        if (typeof avatarFile !== 'undefined' && avatarFile) {
-            const fileExt = avatarFile.name.split('.').pop();
-            const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-
-            const { data: uploadData, error: uploadError } = await supabaseClient.storage
-                .from('avatars')
-                .upload(fileName, avatarFile, {
-                    upsert: true
-                });
-
-            if (uploadError) throw new Error("Erreur d'upload : " + uploadError.message);
-
-            // Récupérer l'URL publique
-            const { data: publicUrlData } = supabaseClient.storage
-                .from('avatars')
-                .getPublicUrl(fileName);
-
-            avatarUrl = publicUrlData.publicUrl;
-        }
-
-        // 4. Préparation des données pour la table 'profiles'
-        const updates = {
-            id: user.id,
-            // Ne pas mettre à jour l'email si votre table 'profiles' ne le gère pas (l'email est déjà dans auth.users)
-            full_name: document.getElementById('p-name').value.trim(),
-            phone: document.getElementById('p-phone').value.trim(),
-            bio: document.getElementById('p-bio').value.trim(),
-            updated_at: new Date().toISOString()
-        };
-
-        if (avatarUrl) {
-            updates.avatar_url = avatarUrl;
-        }
-
-        // 5. Mise à jour dans la base de données
-        const { error: updateError } = await supabaseClient
-            .from('profiles')
-            .upsert(updates, { onConflict: 'id' });
-
-        if (updateError) throw updateError;
-
-        // 6. Succès
-        showToast("Profil mis à jour avec succès ! ✅", "success");
-
-        // Rafraîchir l'interface si la fonction existe
-        if (typeof loadUserProfile === 'function') await loadUserProfile();
-        if (typeof toggleProfile === 'function') toggleProfile();
-
-    } catch (error) {
-        console.error("Erreur saveProfile:", error);
-        showToast(error.message, "error");
-    } finally {
-        // 7. Reset de l'état
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-        if (typeof avatarFile !== 'undefined') avatarFile = null;
-    }
-}
-
-// Déconnexion
-async function logout() {
-    if (confirm("Êtes-vous sûr de vouloir vous déconnecter ?")) {
-        await supabaseClient.auth.signOut();
-        showToast("Déconnexion...", "success");
-        setTimeout(() => {
-            window.location.href = "login.html";
-        }, 1000);
-    }
-}
-
-/* --- MISE À JOUR DES BLOCAGES D'ACCÈS --- */
-
-// Surcharge de la fonction openTerminal
-const originalOpenTerminal = openTerminal;
-openTerminal = async function () {
-    const isConnected = await checkAuth();
-    if (!isConnected) return;
-    originalOpenTerminal();
-}
-
-// Surcharge de toggleOrders
-const originalToggleOrders = toggleOrders;
-toggleOrders = async function () {
-    const isConnected = await checkAuth();
-    if (!isConnected) return;
-    originalToggleOrders();
-}
-
-/* --- GESTION DE L'ESPACE ADMIN --- */
-
-async function checkAdminStatus() {
-    try {
-        // Correction de la parenthèse et de l'accolade ici :
-        const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-
-        if (authError || !user) return;
-
-        const { data: profile, error } = await supabaseClient
-            .from('profiles')
-            .select('is_admin')
-            .eq('id', user.id)
-            .maybeSingle();
-
-        if (profile && profile.is_admin) {
-            isCurrentUserAdmin = true;
-            const adminLink = document.getElementById('nav-admin-link');
-            if (adminLink) adminLink.classList.remove('hidden');
-        }
-    } catch (error) {
-        console.error("Erreur vérification admin :", error);
-    }
-}
-
-// 2. Charger les articles dans la vue Admin
-async function loadAdminArticles() {
-    const list = document.getElementById('admin-articles-list');
-    if (!list) return;
-
-    // Loader initial
-    list.innerHTML = '<div class="col-span-full text-center py-10"><i class="fas fa-circle-notch fa-spin text-2xl text-indigo-600"></i></div>';
-
-    const { data: articles, error } = await supabaseClient
-        .from('articles')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-    if (error) {
-        list.innerHTML = `<p class="col-span-full text-red-500 text-center py-10">Erreur de chargement: ${error.message}</p>`;
-        return;
-    }
-
-    if (!articles || articles.length === 0) {
-        list.innerHTML = '<div class="col-span-full text-center py-10 text-slate-400">Aucun article pour le moment.</div>';
-        return;
-    }
-
-    list.innerHTML = articles.map(art => {
-        // Préparation de l'image pour éviter les erreurs de backticks imbriqués
-        const imageContent = art.image_url
-            ? `<img src="${art.image_url}" class="w-20 h-20 object-cover rounded-lg bg-slate-100 shadow-sm">`
-            : `<div class="w-20 h-20 bg-slate-100 rounded-lg flex items-center justify-center text-slate-300 border border-slate-200"><i class="fas fa-image text-xl"></i></div>`;
-
-        // Nettoyage du contenu (enlève les balises HTML si présentes)
-        const plainText = art.content.replace(/<[^>]*>/g, '');
-        const excerpt = plainText.length > 80 ? plainText.substring(0, 80) + '...' : plainText;
-
-        return `
-        <div class="glass p-6 flex flex-col sm:flex-row gap-4 items-start group hover:shadow-lg transition-all border border-white/20">
-            <div class="flex-shrink-0">
-                ${imageContent}
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#f8fafc">
+    <title>Linko v3.5 Pro</title>
+    <link rel="apple-touch-icon" href="donnees-mobiles.png">
+    <link rel="icon" type="image/png" href="/donnees-mobiles.png">
+    <link rel="manifest" href="./manifest.json">
+    <meta name="color-scheme" content="light dark">
+    <meta name="description" content="Linko est un reseau social pro">
+
+    <!-- PRECHARGEMENT -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://checkout.flutterwave.com/v3.js"></script>
+    <link rel="stylesheet" href="./css/ui.css">
+
+</head>
+
+<body>
+
+    <!-- PROFESSIONAL LOADER -->
+    <div id="loader">
+        <div class="loader-content">
+            <div class="loader-icon"><img src="/donnees-mobiles.png" alt="Linko Logo" class="main-logo">
             </div>
-            
-            <div class="flex-1 flex flex-col h-full">
-                <div class="mb-2">
-                    <span class="text-[10px] font-bold text-indigo-600 uppercase bg-indigo-50 px-2 py-1 rounded-full border border-indigo-100 italic">
-                        ${art.category || 'Général'}
-                    </span>
-                    <h3 class="text-lg font-extrabold text-slate-900 mt-2 leading-tight group-hover:text-indigo-600 transition-colors">
-                        ${art.title}
-                    </h3>
-                </div>
-                
-                <p class="text-xs text-slate-500 mb-4 line-clamp-2">
-                    ${excerpt}
-                </p>
-                
-                <div class="flex items-center justify-between mt-auto pt-2 border-t border-slate-100/50">
-                    <span class="text-xs font-medium text-slate-400">
-                        <i class="far fa-calendar-alt mr-1"></i> 
-                        ${new Date(art.created_at).toLocaleDateString('fr-FR')}
-                    </span>
-                    <a href="javascript:void(0)" 
-                       onclick="editArticle('${art.id}')"
-                       class="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center hover:btn-sky-yellow hover:scale-110 transition-all">
-                        <i class="fas fa-pencil-alt text-[10px]"></i>
-                    </a>
-                </div>
-            </div>
+            <div class="loader-text">Linko</div>
         </div>
-        `;
-    }).join('');
-}
-
-// 3. Ouvrir/Fermermer la modale
-function openArticleModal() {
-    document.getElementById('article-modal').classList.remove('hidden');
-    document.getElementById('article-form').reset();
-}
-function closeArticleModal() {
-    document.getElementById('article-modal').classList.add('hidden');
-}
-
-// 4. Sauvegarder un nouvel article
-async function saveArticle(e) {
-    e.preventDefault();
-    const btn = e.target.querySelector('button[type="submit"]');
-
-    // État de chargement "Ultra Pro"
-    const originalText = btn.innerText;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> Publication...';
-
-    try {
-        const title = document.getElementById('art-title').value;
-        const content = document.getElementById('art-content').value;
-        const category = document.getElementById('art-category').value;
-        const image_url = document.getElementById('art-image').value;
-
-        // CORRECTION : Ajout de la fermeture de l'objet et de la parenthèse
-        const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-
-        if (authError || !user) {
-            throw new Error("Session expirée ou utilisateur non trouvé.");
-        }
-
-        // Insertion dans Supabase
-        const { error } = await supabaseClient.from('articles').insert([{
-            title,
-            content,
-            category,
-            image_url,
-            author_id: user.id,
-            created_at: new Date().toISOString() // Bonne pratique pour le tri
-        }]);
-
-        if (error) throw error;
-
-        // Succès
-        showToast("Article publié avec succès !", "success");
-
-        // Nettoyage et rafraîchissement
-        if (typeof closeArticleModal === 'function') closeArticleModal();
-        if (typeof loadAdminArticles === 'function') loadAdminArticles();
-
-        e.target.reset(); // Vide le formulaire
-
-    } catch (error) {
-        console.error("Erreur publication:", error);
-        alert("Erreur lors de la publication : " + error.message);
-    } finally {
-        // Dans tous les cas (succès ou erreur), on réactive le bouton
-        btn.disabled = false;
-        btn.innerText = originalText;
-    }
-}
-
-// 5. Supprimer un article
-async function deleteArticle(id) {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cet article ?")) return;
-
-    const { error } = await supabaseClient.from('articles').delete().eq('id', id);
-
-    if (error) {
-        showToast("Erreur de suppression", "error");
-    } else {
-        showToast("Article supprimé", "success");
-        loadAdminArticles();
-    }
-}
-/* --- AFFICHER LES ARTICLES ADMIN DANS LA MARKETPLACE --- */
-
-async function loadMarketplaceArticles() {
-    try {
-        // 1. Récupérer les articles depuis Supabase
-        const { data: articles, error } = await supabaseClient
-            .from('articles')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-        if (error) {
-            console.error("Erreur chargement articles marketplace :", error);
-            return;
-        }
-
-        if (!articles || articles.length === 0) return;
-
-        // 2. Le conteneur où l'on va mettre les articles
-        const grid = document.getElementById('products-grid');
-
-        // 3. Créer le HTML pour chaque article
-        articles.forEach(art => {
-            // Définition des couleurs d'arrière-plan selon la catégorie (comme vos produits fixes)
-            let bgClass = 'btn-sky-yellow';
-            let iconClass = 'fas fa-newspaper text-slate-200';
-
-            if (art.category === 'academique') {
-                bgClass = 'bg-indigo-50'; iconClass = 'fas fa-graduation-cap text-indigo-200';
-            } else if (art.category === 'corporate') {
-                bgClass = 'bg-emerald-50'; iconClass = 'fas fa-briefcase text-emerald-200';
-            } else if (art.category === 'marketing') {
-                bgClass = 'bg-orange-50'; iconClass = 'fa-bullhorn text-orange-200';
-            }
-
-            // Création de la Carte
-            const articleHTML = `
-        <div class="market-item glass flex flex-col group overflow-hidden" data-category="${art.category || 'all'}">
-            <div class="h-48 ${bgClass || 'bg-slate-100'} relative overflow-hidden">
-                ${art.image_url
-                    ? `<img src="${art.image_url}" class="w-full h-full object-cover transition-all duration-700 group-hover:scale-110">`
-                    : `<div class="absolute inset-0 flex items-center justify-center text-slate-300 text-5xl">
-                         <i class="fas fa-image"></i>
-                       </div>`
-                }
-                <span class="absolute top-4 left-4 btn-sky-yellow text-white text-[10px] font-bold px-2 py-1 rounded uppercase shadow-lg z-10">
-                    Pub
-                </span>
-            </div>
-
-            <div class="p-6 flex-1 flex flex-col">
-                <h3 class="font-bold text-lg mb-2 text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-1">
-                    ${art.title}
-                </h3>
-                
-                <p class="text-sm text-slate-500 mb-4 flex-1 line-clamp-2">
-                    ${art.content ? art.content.replace(/<[^>]*>/g, '').substring(0, 80) + '...' : ''}
-                </p>
-
-                <div class="flex items-center justify-between mt-auto pt-4 border-t border-slate-100">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 italic">Détails</span>
-                    <a href="javascript:void(0)" 
-                       onclick="openTerminal()" 
-                       class="w-10 h-10 rounded-full btn-sky-yellow text-white flex items-center justify-center hover:scale-110 transition-all shadow-md">
-                        <i class="fas fa-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
+        <div class="loader-dots">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
         </div>
-    `;
+    </div>
 
-            // Injection au début de la grille
-            grid.insertAdjacentHTML('afterbegin', articleHTML);
+    <!-- TOAST CONTAINER -->
+    <div id="toast-container" class="toast-container"></div>
 
-        });
+    <!-- BACKGROUNDS -->
+    <div class="bg-grid" id="parallax-bg"></div>
+    <div class="bg-glow"></div>
+    <!-- Fond blanc/noir unifié derrière le header -->
+    <div class="header-bg-extension"></div>
 
-    } catch (err) {
-        console.error("Erreur marketplace :", err);
+    <!-- SIDEBAR OVERLAY -->
+    <div id="sidebar-overlay" class="fixed inset-0 z-[5000] invisible transition-all duration-500" aria-hidden="true">
+        <div id="sidebar-bg"
+            class="absolute inset-0 bg-slate-900/20 backdrop-blur-sm opacity-0 transition-opacity duration-500"
+            onclick="toggleSidebar()"></div>
 
-        // Rendu visuel de l'erreur pour l'utilisateur
-        const grid = document.getElementById('products-grid'); // Remplacez par votre ID réel
-        if (grid) {
-            grid.innerHTML = `
-                <div class="col-span-full flex flex-col items-center py-12 text-slate-400">
-                    <i class="fas fa-exclamation-circle text-3xl mb-3 opacity-20"></i>
-                    <p class="text-sm font-medium">Impossible de charger les produits pour le moment.</p>
-                    <button onclick="location.reload()" class="mt-4 text-xs font-bold text-indigo-600 hover:text-indigo-500 underline uppercase tracking-widest">
-                        Réessayer
+        <div id="sidebar-panel"
+            class="fixed top-0 left-0 h-full w-[280px] md:w-[300px] bg-white dark:bg-slate-900 z-[5001] -translate-x-full opacity-0 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col shadow-2xl border-r border-slate-100 dark:border-slate-800 overflow-y-auto">
+
+            <!-- HEADER FERMETURE (Mobile) -->
+            <div
+                class="p-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-700/50 md:hidden">
+                <div class="flex items-center gap-2 text-xl font-black text-slate-900 dark:text-white">
+                    Link<span class="text-indigo-600">o</span>
+                </div>
+                <button onclick="toggleSidebar()"
+                    class="w-9 h-9 rounded-full btn-sky-yellow dark:bg-slate-800 flex items-center justify-center">
+                    <i class="fas fa-times text-slate-500"></i>
+                </button>
+            </div>
+
+            <!-- 1. PROFIL UTILISATEUR (Style Facebook) -->
+            <div id="sidebar-user-card" onclick="switchPage('profile-social'); toggleSidebar();"
+                class="p-3 flex items-center gap-3 hover:btn-sky-yellow dark:hover:bg-slate-800/60 cursor-pointer transition-all mx-2 mt-3 rounded-lg group">
+
+                <div class="relative">
+                    <img id="sidebar-avatar" src="https://ui-avatars.com/api/?name=Guest&background=e2e8f0&color=64748b"
+                        class="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <div
+                        class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full">
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-hidden">
+                    <h4 id="sidebar-username"
+                        class="font-bold text-[15px] text-black dark:text-white leading-tight truncate">
+                        Chargement...
+                    </h4>
+                    <span class="text-[13px] text-slate-500 dark:text-slate-400 font-normal group-hover:underline">
+                        Voir votre profil
+                    </span>
+                </div>
+
+                <i class="fas fa-chevron-right text-[10px] text-slate-400"></i>
+            </div>
+
+            <!-- LISTE MENU -->
+            <nav class="flex-1 p-2 space-y-1">
+
+                <!-- MENU PRINCIPAL -->
+                <a onclick="switchPage('home'); toggleSidebar();" class="nav-link-pro active group">
+                    <div
+                        class="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center mr-3 transition-colors group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50">
+                        <i class="fas fa-house text-indigo-600 dark:text-indigo-400 text-sm"></i>
+                    </div>
+                    <span>Accueil</span>
+                </a>
+
+                <a onclick="switchPage('messages'); toggleSidebar();" class="nav-link-pro group">
+                    <div
+                        class="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center mr-3 transition-colors group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50">
+                        <i class="fas fa-comment-dots text-blue-500 dark:text-blue-400 text-sm"></i>
+                    </div>
+                    <span>Messenger</span>
+                </a>
+
+                <a onclick="switchPage('notifications'); toggleSidebar();" class="nav-link-pro group">
+                    <div
+                        class="w-8 h-8 rounded-lg bg-pink-50 dark:bg-pink-900/30 flex items-center justify-center mr-3 transition-colors group-hover:bg-pink-100 dark:group-hover:bg-pink-900/50">
+                        <i class="fas fa-bell text-pink-500 dark:text-pink-400 text-sm"></i>
+                    </div>
+                    <span>Notifications</span>
+                </a>
+
+                <a onclick="switchPage('marketplace'); toggleSidebar();" class="nav-link-pro group">
+                    <div
+                        class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center mr-3 transition-colors group-hover:bg-slate-200 dark:group-hover:bg-slate-700">
+                        <i class="fas fa-store text-slate-600 dark:text-slate-400 text-sm"></i>
+                    </div>
+                    <span>Marketplace</span>
+                </a>
+
+                <!-- SÉPARATEUR -->
+                <div class="border-t border-slate-100 dark:border-slate-800 my-3 mx-2"></div>
+
+                <!-- RACCOURCIS (Nouveau Design) -->
+                <!-- RACCOURCIS (Style Grille Facebook) -->
+                <div class="flex items-center justify-between px-4 mb-3">
+                    <p class="text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tight">
+                        Raccourcis</p>
+                    <button class="text-blue-600 dark:text-blue-400 text-[12px] font-medium">Modifier</button>
+                </div>
+
+                <div class="grid grid-cols-3 gap-y-4 gap-x-2 px-2 mb-6">
+
+                    <a href="javascript:void(0)" onclick="switchPage('saved'); toggleSidebar();"
+                        class="flex flex-col items-center group">
+                        <div
+                            class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-1 group-active:scale-90 transition-transform">
+                            <i class="fas fa-bookmark text-blue-600 text-[20px]"></i>
+                        </div>
+                        <span class="text-[12px] font-medium text-slate-900 dark:text-slate-200">Enregistrés</span>
+                    </a>
+
+                    <a href="javascript:void(0)" onclick="switchPage('pages'); toggleSidebar();"
+                        class="flex flex-col items-center group">
+                        <div
+                            class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-1 group-active:scale-90 transition-transform">
+                            <i class="fas fa-flag text-orange-500 text-[20px]"></i>
+                        </div>
+                        <span class="text-[12px] font-medium text-slate-900 dark:text-slate-200">Pages</span>
+                    </a>
+
+                    <a href="javascript:void(0)" onclick="switchPage('groups'); toggleSidebar();"
+                        class="flex flex-col items-center group">
+                        <div
+                            class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-1 group-active:scale-90 transition-transform">
+                            <i class="fas fa-users text-cyan-500 text-[20px]"></i>
+                        </div>
+                        <span class="text-[12px] font-medium text-slate-900 dark:text-slate-200">Canaux</span>
+                    </a>
+
+                    <a href="javascript:void(0)" onclick="switchPage('events'); toggleSidebar();"
+                        class="flex flex-col items-center group">
+                        <div
+                            class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-1 group-active:scale-90 transition-transform">
+                            <i class="fas fa-calendar-day text-red-500 text-[20px]"></i>
+                        </div>
+                        <span class="text-[12px] font-medium text-slate-900 dark:text-slate-200">Événements</span>
+                    </a>
+
+                    <a href="javascript:void(0)" onclick="switchPage('stats'); toggleSidebar();"
+                        class="flex flex-col items-center group">
+                        <div
+                            class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-1 group-active:scale-90 transition-transform">
+                            <i class="fas fa-chart-simple text-emerald-500 text-[20px]"></i>
+                        </div>
+                        <span class="text-[12px] font-medium text-slate-900 dark:text-slate-200">Tableau bord</span>
+                    </a>
+
+                </div>
+
+                <div class="flex items-center justify-between px-4 mb-3">
+                    <p class="text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tight">Outils
+                        professionnels</p>
+                    <button class="text-blue-600 dark:text-blue-400 text-[12px] font-medium hover:underline">Voir
+                        tout</button>
+                </div>
+
+                <div class="grid grid-cols-3 gap-1 px-2 mb-6">
+
+                    <a href="javascript:void(0)" onclick="switchPage('certification'); toggleSidebar();"
+                        class="flex flex-col items-center p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all group">
+                        <div
+                            class="w-11 h-11 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-2 group-active:scale-95 transition-transform">
+                            <i class="fas fa-check-circle text-sky-500 text-[18px]"></i>
+                        </div>
+                        <span class="text-[12px] font-medium text-slate-900 dark:text-slate-200">Vérifié</span>
+                    </a>
+
+                </div>
+
+                <!-- FOOTER -->
+                <div class="p-4 border-t border-slate-100 dark:border-slate-800 mt-auto">
+
+                    <a onclick="switchPage('settings'); toggleSidebar();"
+                        class="flex items-center gap-3 p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer">
+                        <div
+                            class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
+                            <i class="fas fa-cog text-sm"></i>
+                        </div>
+                        <span class="text-[13px] font-semibold">Paramètres et confidentialité</span>
+                    </a>
+
+                    <a onclick="confirmSocialLogout()"
+                        class="flex items-center gap-3 p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all cursor-pointer mt-1">
+                        <div class="w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center">
+                            <i class="fas fa-sign-out-alt text-sm"></i>
+                        </div>
+                        <span class="text-[13px] font-semibold">Se déconnecter</span>
+                    </a>
+
+                    <div class="mt-4 flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl shadow-inner">
+                        <button onclick="setTheme('light')" id="btn-light-menu" class="flex-1 flex items-center justify-center gap-2 py-2 text-[11px] font-bold rounded-lg transition-all
+            bg-white dark:bg-transparent text-slate-900 dark:text-slate-400 shadow-sm dark:shadow-none">
+                            <i class="fas fa-sun"></i> Clair
+                        </button>
+
+                        <button onclick="setTheme('dark')" id="btn-dark-menu" class="flex-1 flex items-center justify-center gap-2 py-2 text-[11px] font-bold rounded-lg transition-all
+            bg-transparent dark:bg-[#242526] text-slate-500 dark:text-white dark:shadow-sm">
+                            <i class="fas fa-moon"></i> Sombre
+                        </button>
+                    </div>
+                </div>
+        </div>
+    </div>
+
+    <!-- HEADERS -->
+    <!-- MOBILE HEADER -->
+    <div class="sm:hidden fixed top-0 w-full z-[400] px-4 py-1 transition-all duration-300" id="mobile-header">
+        <div class="flex items-center justify-between gap-3">
+            <button onclick="toggleSidebar()"
+                class="flex items-center justify-center w-11 h-11 bg-white/90 border border-slate-200 rounded-xl shadow-sm backdrop-blur-md active:scale-95 transition-all group"
+                aria-label="Menu"><i
+                    class="fas fa-bars text-slate-700 group-hover:text-indigo-600 transition-colors"></i></button>
+            <div
+                class="flex-1 h-11 bg-white/90 border border-slate-200 rounded-xl flex items-center justify-center px-4 shadow-sm backdrop-blur-md">
+                <span class="font-bold text-lg tracking-tight"><span class="text-indigo-600">Link</span>o</span>
+            </div>
+            <!-- BOUTON NOTIFICATIONS (Remplace le bouton menu hamburger) -->
+            <button onclick="switchPage('notifications')"
+                class="flex items-center justify-center w-11 h-11 bg-white/90 border border-slate-200 rounded-xl shadow-sm backdrop-blur-md active:scale-95 transition-all group relative"
+                aria-label="Notifications">
+                <i class="fas fa-bell text-slate-700 group-hover:text-indigo-600 transition-colors"></i>
+
+                <!-- BADGE ROUGE (Caché par défaut) -->
+                <span id="notif-badge-count"
+                    class="hidden absolute top-0 right-0 w-5 h-5 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white shadow-sm">0</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- MOBILE DOCK -->
+    <div
+        class="mobile-dock md:hidden fixed bottom-0 left-0 w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 h-[65px] flex items-center justify-around z-[9999] m-0 p-0">
+
+        <!-- 1. EXPLORER (Accueil) -->
+        <a onclick="switchPage('home')"
+            class="flex flex-col items-center justify-center w-full h-full cursor-pointer py-1">
+            <i class="fas fa-house text-[22px] text-slate-900 dark:text-white"></i>
+            <span class="text-[10px] font-semibold text-slate-900 dark:text-white mt-1">Explorer</span>
+        </a>
+
+        <!-- 2. MARKETPLACE -->
+        <a onclick="switchPage('marketplace')"
+            class="flex flex-col items-center justify-center w-full h-full cursor-pointer py-1">
+            <i class="far fa-compass text-[22px] text-slate-500"></i>
+            <span class="text-[10px] font-medium text-slate-500 mt-1">Marketplace</span>
+        </a>
+
+        <!-- 3. PUBLIER -->
+        <div class="flex items-center justify-center w-full h-full py-1">
+            <a href="javascript:void(0)" onclick="openNewPostModal()"
+                class="flex flex-col items-center justify-center cursor-pointer">
+                <div
+                    class="border-2 border-slate-900 dark:border-white rounded-[8px] w-[40px] h-[28px] flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+                    <i class="fas fa-plus text-slate-900 dark:text-white text-[14px]"></i>
+                </div>
+                <span class="text-[10px] font-medium text-slate-500 mt-1"></span>
+            </a>
+        </div>
+
+        <!-- 4. MESSAGE -->
+        <a href="javascript:void(0)" onclick="switchPage('messages')"
+            class="flex flex-col items-center justify-center w-full h-full cursor-pointer py-1 relative">
+            <i class="far fa-paper-plane text-[22px] text-slate-500"></i>
+            <span class="text-[10px] font-medium text-slate-500 mt-1">Message</span>
+            <span id="msg-badge-count"
+                class="hidden absolute top-0 right-4 bg-red-500 text-white text-[10px] font-bold px-1 rounded-full min-w-[15px] h-4 border-2 border-white dark:border-slate-900">0</span>
+        </a>
+
+        <!-- 5. PROFIL -->
+        <a href="javascript:void(0)" onclick="switchPage('profile-social')"
+            class="flex flex-col items-center justify-center w-full h-full cursor-pointer py-1">
+            <div class="w-6 h-6 rounded-full border border-slate-300 overflow-hidden">
+                <img id="dock-avatar-img" src="" alt="" class="w-full h-full object-cover hidden">
+                <i id="dock-avatar-icon"
+                    class="fas fa-user text-slate-500 flex items-center justify-center h-full text-xs"></i>
+            </div>
+            <span class="text-[10px] font-medium text-slate-500 mt-1">Profil</span>
+        </a>
+    </div>
+
+    <!-- MAIN CONTENT WRAPPER -->
+    <!-- PAGE 1: ACCUEIL (FEED GLOBAL) -->
+    <div id="home-view" class="page-view">
+        <section class="max-w-sl mx-auto ">
+            <!-- SECTION STORIES -->
+            <div id="stories-bar" class="stories-container max-w-2xl mx-auto">
+                <!-- Le JavaScript va injecter le bouton "Votre Story" et les autres ici -->
+                <input type="file" id="story-upload-input" accept="image/*,video/*" class="hidden"
+                    onchange="handleStoryUpload(this)">
+            </div>
+            <!-- Zone Centrale (Pause) -->
+            <div class="w-1/3 h-full" onmousedown="pauseStory()" onmouseup="resumeStory()" ontouchstart="pauseStory()"
+                ontouchend="resumeStory()">
+            </div>
+            <!-- NOUVEAU WRAPPER (FIXE) -->
+            <div class="fixed-explorer-header px-4 py-3">
+
+                <!-- HEADER DU FEED -->
+                <div class="flex items-center justify-between mb-2">
+                    <h1 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                        Explorez
+                    </h1>
+                    <button onclick="toggleSearch()"
+                        class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-4 py-2 rounded-full text-sm font-bold shadow-sm hover:bg-slate-200 transition flex items-center gap-2">
+                        <i class="fas fa-search"></i>
                     </button>
                 </div>
-            `;
-        }
 
-        // Optionnel : Notification Toast
-        if (typeof showToast === 'function') {
-            showToast("Problème de connexion à la marketplace", "error");
-        }
-    }
-}
-/**
-* Génère le HTML de l'avatar de manière élégante
-* @param {string} userEmail - Email de l'utilisateur pour les initiales et la couleur
-* @param {string} avatarUrl - URL optionnelle de la photo de profil
-* @param {boolean} isMe - Optionnel : permet de styliser différemment mon propre avatar
-*/
-function getAvatarHtml(userEmail, avatarUrl, isMe = false) {
-    // 1. Si on a une URL d'image valide
-    if (avatarUrl && avatarUrl.trim() !== '') {
-        return `<img src="${avatarUrl}" class="w-full h-full object-cover rounded-full" onerror="this.parentElement.innerHTML='${getAvatarHtml(userEmail, null, isMe)}'">`;
-    }
+                <!-- BARRE DE RECHERCHE -->
+                <div id="feed-search-bar" class="hidden mb-3 overflow-hidden transition-all duration-300">
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <!-- Dans la barre "Explorez" -->
+                        <input type="text" id="global-search-input" placeholder="       Rechercher..."
+                            class="w-full bg-slate-100 dark:bg-slate-800 rounded-full py-2 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                            onfocus="openSearchOverlay()" oninput="handleGlobalSearch(this.value)">
+                    </div>
+                </div>
 
-    // 2. Préparation des initiales
-    const initials = userEmail && userEmail.includes('@')
-        ? userEmail.split('@')[0].substring(0, 2).toUpperCase()
-        : (userEmail ? userEmail.substring(0, 2).toUpperCase() : '??');
-
-    // 3. Palette de couleurs "Modern Business" (plus sobres et pros)
-    const colors = [
-        '#6366f1', // Indigo
-        '#8b5cf6', // Violet
-        '#ec4899', // Rose
-        '#3b82f6', // Bleu
-        '#06b6d4', // Cyan
-        '#10b981', // Emeraude
-        '#f59e0b', // Ambre
-        '#64748b'  // Ardoise
-    ];
-
-    // Génération d'un index de couleur constant pour le même utilisateur
-    const charCodeSum = userEmail ? userEmail.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) : 0;
-    const colorIndex = charCodeSum % colors.length;
-    const bgColor = colors[colorIndex];
-
-    // 4. Retourne le span avec centrage Flexbox parfait
-    return `
-        <div class="w-full h-full flex items-center justify-center font-bold text-[11px] tracking-tighter rounded-full text-white shadow-inner" 
-             style="background: linear-gradient(135deg, ${bgColor}CC, ${bgColor}); text-shadow: 0 1px 2px rgba(0,0,0,0.2);">
-            ${initials}
-        </div>
-    `;
-}
-
-/* --- METTRE À JOUR L'AVATAR DU DOCK --- */
-function updateDockAvatar(avatarUrl) {
-    const img = document.getElementById('dock-avatar-img');
-    const icon = document.getElementById('dock-avatar-icon');
-
-    if (!img || !icon) return;
-
-    if (avatarUrl && avatarUrl.trim() !== '') {
-        // Si on a une photo : on l'affiche et on cache l'icône
-        img.src = avatarUrl;
-        img.classList.remove('hidden');
-        icon.classList.add('hidden');
-    } else {
-        // Si pas de photo : on cache l'image et on affiche l'icône
-        img.classList.add('hidden');
-        icon.classList.remove('hidden');
-    }
-}
-/* --- GESTION DE L'OUVERTURE DU CHAT (MODIFIÉ) --- */
-/* --- GESTION DE L'OUVERTURE DU CHAT (CORRIGÉ POUR LE DOCK) --- */
-
-window.toggleChat = async function () {
-    const { data: authData } = await supabaseClient.auth.getUser();
-    const user = authData?.user;
-
-    if (!user) {
-        showToast("Veuillez vous connecter pour accéder au chat", "error");
-        return;
-    }
-
-    const overlay = document.getElementById('chat-overlay');
-    const panel = document.getElementById('chat-panel');
-    const dock = document.querySelector('.mobile-dock');
-
-    if (!overlay || !panel) return;
-
-    if (overlay.classList.contains('invisible')) {
-        // --- OUVERTURE ---
-        overlay.classList.remove('invisible');
-        setTimeout(() => {
-            overlay.querySelector('div:first-child').classList.replace('opacity-0', 'opacity-100');
-            panel.classList.replace('translate-x-full', 'translate-x-0');
-        }, 10);
-
-        loadChatMessages();
-        if (!chatInterval) chatInterval = setInterval(loadChatMessages, 3000);
-
-        // --- CACHER LE DOCK ---
-        if (dock) dock.classList.add('dock-hidden');
-
-        setTimeout(() => {
-            const input = document.getElementById('chat-input');
-            if (input) input.focus();
-        }, 500);
-    } else {
-        // --- FERMETURE ---
-        overlay.querySelector('div:first-child').classList.replace('opacity-100', 'opacity-0');
-        panel.classList.replace('translate-x-0', 'translate-x-full');
-        setTimeout(() => overlay.classList.add('invisible'), 500);
-
-        if (chatInterval) {
-            clearInterval(chatInterval);
-            chatInterval = null;
-        }
-
-        // --- RÉAFFICHER LE DOCK ---
-        if (dock) dock.classList.remove('dock-hidden');
-    }
-};
-
-async function loadChatMessages() {
-    const container = document.getElementById('chat-messages');
-    if (!container) return;
-
-    const { data: authData } = await supabaseClient.auth.getUser();
-    const user = authData?.user;
-    if (!user) return;
-
-    const { data: messages, error } = await supabaseClient
-        .from('messages')
-        .select('*')
-        .order('created_at', { ascending: true })
-        .limit(50);
-
-    if (error) return console.error("Erreur chat:", error);
-    if (container.querySelectorAll('.chat-row').length === messages.length) return;
-
-    container.innerHTML = '<div class="text-center my-6"><span class="inline-block bg-indigo-50 text-indigo-600 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full border border-indigo-100">Discussion en direct</span></div>';
-
-    messages.forEach(msg => {
-        const isMe = msg.user_id === user.id;
-        const row = document.createElement('div');
-        row.className = `chat-row ${isMe ? 'flex-row-reverse' : 'flex-row'}`;
-
-        const time = new Date(msg.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-        const name = isMe ? 'Moi' : (msg.user_email?.split('@')[0] || 'Anonyme');
-
-        row.innerHTML = `
-            <div class="chat-avatar shadow-md border-2 ${isMe ? 'border-indigo-100' : 'border-white'}">
-                ${getAvatarHtml(msg.user_email, null, isMe)}
+                <!-- BOUTONS DE TRI -->
+                <div id="header-tabs-container" class="flex gap-2 mt-2 overflow-x-auto">
+                    <button onclick="handleSortClick(this, 'recent')"
+                        class="sort-btn flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 text-[14px] font-semibold transition-all">
+                        <i class="fas fa-bolt-lightning text-sm"></i>
+                        <span class="btn-text">Actualités</span>
+                    </button>
+                    <button onclick="handleSortClick(this, 'popular')"
+                        class="sort-btn flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[14px] font-semibold transition-all">
+                        <i class="fas fa-arrow-trend-up text-sm text-indigo-500"></i>
+                        <span class="btn-text hidden">Tendances</span>
+                    </button>
+                    <button onclick="handleSortClick(this, 'shorts')"
+                        class="sort-btn flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[14px] font-semibold transition-all">
+                        <i class="fas fa-clapperboard text-sm text-pink-500"></i>
+                        <span class="btn-text hidden">Shorts</span>
+                    </button>
+                </div>
             </div>
-            <div class="chat-content ${isMe ? 'items-end' : 'items-start'}">
-                <div class="chat-header ${isMe ? 'flex-row-reverse text-indigo-100' : 'text-indigo-600'}">
-                    <span>${name}</span>
-                    <span class="opacity-60 font-normal">${time}</span>
+
+            <!-- ESPACE VIDE (pour ne pas que le contenu soit caché sous la barre fixe) -->
+            <div class="spacer-for-fixed-header"></div>
+            <!-- FIN DU WRAPPER STICKY -->
+
+            <!-- CONTENEUR DES POSTS -->
+            <div id="global-feed-container">
+                <!-- ... les posts ... -->
+            </div>
+            <!-- AJOUTEZ CE BLOC ICI (Le sentinelle de chargement) -->
+            <div id="feed-loader" class="hidden py-8 flex justify-center">
+                <div class="flex items-center gap-2 text-slate-400 text-sm font-bold">
+                    <i class="fas fa-circle-notch fa-spin text-indigo-500"></i>
+                    Chargement...
                 </div>
-                <div class="chat-bubble ${isMe ? 'me' : 'other'} shadow-sm">
-                    ${msg.content}
+            </div>
+        </section>
+        <!-- OVERLAY DE RECHERCHE (Apparaît sous la barre de recherche) -->
+        <div id="search-overlay" class="fixed inset-0 z-30 bg-white dark:bg-slate-900 hidden overflow-y-auto pt-20">
+            <div class="max-w-2xl mx-auto p-4">
+
+                <!-- Onglets de filtrage -->
+                <div id="search-tabs-sticky" class="flex gap-4 border-b border-slate-200 dark:border-slate-700 mb-4">
+                    <button onclick="setSearchFilter('top')" id="filter-top"
+                        class="pb-2 text-sm font-bold border-b-2 border-sky-500 text-sky-500">Top</button>
+                    <button onclick="setSearchFilter('people')" id="filter-people"
+                        class="pb-2 text-sm font-medium text-slate-400 hover:text-slate-600">Personnes</button>
+                    <button onclick="setSearchFilter('hashtags')" id="filter-hashtags"
+                        class="pb-2 text-sm font-medium text-slate-400 hover:text-slate-600">Hashtags</button>
                 </div>
-            </div>`;
-        container.appendChild(row);
-    });
 
-    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
-}
+                <!-- Contenu Dynamique -->
+                <div id="search-content-area">
+                    <!-- Par défaut: Tendances -->
+                    <div id="trending-section">
+                        <h3 class="text-lg font-bold mb-4 text-slate-800 dark:text-white">Tendances pour vous</h3>
+                        <div id="trending-list" class="space-y-3">
+                            <!-- Rempli par JS -->
+                        </div>
+                    </div>
 
-/* --- GESTION DES BADGES (ADMIN) --- */
-
-async function loadAdminUsers() {
-    const list = document.getElementById('admin-users-list');
-    if (!list) return;
-
-    const { data: profiles, error } = await supabaseClient
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-    if (error) {
-        list.innerHTML = `<tr><td colspan="4">Erreur: ${error.message}</td></tr>`;
-        return;
-    }
-
-    list.innerHTML = profiles.map(p => {
-        const isCert = Boolean(p.is_certified);
-        return `
-        <tr class="hover:bg-slate-50 border-b border-slate-100">
-            <td class="px-6 py-4 flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full overflow-hidden border shadow-sm">
-                     ${p.avatar_url ? `<img src="${p.avatar_url}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400"><i class="fas fa-user text-xs"></i></div>`}
+                    <!-- Résultats Recherche (Caché par défaut) -->
+                    <div id="results-section" class="hidden">
+                        <div id="search-results-list" class="space-y-3">
+                            <!-- Rempli par JS -->
+                        </div>
+                    </div>
                 </div>
-                <span class="font-bold text-slate-900">${p.full_name || 'Sans nom'}</span>
-            </td>
-            <td class="px-6 py-4 text-slate-500 text-xs">${p.email || 'N/A'}</td>
-            <td class="px-6 py-4 text-center">
-                ${isCert ? '<span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-xs font-bold"><i class="fas fa-check-circle"></i> Certifié</span>' : '<span class="text-slate-400 text-xs">Standard</span>'}
-            </td>
-            <td class="px-6 py-4 text-center">
-                <button onclick="toggleUserBadge('${p.id}', ${isCert})" class="px-3 py-1 text-xs font-bold border rounded ${isCert ? 'text-red-600 border-red-200' : 'text-green-600 border-green-200'}">
-                    ${isCert ? 'Révoquer' : 'Certifier'}
+            </div>
+        </div>
+    </div>
+
+
+    <!-- PAGE : PROFIL SOCIAL (DESIGN FLAT STYLE CAPTURE) -->
+    <div id="profile-social-view" class="page-view">
+        <!-- Container principal fond blanc pour cacher le fond de l'app -->
+        <div class="bg-white min-h-screen max-w-lg mx-auto shadow-sm relative z-20 pb-20">
+
+            <!-- HEADER : Avatar + Nom + Stats -->
+            <div class="p-5 flex items-start gap-5 border-b border-gray-100">
+                <!-- BOUTON DÉCONNEXION (Haut Droit) -->
+                <!-- Il s'affiche en gris, devient rouge au survol -->
+                <button onclick="confirmSocialLogout()"
+                    class="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-all"
+                    title="Déconnexion">
+                    <i class="fas fa-sign-out-alt text-lg"></i>
                 </button>
-            </td>
-        </tr>`;
-    }).join('');
-}
+                <!-- 1. AVATAR (Sans le badge absolu dedans) -->
+                <div class="relative">
+                    <div class="w-20 h-20 md:w-24 md:h-24 rounded-full border border-gray-200 p-1 bg-white">
+                        <img id="social-avatar" src="" alt="Profile"
+                            class="w-full h-full object-cover rounded-full hidden">
+                        <div id="social-avatar-placeholder"
+                            class="w-full h-full bg-gray-100 rounded-full flex items-center justify-center text-gray-300">
+                            <i class="fas fa-user text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
 
-async function toggleUserBadge(userId, currentStatus) {
-    const newStatus = !currentStatus;
-    const { error } = await supabaseClient.from('profiles').update({ is_certified: newStatus, certification_badge: newStatus ? 'Vérifié' : null }).eq('id', userId);
+                <!-- 2. INFOS PRINCIPALES -->
+                <div class="flex-1 pt-1">
 
-    if (error) {
-        showToast("Erreur: " + error.message, "error");
-    } else {
-        showToast(newStatus ? "Utilisateur certifié !" : "Badge révoqué.", "success");
-        loadAdminUsers();
-    }
-}
+                    <!-- Conteneur Flex pour aligner le NOM et le BADGE -->
+                    <div class="flex items-center gap-1 mb-1">
+                        <h1 id="social-fullname" class="text-xl font-bold text-black leading-none">Chargement...</h1>
 
-/* --- MISE À JOUR DU JS POUR LE NOUVEAU DESIGN --- */
+                        <!-- LE BADGE EST MAINTENANT ICI (Style Facebook : Rond bleu + Check blanc) -->
+                        <span id="social-badge-inline" class="hidden ml-1">
+                            <!-- Couleur officielle Instagram : #0095F6 -->
+                            <i class="fas fa-check-circle text-[#0095F6] text-lg"></i>
+                        </span>
+                    </div>
 
-/* --- CHARGEMENT PROFIL (OPTIMISÉ) --- */
-async function loadSocialProfile(targetUserId = null) {
-    try {
-        const { data: { user: currentUser }, error: authError } = await supabaseClient.auth.getUser();
-        if (authError || !currentUser) return;
+                    <!-- Stats -->
+                    <div class="text-sm text-gray-600 font-medium mb-2">
+                        <span id="stat-following">0</span> suivis •
+                        <span id="stat-followers">0</span> abonnés
+                    </div>
 
-        let profileId = targetUserId || currentUser.id;
-        let isMyProfile = (profileId === currentUser.id);
+                    <!-- Bouton Modifier -->
+                    <button onclick="openEditProfileModal()"
+                        class="px-3 py-1 bg-gray-100 text-xs font-bold text-gray-700 rounded hover:bg-gray-200 transition">
+                        Modifier le profil
+                    </button>
+                    <!-- NOUVEAU CONTENEUR POUR LE BOUTON FOLLOW (Caché par défaut) -->
+                    <div id="profile-follow-container" class="hidden">
+                        <!-- Le bouton sera injecté ici par JS -->
+                    </div>
+                </div>
+            </div>
 
-        // 1. Charger le profil
-        const { data: profile, error } = await supabaseClient
-            .from('profiles')
-            .select('*')
-            .eq('id', profileId)
-            .maybeSingle();
+            <!-- SECTION INFOS (Liste grise comme sur la capture) -->
+            <div class="bg-gray-50 px-5 py-4 space-y-3 border-b border-gray-200">
+                <!-- Téléphone -->
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-phone text-gray-400 w-4 text-center"></i>
+                    <span id="social-phone" class="text-sm text-gray-700 font-medium">...</span>
+                </div>
+                <!-- Username -->
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-at text-gray-400 w-4 text-center"></i>
+                    <span id="social-username" class="text-sm text-gray-700 font-medium">...</span>
+                </div>
+                <!-- Date de naissance -->
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-birthday-cake text-gray-400 w-4 text-center"></i>
+                    <span id="social-dob" class="text-sm text-gray-700 font-medium">...</span>
+                </div>
+            </div>
 
-        if (error) throw error;
-        if (!profile) return;
+            <!-- ONGLETS (Publications / Archivées) -->
+            <div class="flex border-b border-gray-200">
+                <button onclick="switchSocialTab('publications')"
+                    class="social-tab-btn flex-1 py-4 text-sm font-bold text-black border-b-2 border-black transition-colors">
+                    Publications
+                </button>
+                <button onclick="switchSocialTab('archives')"
+                    class="social-tab-btn flex-1 py-4 text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-gray-600 transition-colors">
+                    Publications archivées
+                </button>
+            </div>
 
-        // 2. Fonction helper pour mettre à jour le texte
-        const updateText = (id, text) => {
-            const el = document.getElementById(id);
-            if (el) el.textContent = text;
-        };
-
-        // Fonction helper pour gérer les classes (pour le mode sombre)
-        const updateClass = (id, className) => {
-            const el = document.getElementById(id);
-            if (el) el.className = className;
-        };
-
-        // 3. Mise à jour des champs de base
-        updateText('social-fullname', profile.full_name || 'Utilisateur');
-
-        // --- CORRECTION USERNAME (Avec fallback intelligent et couleur) ---
-        let usernameDisplay = profile.username ? `@${profile.username}` : `@${currentUser.email.split('@')[0]}`;
-        updateText('social-username', usernameDisplay);
-        // On s'assure que la couleur est visible en mode sombre
-        updateClass('social-username', 'text-sm text-slate-700 dark:text-slate-300 font-medium');
-
-        // --- CHAMPS MANQUANTS ---
-        updateText('social-phone', profile.phone || 'Non renseigné');
-
-        if (profile.dob) {
-            const date = new Date(profile.dob);
-            updateText('social-dob', date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }));
-        } else {
-            updateText('social-dob', 'Non renseignée');
-        }
-
-        // 4. Stats
-        const [followersRes, followingRes] = await Promise.all([
-            supabaseClient.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', profileId),
-            supabaseClient.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', profileId)
-        ]);
-        updateText('stat-followers', followersRes.count || 0);
-        updateText('stat-following', followingRes.count || 0);
-
-        // 5. Avatar Principal
-        const imgEl = document.getElementById('social-avatar');
-        const placeholder = document.getElementById('social-avatar-placeholder');
-
-        if (imgEl && placeholder) {
-            if (profile.avatar_url) {
-                imgEl.src = profile.avatar_url;
-                imgEl.classList.remove('hidden');
-                placeholder.classList.add('hidden');
-            } else {
-                imgEl.classList.add('hidden');
-                placeholder.classList.remove('hidden');
-                placeholder.innerHTML = `<span class="text-3xl font-bold text-slate-400">${(profile.full_name || 'U').charAt(0)}</span>`;
-            }
-        }
-
-        // 6. Badge
-        const badgeInline = document.getElementById('social-badge-inline');
-        if (badgeInline) {
-            profile.is_certified ? badgeInline.classList.remove('hidden') : badgeInline.classList.add('hidden');
-        }
-
-        // 7. Gestion des boutons
-        const editBtn = document.querySelector('button[onclick="toggleProfile()"]');
-        const followContainer = document.getElementById('profile-follow-container');
-
-        if (isMyProfile) {
-            if (editBtn) editBtn.style.display = 'inline-block';
-            if (followContainer) followContainer.classList.add('hidden');
-
-            // --- FORCER LA MISE À JOUR DU DOCK (EN BAS) ---
-            if (typeof updateDockAvatar === 'function') {
-                updateDockAvatar(profile.avatar_url);
-            }
-            // --- FORCER LA MISE À JOUR DU SIDEBAR ---
-            const sideAvatar = document.getElementById('sidebar-avatar');
-            if (sideAvatar) sideAvatar.src = profile.avatar_url;
-
-        } else {
-            if (editBtn) editBtn.style.display = 'none';
-            if (followContainer) {
-                followContainer.classList.remove('hidden');
-                await initFollowButtonOnProfile(profileId, currentUser.id);
-            }
-        }
-
-        // Charger les posts
-        loadSocialPosts(profileId);
-
-    } catch (err) {
-        console.error("Erreur chargement profil social:", err);
-    }
-}
-
-async function initFollowButtonOnProfile(targetUserId, myId) {
-    const container = document.getElementById('profile-follow-container');
-    if (!container) return;
-
-    // 1. Sécurité : On définit cleanMyId proprement
-    let cleanMyId = (typeof myId === 'object' && myId !== null) ? myId.id : myId;
-
-    // Si cleanMyId est toujours invalide, on le récupère via la session
-    if (!cleanMyId || typeof cleanMyId !== 'string') {
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        cleanMyId = user?.id;
-    }
-
-    if (!cleanMyId || !targetUserId) return;
-
-    try {
-        // 2. Vérification de l'abonnement
-        const { data: followCheck } = await supabaseClient
-            .from('follows')
-            .select('*')
-            .eq('follower_id', cleanMyId)
-            .eq('following_id', targetUserId)
-            .maybeSingle();
-
-        const isFollowing = !!followCheck;
-
-        // 3. Rendu HTML (Bouton Follow + Bouton Message)
-        container.style.display = 'flex';
-        container.className = "flex items-center gap-2 w-full mt-4";
-
-        container.innerHTML = `
-            <button id="main-follow-btn" 
-                onclick="toggleFollow('${targetUserId}', this)" 
-                class="flex-1 text-xs font-bold px-6 py-2.5 rounded-full transition-all active:scale-95 ${isFollowing
-                ? 'bg-slate-100 text-slate-600 border border-slate-200'
-                : 'btn-sky-yellow shadow-md'
-            }">
-                ${isFollowing ? 'Abonné' : 'S\'abonner'}
-            </button>
-            
-            <button onclick="startChat('${targetUserId}')" 
-                class="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center hover:bg-indigo-100 transition-all active:scale-90 shadow-sm border border-indigo-100">
-                <i class="fas fa-comment-dots"></i>
-            </button>
-        `;
-    } catch (err) {
-        console.error("Erreur initFollowButton:", err);
-    }
-}
-
-// 3. Chargement des Photos (Grille 3 colonnes)
-// 3. Chargement des Photos (Grille 3 colonnes) - VERSION CORRIGÉE
-async function loadSocialPosts(userId) {
-    const grid = document.getElementById('social-posts-grid');
-    if (!grid) return;
-
-    try {
-        // --- CORRECTION : Récupération de l'utilisateur connecté (myId) ---
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        const myId = user?.id || null; // Si pas connecté, myId est null
-
-        // Récupération des posts du profil visité
-        const { data: posts, error } = await supabaseClient
-            .from('posts')
-            .select('*')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        if (!posts || posts.length === 0) {
-            grid.innerHTML = `
+            <!-- GRILLE DES PHOTOS (3 Colonnes, écart minime) -->
+            <div id="social-posts-grid" class="grid grid-cols-3 gap-1 bg-gray-100">
+                <!-- Les photos seront injectées ici par JS -->
                 <div class="col-span-3 flex flex-col items-center justify-center py-20 text-gray-400">
                     <i class="fas fa-camera text-3xl mb-2"></i>
                     <p class="text-xs">Aucune publication</p>
-                </div>`;
-            return;
-        }
-
-        // Génération HTML pour la grille (carrés parfaits)
-        grid.innerHTML = posts.map(post => {
-            // Logique de confidentialité (Optionnel : masquer les posts privés si ce n'est pas le propriétaire)
-            if (post.visibility === 'private' && myId !== userId) {
-                return ''; // Ne pas afficher les posts privés des autres
-            }
-
-            // Déterminer le média (Image ou Vidéo)
-            const mediaUrl = post.image_url || post.video_url;
-            const isVideo = post.is_short || post.video_url;
-
-            return `
-            <div class="aspect-square bg-gray-200 relative group cursor-pointer overflow-hidden" onclick="openPostModal('${post.id}')">
-                ${mediaUrl
-                    ? (isVideo
-                        ? `<video src="${mediaUrl}" class="w-full h-full object-cover" muted></video>
-                           <div class="absolute top-2 right-2 text-white drop-shadow-lg"><i class="fas fa-play-circle"></i></div>`
-                        : `<img src="${mediaUrl}" decoding="async" class="w-full h-full object-cover" loading="lazy">`
-                    )
-                    : `<div class="w-full h-full flex items-center justify-center bg-slate-100 text-slate-300"><i class="fas fa-image text-2xl"></i></div>`
-                }
-                <!-- Overlay au survol (Style Instagram) -->
-                <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4 text-white text-sm font-bold">
-                    ${post.image_url ? `<span class="flex items-center gap-1"><i class="fas fa-heart"></i> 0</span>` : '<i class="fas fa-play fa-2x"></i>'}
-                </div>
-            </div>
-            `;
-        }).join('');
-
-    } catch (err) {
-        console.error("Erreur posts:", err);
-    }
-}
-
-// 4. Gestion de la Modale de Publication
-function openNewPostModal() {
-    // Afficher la modale
-    const modal = document.getElementById('new-post-modal');
-    if (modal) modal.classList.remove('hidden');
-
-    // NOUVEAU : Cacher le Dock mobile pour libérer l'espace
-    const dock = document.querySelector('.mobile-dock');
-    if (dock) dock.classList.add('nav-hidden');
-}
-
-function closeNewPostModal() {
-    // Cacher la modale
-    const modal = document.getElementById('new-post-modal');
-    if (modal) modal.classList.add('hidden');
-
-    // NOUVEAU : Réafficher le Dock mobile
-    const dock = document.querySelector('.mobile-dock');
-    if (dock) dock.classList.remove('nav-hidden');
-}
-
-
-
-// --- GESTION DU TYPE DE POST (IMAGE / SHORT) ---
-
-let currentPostFile = null; // Stocke le fichier (image ou vidéo)
-
-function setPostType(type) {
-    const imgBox = document.getElementById('upload-image-box');
-    const vidBox = document.getElementById('upload-video-box');
-    const btnImg = document.getElementById('btn-type-image');
-    const btnVid = document.getElementById('btn-type-short');
-    const hiddenInput = document.getElementById('current-post-type');
-
-    hiddenInput.value = type;
-    currentPostFile = null; // Reset file
-    resetPreview();
-
-    if (type === 'image') {
-        imgBox.classList.remove('hidden');
-        vidBox.classList.add('hidden');
-        btnImg.className = "flex-1 py-2 text-xs font-bold rounded-md bg-white shadow-sm text-slate-900 transition";
-        btnVid.className = "flex-1 py-2 text-xs font-bold rounded-md text-slate-500 hover:text-slate-900 transition";
-    } else {
-        imgBox.classList.add('hidden');
-        vidBox.classList.remove('hidden');
-        btnImg.className = "flex-1 py-2 text-xs font-bold rounded-md text-slate-500 hover:text-slate-900 transition";
-        btnVid.className = "flex-1 py-2 text-xs font-bold rounded-md bg-pink-50 shadow-sm text-pink-600 transition";
-    }
-}
-
-function previewFile(input, type) {
-    const file = input.files[0];
-    if (!file) return;
-
-    const errorMsg = document.getElementById('video-error-msg');
-    const previewArea = document.getElementById('preview-area');
-    const imgEl = document.getElementById('preview-img-el');
-    const vidEl = document.getElementById('preview-video-el');
-
-    errorMsg.classList.add('hidden');
-    currentPostFile = file;
-    previewArea.classList.remove('hidden');
-
-    if (type === 'image') {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            imgEl.src = e.target.result;
-            imgEl.classList.remove('hidden');
-            vidEl.classList.add('hidden');
-        };
-        reader.readAsDataURL(file);
-    } else {
-        // LOGIQUE VIDÉO : Vérifier la durée MAX 10 MIN
-        const videoURL = URL.createObjectURL(file);
-        vidEl.src = videoURL;
-
-        vidEl.onloadedmetadata = function () {
-            if (this.duration > 600) { // 600 secondes = 10 minutes
-                errorMsg.innerText = "Erreur : La vidéo dépasse 10 minutes !";
-                errorMsg.classList.remove('hidden');
-                input.value = ""; // Reset
-                currentPostFile = null;
-                previewArea.classList.add('hidden');
-            } else {
-                // Durée OK
-                vidEl.classList.remove('hidden');
-                imgEl.classList.add('hidden');
-            }
-        };
-    }
-}
-
-function resetPreview() {
-    document.getElementById('preview-area').classList.add('hidden');
-    document.getElementById('preview-img-el').src = '';
-    document.getElementById('preview-video-el').src = '';
-}// <--- C'est cette accolade qui ferme la fonction
-
-async function filterFeed(filter) {
-    // Mise à jour visuelle des boutons
-    const btnRecent = document.getElementById('btn-sort-recent');
-    const btnPopular = document.getElementById('btn-sort-popular');
-    const btnShorts = document.getElementById('btn-filter-shorts');
-
-    // Reset classes
-    [btnRecent, btnPopular, btnShorts].forEach(btn => {
-        btn.className = "text-sm font-bold pb-2 px-2 border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-colors whitespace-nowrap";
-    });
-
-    // Active class pour le bouton cliqué
-    if (filter === 'shorts') {
-        btnShorts.className = "text-sm font-bold pb-2 px-2 border-b-2 border-pink-600 text-pink-600 transition-colors whitespace-nowrap flex items-center gap-1";
-    } else if (filter === 'recent') {
-        btnRecent.className = "text-sm font-bold pb-2 px-2 border-b-2 border-indigo-600 text-indigo-600 transition-colors whitespace-nowrap";
-    } else if (filter === 'popular') {
-        btnPopular.className = "text-sm font-bold pb-2 px-2 border-b-2 border-indigo-600 text-indigo-600 transition-colors whitespace-nowrap flex items-center gap-1";
-    }
-
-    // Charger le feed avec le filtre
-    loadGlobalFeed('recent', filter);
-}
-
-/* --- FONCTION DÉCONNEXION SOCIALE --- */
-function confirmSocialLogout() {
-    // 1. Demander confirmation
-    if (confirm("Voulez-vous vraiment vous déconnecter ?")) {
-
-        // 2. Appeler Supabase pour déconnecter
-        supabaseClient.auth.signOut().then(({ error }) => {
-            if (error) {
-                console.error("Erreur déconnexion:", error.message);
-                showToast("Erreur lors de la déconnexion", "error");
-            } else {
-                // 3. Rediriger vers la page de login
-                showToast("Déconnexion !", "success");
-                setTimeout(() => {
-                    window.location.href = 'login.html';
-                }, 1000);
-            }
-        });
-    }
-}
-
-/* --- ALGORITHME DE TRI DES POSTS --- */
-
-// Fonction pour calculer le score d'un post
-function calculatePostScore(likes, comments, createdAt) {
-    // 1. Score d'engagement (1 Like = 10pts, 1 Comment = 5pts)
-    const engagementScore = (likes * 10) + (comments * 5);
-
-    // 2. Calcul du temps écoulé (en heures)
-    const now = new Date();
-    const postDate = new Date(createdAt);
-    const diffTime = Math.abs(now - postDate);
-    const diffHours = diffTime / (1000 * 60 * 60);
-
-    // 3. Formule de désintégration temporelle (Gravity)
-    // Plus diffHours est grand, plus le dénominateur est grand, donc le score baisse.
-    const gravity = 1.8;
-    const timeDecay = Math.pow(diffHours + 2, gravity);
-
-    // 4. Score final
-    return engagementScore / timeDecay;
-}
-
-// Fonction de tri principal
-// Fonction pour le TRI (Tendances)
-function sortFeed(type) {
-    // Mise à jour visuelle des boutons
-    const btnRecent = document.getElementById('btn-sort-recent');
-    const btnPopular = document.getElementById('btn-sort-popular');
-
-    // Reset des styles
-    if (btnRecent) { btnRecent.className = "text-sm font-bold pb-2 px-2 border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-colors whitespace-nowrap"; }
-    if (btnPopular) { btnPopular.className = "text-sm font-bold pb-2 px-2 border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-colors whitespace-nowrap"; }
-
-    // Activation du style du bouton cliqué
-    if (type === 'popular') {
-        if (btnPopular) btnPopular.className = "text-sm font-bold pb-2 px-2 border-b-2 border-indigo-600 text-indigo-600 transition-colors whitespace-nowrap flex items-center gap-1";
-    } else {
-        if (btnRecent) btnRecent.className = "text-sm font-bold pb-2 px-2 border-b-2 border-indigo-600 text-indigo-600 transition-colors whitespace-nowrap";
-    }
-
-    // --- LOGIQUE DE CHARGEMENT ---
-    // Si on clique sur Tendances, on trie par popularité
-    // Sinon on trie par Récent
-    const sortMode = (type === 'popular') ? 'popular' : 'recent';
-
-    // On recharge le feed avec le tri voulu (appendMode = false pour reset)
-    loadGlobalFeed(sortMode, 'all', false);
-}
-
-// Fonction pour le FILTRE (Shorts)
-function filterFeed(filterType) {
-    const btnShorts = document.getElementById('btn-filter-shorts');
-
-    // Reset style bouton Shorts
-    if (btnShorts) btnShorts.className = "text-sm font-bold pb-2 px-2 border-b-2 border-transparent text-slate-400 hover:text-pink-600 transition-colors whitespace-nowrap flex items-center gap-1";
-
-    // Activation style
-    if (filterType === 'shorts') {
-        if (btnShorts) btnShorts.className = "text-sm font-bold pb-2 px-2 border-b-2 border-pink-600 text-pink-600 transition-colors whitespace-nowrap flex items-center gap-1";
-
-        // --- LOGIQUE DE CHARGEMENT ---
-        // On charge le feed en filtrant uniquement les vidéos
-        loadGlobalFeed('recent', 'shorts', false);
-    }
-}
-
-/**
- * CHARGEMENT DU FLUX GLOBAL (VERSION ULTRA PRO)
- */
-async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode = false) {
-    const container = document.getElementById('global-feed-container');
-    const loader = document.getElementById('feed-loader');
-    if (!container) return;
-
-    // --- 1. GESTION DU LOADER ET PAGINATION ---
-    if (!appendMode) {
-        container.innerHTML = `<div class="flex justify-center py-12"><i class="fas fa-circle-notch animate-spin text-3xl text-indigo-600 opacity-20"></i></div>`;
-        feedOffset = 0;
-        hasMorePosts = true;
-    } else {
-        if (loader) loader.classList.remove('hidden');
-    }
-
-    if (appendMode) isLoadingFeed = true;
-
-    try {
-        // --- 2. AUTHENTIFICATION & DATA INIT ---
-        const { data: userData } = await supabaseClient.auth.getUser();
-        const myId = userData?.user?.id || null;
-
-        // B. Récupération de mes abonnements (Pour la confidentialité "Friends")
-        let myFollowingSet = new Set();
-        if (myId) {
-            const { data: followingData } = await supabaseClient
-                .from('follows')
-                .select('following_id')
-                .eq('follower_id', myId);
-            if (followingData) myFollowingSet = new Set(followingData.map(f => f.following_id));
-        }
-
-        // --- 3. RÉCUPÉRATION DES POSTS (Query principale) ---
-        const { data: posts, error } = await supabaseClient
-            .from('posts')
-            .select(`
-                *,
-                profiles ( id, full_name, username, avatar_url, is_certified ),
-                post_likes(count),
-                post_comments(count)
-            `)
-            .order('created_at', { ascending: false })
-            .range(feedOffset, feedOffset + FEED_BATCH_SIZE - 1);
-
-        if (error) throw error;
-
-        if (!posts || posts.length === 0) {
-            if (!appendMode) {
-                container.innerHTML = `<div class="text-center py-20 text-slate-400"><i class="fas fa-newspaper text-4xl mb-3 opacity-20"></i><p>Aucune publication pour le moment.</p></div>`;
-            } else {
-                hasMorePosts = false;
-                if (loader) loader.classList.add('hidden');
-            }
-            return;
-        }
-
-        // --- 4. FILTRAGE CÔTÉ CLIENT (Confidentialité & Blocage) ---
-        const visiblePosts = posts.filter(post => {
-            if (post.user_id === myId) return true;
-
-            const visibility = post.visibility || 'public';
-
-            if (visibility === 'public') return true;
-            if (visibility === 'private') return false;
-
-            if (visibility === 'friends') {
-                return myFollowingSet.has(post.user_id);
-            }
-            return false;
-        });
-
-        // --- 5. RÉACTIONS UTILISATEUR ---
-        let myLikedPostIds = new Set();
-        const postIds = visiblePosts.map(p => p.id);
-
-        if (myId && postIds.length > 0) {
-            const { data: myLikes } = await supabaseClient
-                .from('post_likes')
-                .select('post_id, reaction_type')
-                .eq('user_id', myId)
-                .in('post_id', postIds);
-
-            if (myLikes) {
-                myLikedPostIds = new Set(myLikes.map(l => l.post_id));
-                if (typeof userReactions !== 'undefined') {
-                    myLikes.forEach(like => {
-                        userReactions.set(like.post_id, like.reaction_type);
-                    });
-                }
-            }
-        }
-
-        // --- 6. FILTRE SECONDaire (Shorts) & TRI ---
-        let processedPosts = filterType === 'shorts' ? visiblePosts.filter(p => p.is_short) : visiblePosts;
-
-        if (sortBy === 'popular' && typeof calculatePostScore === 'function') {
-            processedPosts = processedPosts.map(post => ({
-                ...post,
-                calculatedScore: calculatePostScore(post.post_likes?.[0]?.count || 0, post.post_comments?.[0]?.count || 0, post.created_at)
-            })).sort((a, b) => b.calculatedScore - a.calculatedScore);
-        }
-
-        // --- 7. GÉNÉRATION HTML (AVEC DOCUMENTFRAGMENT) ---
-        // Création d'un fragment mémoire (hors DOM) pour optimiser le rendu
-        const fragment = document.createDocumentFragment();
-
-        processedPosts.forEach(post => {
-            const profile = post.profiles || {};
-            const avatarUrl = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username || 'user'}`;
-            const userName = profile.full_name || 'Utilisateur';
-            const isCertified = profile.is_certified;
-            const timeAgo = typeof getTimeAgo === 'function' ? getTimeAgo(new Date(post.created_at)) : 'Récemment';
-
-            const likeCount = post.post_likes?.[0]?.count || 0;
-            const commentCount = post.post_comments?.[0]?.count || 0;
-            const isMyPost = (post.user_id === myId);
-
-            let formattedCaption = "";
-            if (post.caption) {
-                formattedCaption = typeof formatTextWithHighlights === 'function' ? formatTextWithHighlights(post.caption) : post.caption;
-            }
-
-            // Bouton Suivre
-            let followBtn = '';
-            if (!isMyPost && myId) {
-                const isFollowing = myFollowingSet.has(post.user_id);
-                followBtn = `
-                    <button onclick="toggleFollow('${post.user_id}', this)" 
-                            class="text-xs font-bold px-4 py-1.5 rounded-full transition-all ${isFollowing ? 'border border-slate-200 text-slate-500' : 'btn-sky-yellow text-white hover:bg-indigo-700 shadow-sm'}">
-                        ${isFollowing ? 'Abonné' : 'Suivre'}
-                    </button>`;
-            }
-
-            // Menu Contextuel
-            let menuItemsHtml = '';
-            if (isMyPost) {
-                menuItemsHtml = `
-                    <div onclick="editPost('${post.id}')" class="post-dropdown-item"><i class="fas fa-pencil-alt"></i> Modifier</div>
-                    <div onclick="deletePostModal('${post.id}')" class="post-dropdown-item danger"><i class="fas fa-trash-alt"></i> Supprimer</div>`;
-            } else {
-                menuItemsHtml = `
-                    <div onclick="savePost('${post.id}')" class="post-dropdown-item"><i class="far fa-bookmark"></i> Enregistrer</div>
-                    <div onclick="sharePost('${post.id}')" class="post-dropdown-item"><i class="fas fa-link"></i> Copier le lien</div>
-                    <div onclick="reportPost('${post.id}')" class="post-dropdown-item danger"><i class="fas fa-flag"></i> Signaler</div>`;
-            }
-
-            // Média HTML
-            let mediaHtml = '';
-            if (post.is_short && post.video_url) {
-                mediaHtml = `
-                    <div onclick="openPostModal('${post.id}')" class="relative bg-slate-900 flex justify-center overflow-hidden group rounded-2xl mb-4 shadow-lg border border-slate-200/10 cursor-pointer" 
-                         onmouseenter="if(this.querySelector('video')) this.querySelector('video').play()"
-                         onmouseleave="if(this.querySelector('video')) { this.querySelector('video').pause(); this.querySelector('video').currentTime = 0; }">
-                        <div class="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-2 py-1 bg-black/50 backdrop-blur-md rounded-lg text-white text-[10px] font-bold tracking-wider uppercase">
-                            <i class="fas fa-bolt text-yellow-400"></i> Short
-                        </div>
-                        <video src="${post.video_url}" class="w-full aspect-[9/16] max-h-[650px] object-cover transition-transform duration-700 group-hover:scale-105" loop muted playsinline preload="metadata"></video>
-                        <div class="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <div class="w-16 h-16 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white shadow-2xl">
-                                <i class="fas fa-expand text-2xl"></i>
-                            </div>
-                        </div>
-                    </div>`;
-            } else if (post.image_url) {
-                mediaHtml = `<img src="${post.image_url}" onclick="openPostModal('${post.id}')" class="w-full h-auto object-cover rounded-lg mb-1 cursor-pointer hover:opacity-95 transition" loading="lazy" alt="Post">`;
-            }
-
-            // Création de l'élément Article (Node DOM)
-            const article = document.createElement('article');
-            article.className = 'bg-white dark:bg-black overflow-hidden border-b border-slate-100 dark:border-slate-800';
-
-            // Injection du HTML dans le node (Design préservé)
-            article.innerHTML = `
-                <div class="p-4 flex items-center justify-between">
-                    <div class="flex items-center gap-3 cursor-pointer" onclick="viewUserProfile('${post.user_id}')">
-                        <img src="${avatarUrl}" class="w-11 h-11 rounded-full border-2 border-indigo-50 shadow-sm">
-                        <div>
-                            <div class="flex items-center gap-1 font-bold text-sm text-slate-900 dark:text-white">
-                                ${userName} ${isCertified ? '<i class="fas fa-check-circle text-blue-500 text-[10px]"></i>' : ''}
-                            </div>
-                            <div class="text-[11px] text-slate-400 font-medium">${timeAgo}</div>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-1">
-                        ${followBtn}
-                        <div class="post-menu-container ml-1">
-                            <button onclick="togglePostMenu('${post.id}', event)" class="w-25 h-9 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all active:scale-90">
-                                <i class="fas fa-ellipsis-v text-[18px] text-black dark:text-white"></i>
-                            </button>
-                            <div id="menu-${post.id}" class="post-dropdown-menu">${menuItemsHtml}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="px-4 pb-2">
-                    ${formattedCaption ? `<div><p id="caption-${post.id}" class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed line-clamp-2"><span class="font-extrabold text-slate-900 dark:text-white"></span>${formattedCaption}</p>${formattedCaption.length > 50 ? `<span id="btn-more-${post.id}" onclick="toggleCaptionExpand('${post.id}')" class="btn-voir-plus">Voir plus</span>` : ''}</div>` : ''}
-                </div>
-                ${mediaHtml}
-                <div class="px-4 pb-2 pt-1">
-                    <div class="flex items-center gap-5">
-                        <div style="position: relative;">
-                            <button onclick="toggleReactionPopup('${post.id}', this)" class="flex items-center gap-1.5 group">
-                                <i id="icon-react-${post.id}" class="text-xl group-active:scale-125 transition-transform ${(() => {
-                    const type = userReactions.get(post.id);
-                    const style = type ? REACTION_STYLES[type] : null;
-                    return style ? `fas ${style.icon} ${style.color}` : 'far fa-heart text-slate-400';
-                })()
-                }"></i>
-                                <span id="count-like-${post.id}" class="text-xs font-bold text-slate-500">${formatNumber(likeCount)}</span>
-                            </button>
-                            <div id="reactions-popup-${post.id}" class="reactions-popup" style="display:none"></div>
-                        </div>
-                        <button onclick="toggleCommentSection('${post.id}')" class="flex items-center gap-1.5 group">
-                            <i class="fas fa-comment-dots text-slate-400 text-xl group-hover:text-indigo-500 transition-colors"></i>
-                            <span id="count-comment-${post.id}" class="text-xs font-bold text-slate-500">${formatNumber(commentCount)}</span>
-                        </button>
-                        <button onclick="sharePost('${post.id}')" class="ml-auto text-slate-400 hover:text-indigo-600 transition-colors flex items-center gap-1">
-                            <i class="fas fa-arrows-rotate text-xl"></i>
-                        </button>
-                    </div>
-                </div>
-                <div id="comments-${post.id}" class="hidden p-4 border-t border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
-                    <div id="comment-list-${post.id}" class="space-y-3 mb-4 max-h-48 overflow-y-auto no-scrollbar"></div>
-                    <form onsubmit="submitComment(event, '${post.id}')" class="relative">
-                        <input type="text" name="content" placeholder="Ajouter un commentaire..." class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                        <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 btn-sky-yellow px-3 py-1 rounded-full text-xs font-bold">Envoyer</button>
-                    </form>
-                </div>`;
-
-            // Ajout de l'article au fragment (en mémoire, pas encore visible)
-            fragment.appendChild(article);
-        });
-
-        // --- 8. INJECTION DOM (UNE SEULE FOIS) ---
-
-        // Si on remplace tout (pas appendMode), on vide le container
-        if (!appendMode) {
-            container.innerHTML = '';
-        }
-
-        // On injecte tout le fragment d'un coup (Ultra performant)
-        container.appendChild(fragment);
-
-        // Gestion du scroll infini
-        feedOffset += posts.length;
-
-        if (processedPosts.length === 0 && posts.length === FEED_BATCH_SIZE) {
-            loadMoreFeed();
-            return;
-        }
-
-        if (posts.length < FEED_BATCH_SIZE) {
-            hasMorePosts = false;
-            if (loader) loader.classList.add('hidden');
-        }
-
-    } catch (error) {
-        if (error.name !== 'AbortError') {
-            console.error("Erreur Feed:", error);
-            if (!appendMode) {
-                container.innerHTML = `<div class="p-8 text-center bg-red-50 text-red-600 rounded-2xl"><i class="fas fa-exclamation-triangle mb-2 text-xl"></i><p class="text-sm font-bold">Verifier votre connexion</p></div>`;
-            }
-        }
-    } finally {
-        isLoadingFeed = false;
-        if (loader && !hasMorePosts) loader.classList.add('hidden');
-        else if (loader) loader.classList.remove('hidden');
-    }
-}
-
-// 1. Ouvrir/Fermer le menu spécifique
-function togglePostMenu(postId, event) {
-    event.stopPropagation(); // Empêche le clic de se propager
-    const menu = document.getElementById(`menu-${postId}`);
-    const isVisible = menu.style.display === 'block';
-
-    // Fermer tous les autres menus ouverts
-    document.querySelectorAll('.post-dropdown-menu').forEach(m => m.style.display = 'none');
-
-    // Basculer l'affichage du menu actuel
-    if (!isVisible) {
-        menu.style.display = 'block';
-    }
-}
-
-// 2. Fermer le menu si on clique ailleurs sur la page
-document.addEventListener('click', () => {
-    document.querySelectorAll('.post-dropdown-menu').forEach(m => m.style.display = 'none');
-});
-
-// 3. Fonction pour "Enregistrer" (placeholder)
-async function savePost(postId) {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return showToast("Connectez-vous", "error");
-
-    // Vérifier si déjà enregistré
-    const { data: existing } = await supabaseClient
-        .from('saved_posts')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('post_id', postId)
-        .maybeSingle();
-
-    if (existing) {
-        // Supprimer
-        await supabaseClient.from('saved_posts').delete().eq('id', existing.id);
-        showToast("Retiré des enregistrements", "success");
-    } else {
-        // Ajouter
-        await supabaseClient.from('saved_posts').insert([{ user_id: user.id, post_id: postId }]);
-        showToast("Post enregistré !", "success");
-    }
-
-    // Mettre à jour l'icône visuellement (Optionnel)
-    const btn = document.querySelector(`[onclick="savePost('${postId}')"] i`);
-    if (btn) btn.classList.toggle('fas'); // Change l'icône en plein
-}
-// Fonction déclenchée par l'observateur quand on arrive en bas
-async function loadMoreFeed() {
-    if (isLoadingFeed || !hasMorePosts) return;
-
-    // On réutilise les filtres actuels (ou 'recent' par défaut)
-    // On passe 'true' pour le mode append (ajout)
-    await loadGlobalFeed('recent', 'all', true);
-}
-
-function initVideoObserver() {
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            const video = entry.target;
-            if (entry.isIntersecting) {
-                if (!video.src && video.dataset.src) video.src = video.dataset.src;
-                video.play().catch(() => { });
-            } else {
-                video.pause();
-            }
-        });
-    }, { threshold: 0.6 });
-
-    document.querySelectorAll('.lazy-video').forEach(v => observer.observe(v));
-}
-
-function toggleCommentSection(postId) {
-    const commentSection = document.getElementById(`comments-${postId}`);
-
-    if (commentSection) {
-        // On bascule la classe 'hidden' pour afficher ou cacher la section
-        commentSection.classList.toggle('hidden');
-
-        // Petit bonus : si on ouvre la section, on scrolle doucement vers elle
-        if (!commentSection.classList.contains('hidden')) {
-            commentSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-    }
-}
-
-/* --- ACTIONS : LIKE, COMMENT, SHARE --- */
-
-// 1. Gérer le Like
-// 1. LIKE : Optimisé et robuste
-// 1. Gérer le Like
-// Variable pour empêcher le spamming de clics
-const likeLocks = new Set();
-
-async function toggleLike(postId, btnElement) {
-    // Empêche le double-clic
-    if (likeLocks.has(postId)) return;
-
-    const icon = document.getElementById(`icon-like-${postId}`);
-    const countSpan = document.getElementById(`count-like-${postId}`);
-
-    if (!icon || !countSpan) return;
-
-    try {
-        // Vérification utilisateur
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        if (!user) {
-            showToast("Connectez-vous pour liker", "warning");
-            return;
-        }
-
-        // --- CALCUL INTELLIGENT DU NOMBRE ACTUEL ---
-        // 1. On essaie de lire l'attribut caché (le plus fiable)
-        let currentCount = parseInt(countSpan.getAttribute('data-raw-count'));
-
-        // 2. SECURITE : Si l'attribut est absent (null), on lit le texte affiché à l'écran
-        if (isNaN(currentCount)) {
-            const textVisible = countSpan.innerText || "0";
-            // Si le texte contient "K" (ex: 1.2K), on convertit en chiffre
-            if (textVisible.includes('K')) {
-                currentCount = parseFloat(textVisible) * 1000;
-            } else {
-                // Sinon on prend le chiffre brut
-                currentCount = parseInt(textVisible.replace(/[^0-9]/g, '')) || 0;
-            }
-        }
-
-        // 3. Logique de changement d'état
-        const isCurrentlyLiked = icon.classList.contains('fas');
-
-        if (isCurrentlyLiked) {
-            // ON RETIRE LE LIKE
-            icon.classList.replace('fas', 'far');
-            icon.classList.remove('text-red-500', 'animate-heart-pop');
-            currentCount = Math.max(0, currentCount - 1);
-        } else {
-            // ON MET UN LIKE
-            icon.classList.replace('far', 'fas');
-            icon.classList.add('text-red-500', 'animate-heart-pop');
-            currentCount += 1;
-        }
-
-        // 4. Mise à jour visuelle IMMEDIATE
-        countSpan.innerText = formatNumber(currentCount);
-        // On met à jour l'attribut caché pour la prochaine fois
-        countSpan.setAttribute('data-raw-count', currentCount);
-
-        // 5. Action en Base de Données
-        if (isCurrentlyLiked) {
-            await supabaseClient
-                .from('post_likes')
-                .delete()
-                .match({ post_id: postId, user_id: user.id });
-        } else {
-            await supabaseClient
-                .from('post_likes')
-                .insert([{ post_id: postId, user_id: user.id }]);
-        }
-
-    } catch (err) {
-        console.error("Erreur Like:", err);
-        // On ne fait rien de visuel, l'état optimiste reste
-    } finally {
-        likeLocks.delete(postId);
-    }
-}
-
-// 2. COMMENTAIRE : Corrigé
-async function submitComment(e, postId) {
-    e.preventDefault();
-    const form = e.target;
-    const content = form.content.value.trim();
-    const listElement = document.getElementById(`comment-list-${postId}`);
-    const countSpan = document.getElementById(`count-comment-${postId}`);
-
-    // --- VÉRIFICATION CONTENU ---
-    if (containsInappropriateContent(content)) {
-        showToast("Commentaire refusé : Langage inapproprié.", "error");
-        if (input) {
-            input.classList.add('border-red-500', 'bg-red-50');
-            setTimeout(() => input.classList.remove('border-red-500', 'bg-red-50'), 2000);
-        }
-        return;
-    }
-
-    const { data: { user } } = await supabaseClient.auth.getUser();
-
-    const { error } = await supabaseClient
-        .from('post_comments')
-        .insert([{ user_id: user.id, post_id: postId, content: content }]);
-
-    if (!error) {
-        // Ajout visuel
-        const newComment = document.createElement('div');
-        newComment.className = 'text-sm animate-fade-in'; // Petite animation si tu as le CSS
-        newComment.innerHTML = `<span class="font-bold text-indigo-700">Vous</span> <span class="text-slate-600">${content}</span>`;
-        listElement.appendChild(newComment);
-        form.reset();
-
-        // Mise à jour du compteur
-        let rawText = countSpan.innerText.toUpperCase().replace(',', '.');
-        let currentCount = rawText.includes('K') ? parseFloat(rawText) * 1000 : parseInt(rawText);
-        countSpan.innerText = formatNumber(currentCount + 1);
-    } else {
-        console.error("Erreur Commentaire:", error);
-    }
-}
-// AVANT : function ajouterCommentaire() {
-// APRÈS :
-async function ajouterCommentaire(postId, content) {
-
-    // Maintenant 'await' est autorisé ici
-    const { data: postData, error: postError } = await supabaseClient
-        .from('posts')
-        .select('user_id')
-        .eq('id', postId)
-        .single();
-
-    if (postData?.user_id && !postError) {
-        sendNotification(postData.user_id, 'comment', postId, content);
-    }
-}
-
-// 5. Partager (Simulation)
-function sharePost(postId) {
-    // Récupérer l'URL actuelle
-    const url = window.location.href.split('#')[0] + '?post=' + postId;
-
-    if (navigator.share) {
-        navigator.share({
-            title: 'Regarde cette publication sur Printbam',
-            url: url,
-        }).catch(console.error);
-    } else {
-        // Fallback : copier dans le presse-papier
-        navigator.clipboard.writeText(url);
-        showToast("Lien copié !", "success");
-    }
-}
-
-// Fonction utilitaire pour le temps relatif (ex: 2h)
-function getTimeAgo(date) {
-    const seconds = Math.floor((new Date() - date) / 1000);
-    let interval = seconds / 31536000;
-    if (interval > 1) return Math.floor(interval) + " an";
-    interval = seconds / 2592000;
-    if (interval > 1) return Math.floor(interval) + " mois";
-    interval = seconds / 86400;
-    if (interval > 1) return Math.floor(interval) + " j";
-    interval = seconds / 3600;
-    if (interval > 1) return Math.floor(interval) + " h";
-    interval = seconds / 60;
-    if (interval > 1) return Math.floor(interval) + " min";
-    return "À l'instant";
-}
-/* --- SYSTÈME D'ABONNEMENT (CORRIGÉ POUR ERREUR 409) --- */
-
-/* --- SYSTÈME D'ABONNEMENT (VERSION FINALE) --- */
-
-async function toggleFollow(targetUserId, btnElement) {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return showToast("Connectez-vous", "error");
-    if (user.id === targetUserId) return;
-
-    // On vérifie l'état actuel grâce à la classe CSS 'following'
-    const isFollowing = btnElement.classList.contains('following');
-
-    try {
-        if (isFollowing) {
-            // --- ACTION : SE DÉSABONNER ---
-            const { error } = await supabaseClient
-                .from('follows')
-                .delete()
-                .eq('follower_id', user.id)
-                .eq('following_id', targetUserId);
-
-            if (!error) {
-                updateFollowButton(btnElement, false); // Repasse en "S'abonner"
-                showToast("Désabonné", "success");
-            }
-
-        } else {
-            // --- ACTION : S'ABONNER ---
-            const { error } = await supabaseClient
-                .from('follows')
-                .insert([{ follower_id: user.id, following_id: targetUserId }]);
-
-            if (error) {
-                // Si erreur "Déjà abonné", on synchronise l'affichage
-                if (error.code === '23505' || error.status === 409) {
-                    updateFollowButton(btnElement, true); // Force l'état "Abonné"
-                } else {
-                    throw error;
-                }
-            } else {
-                updateFollowButton(btnElement, true); // Passe en "Abonné"
-                showToast("Abonné !", "success");
-            }
-        }
-
-        // Rafraîchir les chiffres du profil
-        loadSocialProfile();
-
-    } catch (err) {
-        console.error("Erreur:", err);
-        showToast("Erreur", "error");
-    }
-}
-
-// Fonction de mise à jour visuelle
-function updateFollowButton(btn, isFollowing) {
-    if (isFollowing) {
-        // ÉTAT : ABONNÉ (Gris)
-        btn.innerText = "Abonné";
-        // On ajoute la classe 'following' pour que le bouton sache qu'il est actif
-        btn.classList.add('following');
-        btn.className = "text-xs font-bold px-4 py-1.5 rounded-full transition-all ${isFollowing ? 'border border-slate-200 text-slate-500' : 'btn-sky-yellow shadow-sm'}";
-    } else {
-        // ÉTAT : S'ABONNER (Bleu)
-        btn.innerText = "S'abonner";
-        // On retire la classe
-        btn.classList.remove('following');
-        btn.className = "text-xs font-bold px-4 py-1.5 rounded-full btn-sky-yellow text-white hover:bg-blue-700 transition shadow";
-    }
-}
-
-function resetProfileUI() {
-    // On cible le conteneur blanc principal à l'intérieur de #profile-social-view
-    const profileContainer = document.querySelector('#profile-social-view > div');
-
-    if (profileContainer) {
-        // On injecte le code HTML du Skeleton (L'animation CSS va faire le reste)
-        profileContainer.innerHTML = getProfileSkeletonHTML();
-    }
-}
-
-function getProfileSkeletonHTML() {
-    return `
-    <!-- CONTENEUR PRINCIPAL BLANC -->
-    <div class="bg-white min-h-screen max-w-lg mx-auto shadow-sm relative z-20 pb-20">
-        
-        <!-- HEADER -->
-        <div class="p-5 flex items-start gap-5 border-b border-gray-100">
-            
-            <!-- 1. AVATAR (Doit avoir l'ID 'social-avatar') -->
-            <div class="relative">
-                <div class="w-20 h-20 md:w-24 md:h-24 rounded-full border border-gray-200 p-1 bg-white">
-                    <!-- On met l'ID sur l'image, le placeholder sera caché après -->
-                    <img id="social-avatar" src="" alt="Profile" class="w-full h-full object-cover rounded-full hidden">
-                    
-                    <!-- Le placeholder affiché par défaut -->
-                    <div id="social-avatar-placeholder" class="w-full h-full bg-gray-200 rounded-full flex items-center justify-center text-gray-300">
-                        <!-- On met une fausse image animée dedans pour le loader -->
-                        <div class="w-full h-full bg-gray-200 skeleton skeleton-avatar"></div>
-                    </div>
                 </div>
             </div>
 
-            <!-- 2. INFOS PRINCIPALES (Doit avoir l'ID 'social-fullname') -->
-            <div class="flex-1 pt-1">
-                <div class="flex items-center gap-1 mb-1">
-                    <!-- IMPORTANT : id="social-fullname" -->
-                    <!-- On met le texte gris animé dans la balise H1 pour qu'il soit remplacé par le vrai nom -->
-                    <h1 id="social-fullname" class="text-xl font-bold text-black leading-none opacity-50">
-                        <div class="skeleton skeleton-text short" style="height: 20px; width: 140px; display: block;"></div>
-                    </h1>
-                    
-                    <span id="social-badge-inline" class="hidden ml-1">
-                        <!-- Contenu vide, il sera caché de toute façon -->
-                    </span>
-                </div>
-                
-                <!-- Stats (Doivent avoir les IDs 'stat-following' et 'stat-followers') -->
-                <div class="text-sm text-gray-600 font-medium mb-2">
-                    <span id="stat-following">
-                         <div class="skeleton skeleton-text medium" style="display:inline-block; width: 20px;"></div>
-                    </span> suivis • 
-                    <span id="stat-followers">
-                         <div class="skeleton skeleton-text medium" style="display:inline-block; width: 20px;"></div>
-                    </span> abonnés
-                </div>
-                
-                <!-- Bouton Modifier -->
-                <button class="px-3 py-1 bg-gray-100 text-xs font-bold text-gray-700 rounded hover:bg-gray-200 transition skeleton-btn"></button>
-                
-                <!-- Conteneur Follow -->
-                <div id="profile-follow-container" class="hidden"></div>
-            </div>
-        </div>
-
-        <!-- SECTION INFOS (Doivent avoir les IDs 'social-phone', 'social-username', 'social-dob') -->
-        <div class="bg-gray-50 px-5 py-4 space-y-3 border-b border-gray-200">
-            <!-- Téléphone -->
-            <div class="flex items-center gap-3">
-                <div class="skeleton skeleton-avatar" style="width: 16px; height: 16px;"></div>
-                <span id="social-phone" class="text-sm text-gray-700 font-medium">
-                     <div class="skeleton skeleton-text long"></div>
-                </span>
-            </div>
-            <!-- Username -->
-            <div class="flex items-center gap-3">
-                <div class="skeleton skeleton-avatar" style="width: 16px; height: 16px;"></div>
-                <span id="social-username" class="text-sm text-gray-700 font-medium">
-                     <div class="skeleton skeleton-text medium"></div>
-                </span>
-            </div>
-            <!-- Date de naissance -->
-            <div class="flex items-center gap-3">
-                <div class="skeleton skeleton-avatar" style="width: 16px; height: 16px;"></div>
-                <span id="social-dob" class="text-sm text-gray-700 font-medium">
-                     <div class="skeleton skeleton-text short"></div>
-                </span>
-            </div>
-        </div>
-
-        <!-- ONGLETS -->
-        <div class="flex border-b border-gray-200">
-            <button onclick="switchSocialTab('publications')" class="social-tab-btn flex-1 py-4 text-sm font-bold text-black border-b-2 border-black transition-colors">
-                Publications
+            <!-- BOUTON AJOUTER FLOTTANT (En bas à droite ou fixe en bas) -->
+            <!-- La capture montre un bouton en bas. Je le place fixe en bas à droite pour l'effet moderne -->
+            <button onclick="openNewPostModal()"
+                class="fixed bottom-6 right-6 md:absolute md:bottom-6 md:right-6 w-14 h-14 btn-sky-yellow text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition-all z-50">
+                <i class="fas fa-plus text-xl"></i>
             </button>
-            <button onclick="switchSocialTab('archives')" class="social-tab-btn flex-1 py-4 text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-gray-600 transition-colors">
-                Publications archivées
-            </button>
-        </div>
 
-        <!-- GRILLE DES PHOTOS (Doit avoir l'ID 'social-posts-grid') -->
-        <div id="social-posts-grid" class="grid grid-cols-3 gap-1 bg-gray-100">
-             <!-- 6 Blocs animés -->
-             ${Array(6).fill(0).map(() => `
-                <div class="aspect-square bg-gray-200 skeleton"></div>
-             `).join('')}
-        </div>
-
-        <!-- BOUTON AJOUTER FLOTTANT -->
-        <button class="fixed bottom-6 right-6 md:absolute md:bottom-6 md:right-6 w-14 h-14 btn-sky-yellow text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition-all z-50 skeleton" style="border-radius: 50%; width: 56px; height: 56px;">
-            <div style="width: 20px; height: 20px; background: rgba(255,255,255,0.4); border-radius: 50%;"></div>
-        </button>
-
-    </div>
-    `;
-}
-
-/* --- NAVIGATION VERS UN AUTRE PROFIL --- */
-// Fonction globale pour voir un profil
-function viewUserProfile(userId) {
-    // 1. On change de vue vers "profile-social"
-    switchPage('profile-social');
-
-    // 2. On force l'affichage de la vue (sécurité)
-    const view = document.getElementById('profile-social-view');
-    if (view) {
-        view.style.display = 'block';
-        setTimeout(() => view.classList.add('active'), 10);
-    }
-
-    // 3. On charge les données de CET utilisateur spécifique
-    // On passe l'ID en paramètre
-    loadSocialProfile(userId);
-}
-/* --- SYSTÈME DE MESSAGERIE --- */
-let lastMessageCount = 0; // Pour éviter le clignotement au rechargement
-
-// 1. Démarrer une conversation
-/* --- DÉMARRER OU CRÉER UNE DISCUSSION (VERSION OPTIMISÉE) --- */
-async function startChat(targetUserId) {
-    if (!targetUserId) return;
-
-    // 1. ACTION IMMÉDIATE (Optimiste)
-    // On change de page tout de suite pour ne pas avoir l'impression que ça bug
-    switchPage('chat');
-
-    // On affiche un loader dans la zone de message pendant le chargement
-    const container = document.getElementById('chat-messages-container');
-    if (container) {
-        container.innerHTML = `<div class="flex justify-center items-center h-full">
-            <div class="text-center text-slate-400">
-                <i class="fas fa-spinner fa-spin text-2xl text-indigo-500 mb-2"></i>
-                <p class="text-xs">Chargement...</p>
-            </div>
-        </div>`;
-    }
-
-    // 2. Vérification utilisateur (en arrière-plan)
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) {
-        showToast("Veuillez vous connecter", "error");
-        switchPage('messages'); // Retour si erreur
-        return;
-    }
-    if (user.id === targetUserId) return;
-
-    try {
-        // 3. Recherche ou création du chat
-        const { data: existingChat } = await supabaseClient
-            .from('chats')
-            .select('id')
-            .or(`and(user_1_id.eq.${user.id},user_2_id.eq.${targetUserId}),and(user_1_id.eq.${targetUserId},user_2_id.eq.${user.id})`)
-            .maybeSingle();
-
-        let chatId;
-
-        if (existingChat) {
-            chatId = existingChat.id;
-        } else {
-            // Création si inexistant
-            const { data: newChat, error } = await supabaseClient
-                .from('chats')
-                .insert([{ user_1_id: user.id, user_2_id: targetUserId }])
-                .select('id')
-                .single();
-
-            if (error) throw error;
-            chatId = newChat.id;
-
-            // Mise à jour du cache global
-            if (typeof myChatIdsCache !== 'undefined') {
-                myChatIdsCache.add(chatId);
-            }
-        }
-
-        // 4. Ouuration finale de la salle (charge les vrais messages)
-        openChatRoom(chatId, targetUserId);
-
-    } catch (err) {
-        console.error("Erreur startChat:", err);
-        showToast("Erreur de chargement", "error");
-        // Retour à la liste en cas d'erreur grave
-        switchPage('messages');
-    }
-}
-
-/* --- CHARGEMENT LISTE CHAT (AVEC STATUT & LECTURE) --- */
-async function loadChatList() {
-    const container = document.getElementById('chat-list-container');
-    if (!container) return;
-
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return;
-
-    try {
-        // 1. Récupérer les discussions
-        const { data: chats, error } = await supabaseClient
-            .from('chats')
-            .select('*')
-            .or(`user_1_id.eq.${user.id},user_2_id.eq.${user.id}`)
-            .order('updated_at', { ascending: false });
-
-        if (error) throw error;
-
-        if (!chats || chats.length === 0) {
-            container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-slate-400 p-8 text-center"><i class="fas fa-comments text-4xl mb-3 opacity-20"></i><p>Aucune discussion.</p></div>`;
-            return;
-        }
-
-        const otherUserIds = chats.map(c => c.user_1_id === user.id ? c.user_2_id : c.user_1_id);
-        const chatIds = chats.map(c => c.id);
-
-        // 2. Requêtes Parallèles (Ajout de last_seen pour le statut)
-        const [profilesRes, messagesRes, unreadRes] = await Promise.all([
-            supabaseClient.from('profiles')
-                .select('id, full_name, avatar_url, is_certified, last_seen') // <-- Ajout last_seen
-                .in('id', otherUserIds),
-
-            supabaseClient.from('messages')
-                .select('chat_id, content, sender_id, created_at, is_read') // <-- Ajout is_read
-                .in('chat_id', chatIds)
-                .order('created_at', { ascending: false })
-                .limit(50),
-
-            supabaseClient.from('messages')
-                .select('chat_id')
-                .eq('is_read', false)
-                .neq('sender_id', user.id)
-                .in('chat_id', chatIds)
-        ]);
-
-        const profilesMap = new Map(profilesRes.data?.map(p => [p.id, p]));
-
-        const latestMessagesMap = new Map();
-        messagesRes.data?.forEach(msg => {
-            if (!latestMessagesMap.has(msg.chat_id)) {
-                latestMessagesMap.set(msg.chat_id, msg);
-            }
-        });
-
-        const unreadCountsMap = new Map();
-        unreadRes.data?.forEach(msg => {
-            unreadCountsMap.set(msg.chat_id, (unreadCountsMap.get(msg.chat_id) || 0) + 1);
-        });
-
-        // 3. Rendu
-        const fragment = document.createDocumentFragment();
-
-        chats.forEach(chat => {
-            const otherId = chat.user_1_id === user.id ? chat.user_2_id : chat.user_1_id;
-            const profile = profilesMap.get(otherId) || { full_name: 'Utilisateur' };
-            const lastMsg = latestMessagesMap.get(chat.id);
-            const unreadCount = unreadCountsMap.get(chat.id) || 0;
-
-            let previewText = "Aucun message";
-            let timeText = "";
-            let textClass = "text-slate-500 truncate";
-            let badgeHtml = "";
-
-            // --- NOUVEAU : LOGIQUE STATUT EN LIGNE ---
-            let onlineDot = "";
-            if (profile.last_seen) {
-                const lastSeenDate = new Date(profile.last_seen);
-                const now = new Date();
-                const diffSeconds = (now - lastSeenDate) / 1000;
-
-                // Si en ligne il y a moins de 2 min
-                if (diffSeconds < 120) {
-                    onlineDot = `<span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse"></span>`;
-                }
-            }
-
-            if (lastMsg) {
-                previewText = lastMsg.content;
-                timeText = getTimeAgoSimple(new Date(lastMsg.created_at));
-
-                // --- NOUVEAU : LOGIQUE CHECKS (Lecture) ---
-                if (lastMsg.sender_id === user.id) {
-                    // C'est MON message
-                    if (lastMsg.is_read) {
-                        // Lu : 2 checks bleus
-                        previewText += ` <i class="fas fa-check-double text-blue-500 ml-1 text-[10px]"></i>`;
-                    } else {
-                        // Envoyé : 1 check gris
-                        previewText += ` <i class="fas fa-check text-slate-400 ml-1 text-[10px]"></i>`;
-                    }
-                }
-            }
-
-            // Logique Badge Non-Lu (Reçus)
-            if (unreadCount > 0) {
-                textClass = "text-gradient-unread truncate";
-                const plural = unreadCount > 1 ? 's' : '';
-                badgeHtml = `<span class="badge-unread-count">${unreadCount} nouveau${plural} message${plural}</span>`;
-            }
-
-            const div = document.createElement('div');
-            div.className = 'flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer border-b border-slate-100 dark:border-slate-700 transition';
-            div.onclick = () => startChat(otherId);
-
-            div.innerHTML = `
-                <div class="relative flex-shrink-0">
-                    <img src="${profile.avatar_url || `https://ui-avatars.com/api/?name=${profile.full_name}`}" class="w-12 h-12 rounded-full object-cover bg-slate-200 shadow-sm">
-                    ${onlineDot}
-                    ${profile.is_certified ? '<i class="fas fa-check-circle text-blue-500 text-[10px] absolute top-0 right-0 bg-white rounded-full"></i>' : ''}
-                </div>
-                <div class="flex-1 min-w-0">
-                    <div class="flex justify-between items-baseline mb-0.5">
-                         <h4 class="font-semibold text-slate-900 dark:text-white truncate">${profile.full_name}</h4>
-                         <span class="text-[10px] text-slate-400 flex-shrink-0 ml-2">${timeText}</span>
-                    </div>
-                    <div class="flex items-center gap-1">
-                         <p class="text-sm ${textClass}">${previewText}</p>
-                    </div>
-                    <div class="mt-1">${badgeHtml}</div>
-                </div>
-            `;
-            fragment.appendChild(div);
-        });
-
-        container.innerHTML = '';
-        container.appendChild(fragment);
-
-    } catch (err) {
-        console.error("Erreur loadChatList:", err);
-    }
-}
-
-/* --- OUVERTURE D'UNE DISCUSSION (VERSION CORRIGÉE) --- */
-async function openChatRoom(chatId, targetUserId) {
-    currentChatId = chatId;
-    currentTargetUserId = targetUserId;
-
-    // 1. Récupérer l'utilisateur UNE SEULE FOIS
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return;
-
-    switchPage('chat');
-
-    // 2. Charger le Header
-    const { data: profile } = await supabaseClient
-        .from('profiles')
-        .select('full_name, avatar_url, is_certified')
-        .eq('id', targetUserId)
-        .maybeSingle();
-
-    if (profile) {
-        const nameEl = document.getElementById('chat-header-name');
-        const badge = profile.is_certified ? '<i class="fas fa-check-circle text-blue-500 text-xs ml-1"></i>' : '';
-        nameEl.innerHTML = `${profile.full_name} ${badge}`;
-
-        const avatarEl = document.getElementById('chat-header-avatar');
-        const defaultAvatar = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(profile.full_name)}`;
-        avatarEl.src = profile.avatar_url || defaultAvatar;
-    }
-
-    // 3. Charger l'historique
-    await loadChatMessages(chatId);
-
-    // 4. Marquer comme LU immédiatement
-    markChatAsRead(chatId);
-
-    // 5. Nettoyer l'ancien channel
-    if (window.currentChatChannel) {
-        await supabaseClient.removeChannel(window.currentChatChannel);
-    }
-
-    // 6. CONNEXION WEBSOCKET (INSERT + UPDATE)
-    window.currentChatChannel = supabaseClient
-        .channel(`realtime:chat:${chatId}`)
-
-        // ÉCOUTEUR A : Nouveaux Messages
-        .on('postgres_changes', {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'messages',
-            filter: `chat_id=eq.${chatId}`
-        }, (payload) => {
-            handleRealtimeMessage(payload.new);
-        })
-
-        // ÉCOUTEUR B : CONFIRMATION DE LECTURE (UPDATE)
-        .on('postgres_changes', {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'messages',
-            filter: `chat_id=eq.${chatId}`
-        }, (payload) => {
-            const msg = payload.new;
-
-            // Condition : Le message est lu (is_read=true) ET c'est MOI l'expéditeur
-            if (msg.is_read === true && msg.sender_id === user.id) {
-                updateMessageReadStatusUI(msg.id, true);
-            }
-        })
-        .subscribe();
-
-    // 7. Statut "En ligne"
-    if (chatStatusInterval) clearInterval(chatStatusInterval);
-    refreshChatStatus(targetUserId);
-    chatStatusInterval = setInterval(() => {
-        if (currentTargetUserId === targetUserId) {
-            refreshChatStatus(targetUserId);
-        } else {
-            clearInterval(chatStatusInterval);
-        }
-    }, 30000);
-}
-
-/* --- MISE À JOUR VISUELLE DE L'ÉTAT "LU" --- */
-function updateMessageReadStatusUI(msgId, isRead) {
-    // On cherche l'élément du message par son ID réel
-    const msgElement = document.querySelector(`[data-msg-id="${msgId}"]`);
-    if (!msgElement) return;
-
-    // On cherche l'icône de statut
-    const icon = msgElement.querySelector('.fa-check'); // Cible la coche simple
-
-    if (icon && isRead) {
-        // TRANSFORMATION : 1 coche grise -> 2 coches bleues
-        icon.classList.remove('fa-check');        // Retire "1 coche"
-        icon.classList.add('fa-check-double');    // Ajoute "2 coches"
-
-        icon.classList.remove('text-white/60');   // Retire gris
-        icon.classList.add('text-blue-300');      // Met en bleu
-    }
-}
-
-/* --- SERVICE GLOBAL D'ÉCOUTE (TEMPS RÉEL) --- */
-async function initGlobalRealtimeListeners() {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return;
-
-    console.log("🚀 Initialisation du service global Realtime...");
-
-    // 1. Préparer le cache des chats existants
-    const { data: chats } = await supabaseClient
-        .from('chats')
-        .select('id')
-        .or(`user_1_id.eq.${user.id},user_2_id.eq.${user.id}`);
-
-    if (chats) {
-        chats.forEach(c => myChatIdsCache.add(c.id));
-    }
-
-    // 2. NETTOYER LES ANCIENS CHANNELS (Évite les doublons)
-    if (globalMessageListener) await supabaseClient.removeChannel(globalMessageListener);
-    if (globalNotifListener) await supabaseClient.removeChannel(globalNotifListener);
-
-    // 3. ÉCOUTEUR A : NOUVEAUX MESSAGES
-    globalMessageListener = supabaseClient
-        .channel('global-messages-channel')
-        .on('postgres_changes', {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'messages'
-        }, async (payload) => {
-            const msg = payload.new;
-
-            // A. Si c'est MOI qui envoie le message, on ne notifie pas
-            if (msg.sender_id === user.id) return;
-
-            // B. Vérifier si ce chat nous appartient (ou si c'est un nouveau chat)
-            // Si le chat n'est pas dans le cache, on vérifie en BD (cas d'un nouveau chat créé par l'autre)
-            if (!myChatIdsCache.has(msg.chat_id)) {
-                const { data: chatCheck } = await supabaseClient
-                    .from('chats')
-                    .select('id')
-                    .eq('id', msg.chat_id)
-                    .or(`user_1_id.eq.${user.id},user_2_id.eq.${user.id}`)
-                    .maybeSingle();
-
-                if (!chatCheck) return; // Ce n'est pas mon chat
-
-                // C'est un nouveau chat pour moi, on l'ajoute au cache
-                myChatIdsCache.add(msg.chat_id);
-                console.log("Nouveau chat détecté et ajouté au cache :", msg.chat_id);
-            }
-
-            // --- LOGIQUE D'AFFICHAGE ---
-
-            // 1. Si on est DÉJÀ dans ce chat spécifique -> On ne fait rien (géré par le listener local)
-            if (window.currentChatId === msg.chat_id) {
-                return;
-            }
-
-            // 2. Récupérer les infos de l'expéditeur
-            const { data: senderProfile } = await supabaseClient
-                .from('profiles')
-                .select('full_name, avatar_url')
-                .eq('id', msg.sender_id)
-                .single();
-
-            // 3. Afficher le Toast Facebook Style
-            if (senderProfile) {
-                showIncomingMessageToast(
-                    senderProfile.full_name,
-                    msg.content.substring(0, 30) + '...',
-                    senderProfile.avatar_url,
-                    msg.chat_id,
-                    msg.sender_id
-                );
-            }
-
-            // 4. Mettre à jour le badge rouge du Dock
-            updateMessageBadge();
-
-            // 5. MISE À JOUR AUTOMATIQUE DE LA LISTE (NOUVEAU)
-            // Si l'utilisateur est sur la page "Messages", on rafraîchit la liste
-            const messagesView = document.getElementById('messages-view');
-            if (messagesView && messagesView.classList.contains('active')) {
-                console.log("Mise à jour de la liste des discussions...");
-                loadChatList(); // Recharge la liste pour montrer le nouveau message / déplacer le chat
-            }
-
-        })
-        .subscribe();
-
-    // 4. ÉCOUTEUR B : NOUVELLES NOTIFICATIONS
-    globalNotifListener = supabaseClient
-        .channel('global-notifs-channel')
-        .on('postgres_changes', {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'notifications',
-            filter: `recipient_id=eq.${user.id}`
-        }, (payload) => {
-            const notif = payload.new;
-
-            // Mettre à jour le badge
-            updateNotificationBadge();
-            // Afficher un Toast simple
-            showToast(`🔔 Nouvelle notification !`, "success");
-        })
-        .subscribe();
-}
-
-// --- FONCTION HELPER POUR L'INJECTION DIRECTE ---
-async function handleRealtimeMessage(newMessage) {
-    const container = document.getElementById('chat-messages-container');
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user || !container) return;
-
-    const isMe = newMessage.sender_id === user.id;
-
-    // --- CAS 1 : C'est MON message (Confirmation du serveur) ---
-    if (isMe) {
-        // On cherche le message temporaire par son attribut 'data-temp-id'
-        const pendingEl = container.querySelector('[data-temp-id]');
-
-        if (pendingEl) {
-            // 1. On remplace l'ID temporaire par le VRAI ID (CRUCIAL pour la lecture)
-            pendingEl.setAttribute('data-msg-id', newMessage.id);
-
-            // 2. On nettoie les attributs et classes temporaires
-            pendingEl.removeAttribute('data-temp-id');
-            pendingEl.classList.remove('opacity-60', 'animate-pulse'); // Styles d'envoi en cours
-
-            // 3. Mise à jour de l'icône de statut
-            const statusIcon = pendingEl.querySelector('.status-icon');
-            if (statusIcon) {
-                // On remplace l'horloge par 1 coche (Envoyé) ou 2 coches (Lu) selon l'état
-                if (newMessage.is_read) {
-                    statusIcon.className = 'fas fa-check-double text-[10px] ml-1 text-blue-300 status-icon';
-                } else {
-                    // Par défaut à la confirmation : 1 coche grise/blanche
-                    statusIcon.className = 'fas fa-check text-[10px] ml-1 text-white/60 status-icon';
-                }
-            }
-        }
-        return;
-    }
-
-    // --- CAS 2 : C'est un message de L'AUTRE (Nouveau message) ---
-
-    // On utilise createMessageBubble pour garder le style et le menu contextuel
-    const row = createMessageBubble(newMessage, false, user.id);
-
-    container.appendChild(row);
-    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
-
-    // Petite vibration si l'app est en arrière-plan
-    if (document.hidden && navigator.vibrate) navigator.vibrate(200);
-
-    // Mise à jour du badge global
-    updateMessageBadge();
-}
-
-/* ==========================================================
-   SECTION 1 : CHAT MESSAGING (ULTRA OPTIMISÉ)
-   ========================================================== */
-
-// 1. Charger l'historique (Version Performance avec DocumentFragment)
-async function loadChatMessages(chatId) {
-    const container = document.getElementById('chat-messages-container');
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user || !container) return;
-
-    // Sauvegarder la position de scroll pour ne pas perturber la lecture
-    const isScrolledToBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 50;
-
-    try {
-        const { data: messages, error } = await supabaseClient
-            .from('messages')
-            .select('*')
-            .eq('chat_id', chatId)
-            .order('created_at', { ascending: true });
-
-        if (error) throw error;
-
-        // Utilisation d'un Fragment pour performances optimales (1 seul repaint DOM)
-        const fragment = document.createDocumentFragment();
-        let lastDate = null;
-
-        if (!messages || messages.length === 0) {
-            container.innerHTML = '<div class="text-center py-10 text-slate-400 text-xs">Commencez la conversation !</div>';
-            return;
-        }
-
-        container.innerHTML = ''; // Vider une seule fois
-
-        messages.forEach(msg => {
-            const msgDate = new Date(msg.created_at).toLocaleDateString('fr-FR');
-
-            // Séparateur de date
-            if (lastDate !== msgDate) {
-                const dateEl = document.createElement('div');
-                dateEl.className = 'text-center my-4';
-                dateEl.innerHTML = `<span class="text-[10px] font-bold text-slate-400 uppercase bg-slate-200 dark:bg-slate-800 px-3 py-1 rounded-full">${msgDate}</span>`;
-                fragment.appendChild(dateEl);
-                lastDate = msgDate;
-            }
-
-            // Bulle de message
-            const isMe = msg.sender_id === user.id;
-            const row = createMessageBubble(msg, isMe);
-            fragment.appendChild(row);
-        });
-
-        container.appendChild(fragment);
-
-        // Auto-scroll uniquement si on était déjà en bas
-        if (isScrolledToBottom) {
-            container.scrollTop = container.scrollHeight;
-        }
-
-    } catch (err) {
-        console.error("Erreur loadMessages:", err);
-    }
-}
-
-// Helper pour créer une bulle de message (À placer en dehors des autres fonctions)
-function createMessageBubble(msg, isMe) {
-    const row = document.createElement('div');
-    row.className = `flex w-full mb-3 px-4 ${isMe ? 'justify-end' : 'justify-start'}`;
-    row.setAttribute('data-msg-id', msg.id);
-
-    // Styles adaptatifs
-    const bubbleClass = isMe
-        ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-2xl rounded-br-sm shadow-md'
-        : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-2xl rounded-bl-sm shadow-sm border border-slate-100 dark:border-slate-700';
-
-    const time = new Date(msg.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-
-    // Icônes de statut
-    let statusIconHtml = '';
-    if (isMe) {
-        if (msg.is_read) {
-            statusIconHtml = '<i class="fas fa-check-double text-[10px] ml-1 text-blue-300"></i>';
-        } else {
-            statusIconHtml = '<i class="fas fa-check text-[10px] ml-1 text-white/60"></i>';
-        }
-    }
-
-    row.innerHTML = `
-        <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%]">
-            <div class="${bubbleClass} px-4 py-2 text-sm leading-relaxed break-words">
-                ${msg.content}
-            </div>
-            <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 mx-1 flex items-center">
-                ${time} ${statusIconHtml}
-            </span>
-        </div>
-    `;
-
-    // Ajout des écouteurs pour le menu contextuel (Voir point 3)
-    addContextMenuListeners(row, msg);
-
-    return row;
-}
-
-// 2. Envoyer un message (UI Optimiste)
-async function sendChatMessage(e) {
-    if (e) e.preventDefault();
-
-    const input = document.getElementById('chat-input');
-    const content = input.value.trim();
-
-    // Sécurité : pas de contenu ou pas de chat ouvert
-    if (!content || !currentChatId) return;
-
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return;
-
-    // --- 1. GESTION DU MODE ÉDITION ---
-    // Si on est en train de modifier un message existant
-    if (window.isEditingId) {
-        const { error } = await supabaseClient
-            .from('messages')
-            .update({ content: content })
-            .eq('id', window.isEditingId);
-
-        if (!error) {
-            // Mise à jour visuelle immédiate dans le chat
-            const msgEl = document.querySelector(`[data-msg-id="${window.isEditingId}"] .break-words`);
-            if (msgEl) {
-                msgEl.innerText = content;
-                // Ajouter indicateur "modifié" si nécessaire
-            }
-            showToast("Message modifié", "success");
-        } else {
-            showToast("Erreur modification", "error");
-        }
-
-        // Reset du mode édition et champ
-        window.isEditingId = null;
-        input.value = '';
-        toggleChatSendButton(); // Remet l'icône micro
-        return;
-    }
-
-    // --- 2. GESTION DU MODE RÉPONSE ---
-    const replyContainer = document.getElementById('reply-container');
-    const isReplying = replyContainer && !replyContainer.classList.contains('hidden');
-
-    // Réinitialisation immédiate de l'UI (Input + Bouton + Réponse)
-    input.value = '';
-    toggleChatSendButton(); // Remet l'icône micro
-    if (isReplying) cancelReply(); // Cache la barre de réponse
-
-    // --- 3. AFFICHAGE OPTIMISTE (Message temporaire) ---
-    const tempId = 'temp-' + Date.now();
-    const tempMsg = {
-        id: tempId,
-        sender_id: user.id, // Nécessaire pour createMessageBubble
-        content: content,
-        created_at: new Date().toISOString(),
-        is_read: false
-    };
-
-    const container = document.getElementById('chat-messages-container');
-
-    // Appel correct de createMessageBubble avec les 3 arguments
-    const row = createMessageBubble(tempMsg, true, user.id);
-
-    // Style "En cours d'envoi"
-    row.classList.add('opacity-60', 'animate-pulse');
-    row.setAttribute('data-temp-id', tempId); // Marqueur pour le retrouver via le Realtime
-
-    container.appendChild(row);
-    container.scrollTop = container.scrollHeight;
-
-    // --- 4. ENVOI RÉEL SUPABASE ---
-    const { error } = await supabaseClient
-        .from('messages')
-        .insert([{
-            chat_id: currentChatId,
-            sender_id: user.id,
-            content: content,
-            // Si vous avez une colonne 'reply_to' dans votre table :
-            // reply_to: isReplying ? selectedMessageForContext?.id : null 
-        }]);
-
-    if (error) {
-        console.error("Erreur envoi:", error);
-        showToast("Erreur d'envoi", "error");
-
-        // En cas d'erreur, on arrête l'animation et on marque le message
-        row.classList.remove('opacity-60', 'animate-pulse');
-        row.classList.add('bg-red-100', 'dark:bg-red-900/30'); // Couleur erreur
-        row.querySelector('.break-words').innerHTML += '<br><span class="text-red-500 text-xs">Échec de l\'envoi</span>';
-    }
-
-    // Si succès, le Listener Realtime (INSERT) détectera le nouveau message,
-    // remplacera l'ID temporaire par le vrai ID et enlèvera l'opacité.
-}
-
-/* ==========================================================
-   SECTION 2 : NOTIFICATIONS (TEMPS RÉEL & BADGES)
-   ========================================================== */
-
-// 1. Initialisation du Listener Temps Réel (À appeler au démarrage de l'app)
-function initRealtimeNotifications() {
-    supabaseClient
-        .channel('realtime:notifications')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, payload => {
-            const notif = payload.new;
-            // Vérifier si c'est pour moi
-            if (notif.recipient_id === supabaseClient.auth.user()?.id) {
-                updateNotificationBadge(); // MAJ badge
-                showToast("🔔 Nouvelle notification !", "success");
-            }
-        })
-        .subscribe();
-}
-
-// 2. Charger les notifications (Render Optimisé)
-async function loadNotifications() {
-    const container = document.getElementById('notifications-list-container');
-    if (!container) return;
-
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return;
-
-    // Loader simple
-    container.innerHTML = `<div class="text-center py-10 text-slate-400"><i class="fas fa-spinner fa-spin"></i></div>`;
-
-    try {
-        const { data: notifs, error } = await supabaseClient
-            .from('notifications')
-            .select(`*, profiles ( full_name, avatar_url )`)
-            .eq('recipient_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(50); // Limite pour perf
-
-        if (error) throw error;
-
-        if (!notifs || notifs.length === 0) {
-            container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-slate-400"><i class="far fa-bell-slash text-4xl mb-3 opacity-20"></i><p>Aucune notification.</p></div>`;
-            return;
-        }
-
-        container.innerHTML = notifs.map(notif => {
-            const actor = notif.profiles || {};
-            const avatar = actor.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix';
-            const name = actor.full_name || 'Utilisateur';
-
-            // Logique d'icône et message
-            const config = {
-                'like': { icon: 'fa-heart', color: 'text-red-500', msg: 'a aimé votre publication.' },
-                'comment': { icon: 'fa-comment', color: 'text-blue-500', msg: `a commenté : "${notif.content_preview || '...'}"` },
-                'follow': { icon: 'fa-user-plus', color: 'text-green-500', msg: 'a commencé à vous suivre.' }
-            };
-            const { icon, color, msg } = config[notif.type] || { icon: 'fa-bell', color: 'text-slate-500', msg: 'Nouvelle interaction.' };
-
-            const bgClass = notif.is_read ? 'bg-white dark:bg-slate-900' : 'bg-indigo-50 dark:bg-slate-800 border-l-4 border-indigo-500';
-
-            return `
-            <div class="flex items-center gap-4 p-4 border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition ${bgClass}">
-                <img src="${avatar}" class="w-12 h-12 rounded-full object-cover shadow-sm">
-                <div class="flex-1">
-                    <p class="text-sm text-slate-800 dark:text-slate-200">
-                        <span class="font-bold">${name}</span> ${msg}
-                    </p>
-                    <span class="text-[10px] text-slate-400">${getTimeAgo(new Date(notif.created_at))}</span>
-                </div>
-                <i class="fas ${icon} ${color} opacity-50"></i>
-            </div>`;
-        }).join('');
-
-    } catch (err) {
-        console.error("Erreur notifs:", err);
-    }
-}
-
-// 3. Badge de Notification (Lecture rapide HEAD)
-async function updateNotificationBadge() {
-    const badge = document.getElementById('notif-badge-count');
-    if (!badge) return;
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return;
-
-    const { count } = await supabaseClient
-        .from('notifications')
-        .select('*', { count: 'exact', head: true })
-        .eq('recipient_id', user.id)
-        .eq('is_read', false);
-
-    if (count && count > 0) {
-        badge.innerText = count > 99 ? '99+' : count;
-        badge.classList.remove('hidden');
-    } else {
-        badge.classList.add('hidden');
-    }
-}
-
-/* ==========================================================
-   SECTION 3 : UTILITAIRES & CONTENU
-   ========================================================== */
-
-// Validation de contenu (Version améliorée avec liste)
-function containsInappropriateContent(text) {
-    if (!text) return false;
-    const lowerText = text.toLowerCase();
-    // Liste simple (à enrichir ou utiliser une API externe pour un vrai projet)
-    const forbiddenWords = ['connard', 'merde', 'putain', 'idiot', 'bastard', 'asshole'];
-    return forbiddenWords.some(word => lowerText.includes(word));
-}
-
-/* --- RAFRAÎCHISSEMENT DU STATUT EN LIGNE --- */
-/* --- LIRE LE STATUT DE L'AUTRE --- */
-async function refreshChatStatus(userId) {
-    const statusText = document.getElementById('chat-header-status-text');
-    const statusDot = document.getElementById('chat-status-dot');
-
-    if (!statusText || !userId) return;
-
-    try {
-        // On récupère ONLY last_seen pour la performance
-        const { data: profile, error } = await supabaseClient
-            .from('profiles')
-            .select('last_seen')
-            .eq('id', userId)
-            .maybeSingle();
-
-        if (error || !profile) {
-            statusText.innerText = "Hors ligne";
-            statusText.className = "text-[11px] text-slate-400";
-            if (statusDot) statusDot.classList.add('hidden');
-            return;
-        }
-
-        const lastSeen = profile.last_seen;
-
-        // Si pas de date, on considère hors ligne
-        if (!lastSeen) {
-            statusText.innerText = "Hors ligne";
-            if (statusDot) statusDot.classList.add('hidden');
-            return;
-        }
-
-        const now = new Date();
-        const lastDate = new Date(lastSeen);
-        const diffSeconds = Math.floor((now - lastDate) / 1000);
-
-        // LOGIQUE STRICTE : Si actif il y a moins de 2 min (120s)
-        if (diffSeconds < 120) {
-            statusText.innerText = "En ligne";
-            statusText.className = "text-[11px] text-emerald-400 font-semibold"; // Vert
-            if (statusDot) {
-                statusDot.classList.remove('hidden');
-                statusDot.className = "absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white dark:border-slate-900 animate-pulse";
-            }
-        } else {
-            statusText.innerText = getTimeAgoSimple(lastDate);
-            statusText.className = "text-[11px] text-slate-400";
-            if (statusDot) statusDot.classList.add('hidden');
-        }
-
-    } catch (err) {
-        console.error("Erreur refreshChatStatus:", err);
-    }
-}
-
-// Helper pour le temps (ex: "il y a 5 min")
-function getTimeAgoSimple(date) {
-    const seconds = Math.floor((new Date() - date) / 1000);
-    if (seconds < 60) return "À l'instant";
-    if (seconds < 3600) return `il y a ${Math.floor(seconds / 60)} min`;
-    if (seconds < 86400) return `il y a ${Math.floor(seconds / 3600)} h`;
-    return `le ${date.toLocaleDateString('fr-FR')}`;
-}
-
-// Recherche Toggle (UX Pro)
-function toggleSearch() {
-    const searchBar = document.getElementById('feed-search-bar');
-    const searchInput = document.getElementById('feed-search-input');
-
-    // Sécurité : si les éléments n'existent pas, on arrête tout
-    if (!searchBar) return;
-
-    if (searchBar.classList.contains('hidden')) {
-        searchBar.classList.remove('hidden');
-        searchBar.style.opacity = '0';
-        searchBar.style.transform = 'translateY(-10px)';
-
-        requestAnimationFrame(() => {
-            searchBar.style.transition = 'all 0.3s ease';
-            searchBar.style.opacity = '1';
-            searchBar.style.transform = 'translateY(0)';
-            // On vérifie que l'input existe avant de focus
-            if (searchInput) searchInput.focus();
-        });
-    } else {
-        searchBar.style.opacity = '0';
-        searchBar.style.transform = 'translateY(-10px)';
-        setTimeout(() => {
-            searchBar.classList.add('hidden');
-            if (searchInput) {
-                searchInput.value = '';
-                // searchFeed(''); // Décommentez si vous avez cette fonction
-            }
-        }, 300);
-    }
-}
-
-/* --- METTRE À JOUR MA PRÉSENCE --- */
-/* --- METTRE À JOUR MA PRÉSENCE (JE SUIS EN LIGNE) --- */
-async function updateMyPresence() {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return;
-
-    // On met à jour notre profil avec l'heure actuelle
-    try {
-        await supabaseClient
-            .from('profiles')
-            .update({ last_seen: new Date().toISOString() })
-            .eq('id', user.id);
-    } catch (err) {
-        console.warn("Impossible de mettre à jour la présence :", err.message);
-    }
-}
-
-// Lancer cette mise à jour toutes les 30 secondes pour rester "En ligne"
-setInterval(updateMyPresence, 30000);
-// Et l'appeler une fois au chargement
-updateMyPresence();
-/* ==========================================================
-FONCTIONS MANQUANTES POUR LE CHAT (BADGE & LECTURE)
-========================================================== */
-
-// 1. Mettre à jour le badge rouge de message (Dock & Header)
-async function updateMessageBadge() {
-    const badge = document.getElementById('msg-badge-count');
-    if (!badge) return;
-
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return;
-
-    try {
-        // A. Récupérer tous mes chats
-        const { data: myChats } = await supabaseClient
-            .from('chats')
-            .select('id')
-            .or(`user_1_id.eq.${user.id},user_2_id.eq.${user.id}`);
-
-        if (!myChats || myChats.length === 0) {
-            badge.classList.add('hidden');
-            return;
-        }
-
-        const myChatIds = myChats.map(c => c.id);
-
-        // B. Compter les messages NON LUS envoyés par les AUTRES
-        const { count } = await supabaseClient
-            .from('messages')
-            .select('*', { count: 'exact', head: true }) // head: true pour perf (pas de body)
-            .in('chat_id', myChatIds)
-            .neq('sender_id', user.id) // Pas les miens
-            .eq('is_read', false);     // Non lus
-
-        const unreadCount = count || 0;
-
-        // C. Affichage du badge
-        if (unreadCount > 0) {
-            badge.innerText = unreadCount > 99 ? '99+' : unreadCount;
-            badge.classList.remove('hidden');
-        } else {
-            badge.classList.add('hidden');
-        }
-
-    } catch (err) {
-        console.error("Erreur updateMessageBadge:", err);
-    }
-}
-
-// 2. Marquer une conversation comme lue (quand on l'ouvre)
-async function markChatAsRead(chatId) {
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-
-    if (authError || !user) {
-        console.error("Utilisateur non authentifié");
-        return;
-    }
-
-    try {
-        const { error } = await supabaseClient
-            .from('messages')
-            .update({ is_read: true })
-            .match({
-                chat_id: chatId,
-                is_read: false
-            })
-            .neq('sender_id', user.id);
-
-        if (error) throw error;
-
-        // Mise à jour de l'UI locale
-        if (typeof updateMessageBadge === 'function') {
-            await updateMessageBadge();
-        }
-
-    } catch (err) {
-        console.error("Erreur markChatAsRead:", err.message);
-    }
-}
-
-/* --- FONCTION TOAST POUR MESSAGE ENTRANT (STYLE FACEBOOK) --- */
-function showIncomingMessageToast(senderName, messagePreview, avatarUrl, chatId, senderId) {
-    const container = document.getElementById('toast-container');
-
-    // Création du toast spécial
-    const toast = document.createElement('div');
-    toast.className = 'toast incoming-message cursor-pointer hover:scale-[1.02] transition-transform';
-    toast.style.background = 'white';
-    toast.style.borderLeft = '4px solid #3b82f6'; // Bleu pour message
-    toast.style.minWidth = '280px';
-
-    // Date formatée
-    const time = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-
-    // HTML interne du Toast
-    toast.innerHTML = `
-        <div class="flex items-center gap-3 p-2" onclick="handleToastClick('${chatId}', '${senderId}')">
-            <div class="relative">
-                <img src="${avatarUrl}" class="w-12 h-12 rounded-full object-cover border-2 border-slate-100 shadow-sm">
-                <div class="absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full p-1">
-                    <i class="fas fa-comment text-[8px]"></i>
-                </div>
-            </div>
-            <div class="flex-1 overflow-hidden">
-                <p class="text-sm font-bold text-slate-900 truncate">${senderName}</p>
-                <p class="text-xs text-slate-500 truncate">${messagePreview}</p>
-                <span class="text-[10px] text-slate-400">${time}</span>
-            </div>
-        </div>
-    `;
-
-    container.appendChild(toast);
-
-    // Auto-suppression après 5 secondes
-    setTimeout(() => {
-        toast.style.animation = 'slideOut 0.3s forwards';
-        setTimeout(() => toast.remove(), 300);
-    }, 5000);
-}
-
-// Fonction utilitaire pour gérer le clic sur le Toast
-async function handleToastClick(chatId, senderId) {
-    // 1. Fermer le toast cliqué
-    event.currentTarget.closest('.toast').remove();
-
-    // 2. Ouvrir la discussion
-    // Si la fonction startChat existe (pour créer/récupérer le chat)
-    if (typeof startChat === 'function') {
-        await startChat(senderId);
-    } else {
-        // Sinon ouvrir directement la room si on a déjà l'ID
-        openChatRoom(chatId, senderId);
-    }
-}
-
-// Initialisation à ajouter dans votre DOMContentLoaded
-// initRealtimeNotifications(); // Lancer le realtime au démarrage
-
-// 2. Fonction pour filtrer les posts en temps réel (Recherche Facebook-like)
-document.getElementById('feed-search-input')?.addEventListener('input', function (e) {
-    const query = e.target.value.toLowerCase();
-    searchFeed(query);
-});
-
-// REMPLACEZ L'ANCIENNE FONCTION PAR CECI
-async function searchFeed(query) {
-    const container = document.getElementById('global-feed-container');
-
-    // 1. Gestion du Debounce (Anti-spam)
-    // On annule la recherche précédente si l'utilisateur tape vite
-    clearTimeout(searchDebounceTimer);
-
-    searchDebounceTimer = setTimeout(async () => {
-        // 2. Si le champ est vide, on recharge le feed normal
-        if (!query || query.trim() === '') {
-            return loadGlobalFeed('recent', 'all', false);
-        }
-
-        // 3. Affichage du Loader
-        container.innerHTML = `
-            <div class="col-span-full flex justify-center py-20">
-                <div class="flex items-center gap-2 text-slate-400 text-sm font-bold">
-                    <i class="fas fa-circle-notch fa-spin text-indigo-500"></i>
-                    Recherche en cours...
-                </div>
-            </div>`;
-
-        try {
-            // 4. Requête Supabase (Recherche dans le CAPTION)
-            // Le symbole % est un joker SQL : %mot% signifie "contient mot"
-            const { data: posts, error } = await supabaseClient
-                .from('posts')
-                .select(`
-                    *,
-                    profiles ( id, full_name, username, avatar_url, is_certified ),
-                    post_likes(count),
-                    post_comments(count)
-                `)
-                .ilike('caption', `%${query}%`) // Recherche insensible à la casse
-                .order('created_at', { ascending: false })
-                .limit(30);
-
-            if (error) throw error;
-
-            // 5. Gestion "Aucun résultat"
-            if (!posts || posts.length === 0) {
-                container.innerHTML = `
-                    <div class="col-span-full text-center py-20 text-slate-400">
-                        <i class="fas fa-search text-4xl mb-3 opacity-20"></i>
-                        <p class="font-bold">Aucun résultat pour "<span class="text-indigo-600">${query}</span>"</p>
-                        <p class="text-xs mt-1">Essayez avec d'autres mots-clés.</p>
-                    </div>`;
-                return;
-            }
-
-            // 6. Rendu des résultats (Pro)
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            const myId = user?.id;
-
-            container.innerHTML = posts.map(post => {
-                const profile = post.profiles || {};
-                const avatarUrl = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username || 'user'}`;
-                const userName = profile.full_name || 'Utilisateur';
-                const timeAgo = typeof getTimeAgo === 'function' ? getTimeAgo(new Date(post.created_at)) : '';
-                const likeCount = post.post_likes?.[0]?.count || 0;
-                const commentCount = post.post_comments?.[0]?.count || 0;
-
-                // Sécurité pour l'affichage du texte
-                const safeCaption = post.caption ? post.caption.replace(/</g, "&lt;").replace(/>/g, "&gt;") : '';
-
-                return `
-                <article class="bg-white dark:bg-black border border-black/5 dark:border-white/10 rounded-lg overflow-hidden mb-2 transition-all hover:shadow-xl">
-                    <!-- HEADER -->
-                    <div class="p-4 flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <img src="${avatarUrl}" class="w-11 h-11 rounded-full border-2 border-indigo-50 shadow-sm">
-                            <div>
-                                <div class="flex items-center gap-1 font-bold text-sm text-slate-900 dark:text-white">
-                                    ${userName} ${profile.is_certified ? '<i class="fas fa-check-circle text-blue-500 text-[10px]"></i>' : ''}
-                                </div>
-                                <div class="text-[11px] text-slate-400 font-medium">${timeAgo}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- CAPTION -->
-                    <div class="px-4 pb-2">
-                        <p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-                            ${safeCaption}
-                        </p>
-                    </div>
-
-                    <!-- MEDIA -->
-                    ${post.image_url ? `<img src="${post.image_url}" class="w-full h-auto object-cover" loading="lazy">` : ''}
-
-                    <!-- ACTIONS SIMPLIFIEES (Pour un resultat de recherche, on peut simplifier) -->
-                    <div class="px-4 py-2 flex items-center justify-between border-t border-slate-50 dark:border-slate-800">
-                        <div class="flex items-center gap-4 text-slate-500 text-xs font-bold">
-                            <span><i class="far fa-heart text-red-500 mr-1"></i> ${likeCount}</span>
-                            <span><i class="far fa-comment text-blue-500 mr-1"></i> ${commentCount}</span>
-                        </div>
-                        <button onclick="openPostModal('${post.id}')" class="text-xs font-bold text-indigo-600 hover:underline">Voir détails</button>
-                    </div>
-                </article>
-                `;
-            }).join('');
-
-        } catch (err) {
-            console.error("Erreur recherche:", err);
-            container.innerHTML = `<div class="col-span-full text-center py-10 text-red-500"><p>Erreur lors de la recherche.</p></div>`;
-        }
-
-    }, 400); // Délai de 400ms avant de lancer la recherche
-}
-async function reportPost(postId) {
-    const reason = prompt("Pourquoi signalez-vous cette publication ? (Haine, Arnaque, Pornographie, Autre)");
-    if (!reason) return;
-
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return showToast("Connectez-vous pour signaler.", "error");
-
-    // Envoi dans une table 'reports' (à créer dans Supabase)
-    await supabaseClient.from('reports').insert([{
-        reporter_id: user.id,
-        post_id: postId,
-        reason: reason,
-        status: 'pending' // En attente de modération
-    }]);
-
-    showToast("Signalement envoyé aux modérateurs.", "success");
-}
-
-let openReactionsPopupId = null;
-
-function toggleReactionPopup(postId, btnElement) {
-    // Si on clique sur un bouton du menu (dans le cas d'une sélection directe via le menu)
-    if (btnElement && btnElement.dataset.type) {
-        setReaction(postId, btnElement.dataset.type);
-        closeReactionPopup(postId);
-        return;
-    }
-
-    // Logique d'ouverture/fermeture standard...
-    const popup = document.getElementById(`reactions-popup-${postId}`);
-
-    if (popup.style.display === 'flex') {
-        closeReactionPopup(postId);
-    } else {
-        document.querySelectorAll('.reactions-popup').forEach(el => el.style.display = 'none');
-
-        // Génération HTML (Boutons Facebook Style)
-        popup.innerHTML = REACTIONS.map(r => `
-            <div class="reaction-btn" data-type="${r.type}" onclick="setReaction('${postId}', '${r.type}', this)">
-                <i class="fas ${r.icon}"></i>
-            </div>
-        `).join('');
-
-        popup.style.display = 'flex';
-        openReactionsPopupId = postId;
-    }
-}
-
-function closeReactionPopup(postId) {
-    const popup = document.getElementById(`reactions-popup-${postId}`);
-    if (popup) popup.style.display = 'none';
-    openReactionsPopupId = null;
-}
-
-// Fonction de mise à jour du style et du COMPTEUR
-async function setReaction(postId, reactionType, btnElement) {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) {
-        showToast("Connectez-vous pour réagir", "warning");
-        return;
-    }
-
-    // 1. Récupérer l'élément du compteur
-    const countSpan = document.getElementById(`count-like-${postId}`);
-    if (!countSpan) return;
-
-    // 2. Calculer le nombre actuel (gestion du format "1.2K")
-    let currentCount = parseInt(countSpan.getAttribute('data-raw-count'));
-    if (isNaN(currentCount)) {
-        let rawText = countSpan.innerText || "0";
-        if (rawText.includes('K')) currentCount = parseFloat(rawText) * 1000;
-        else currentCount = parseInt(rawText.replace(/[^0-9]/g, '')) || 0;
-    }
-
-    try {
-        // 3. Vérifier si une réaction existe déjà
-        const { data: existingReaction } = await supabaseClient
-            .from('post_likes')
-            .select('*')
-            .eq('post_id', postId)
-            .eq('user_id', user.id)
-            .maybeSingle();
-
-        // 4. Logique de changement d'état et MISE À JOUR DU COMPTEUR
-        if (existingReaction) {
-            if (existingReaction.reaction_type === reactionType) {
-                // --- ACTION : RETIRER (Toggle OFF) ---
-                const { error } = await supabaseClient
-                    .from('post_likes')
-                    .delete()
-                    .match({ post_id: postId, user_id: user.id });
-
-                if (error) throw error;
-
-                currentCount = Math.max(0, currentCount - 1); // On décrémente
-                userReactions.delete(postId);
-                updateMainIcon(postId, null);
-            } else {
-                // --- ACTION : CHANGER DE TYPE (ex: Cœur -> Bravo) ---
-                const { error } = await supabaseClient
-                    .from('post_likes')
-                    .update({ reaction_type: reactionType })
-                    .match({ id: existingReaction.id });
-
-                if (error) throw error;
-
-                // Le compte ne change pas, juste le type
-                userReactions.set(postId, reactionType);
-                updateMainIcon(postId, reactionType);
-            }
-
-            closeReactionPopup(postId);
-
-        } else {
-            // --- ACTION : AJOUTER (Nouvelle réaction) ---
-            const { error } = await supabaseClient
-                .from('post_likes')
-                .insert([{
-                    post_id: postId,
-                    user_id: user.id,
-                    reaction_type: reactionType
-                }]);
-
-            if (error) throw error;
-
-            currentCount++; // On incrémente
-            userReactions.set(postId, reactionType);
-            updateMainIcon(postId, reactionType);
-
-            closeReactionPopup(postId);
-        }
-
-        // 5. MISE À JOUR VISUELLE IMMÉDIATE DU CHIFFRE
-        countSpan.innerText = formatNumber(currentCount);
-        countSpan.setAttribute('data-raw-count', currentCount); // On sauvegarde la valeur brute
-
-    } catch (err) {
-        console.error("Erreur Réaction:", err);
-        showToast("Erreur de mise à jour", "error");
-    }
-}
-
-// Fonction helper pour mettre à jour l'icône principale
-function updateMainIcon(postId, reactionType) {
-    const icon = document.getElementById(`icon-react-${postId}`);
-
-    if (!icon) return;
-
-    // Si reactionType est null, on revient au style par défaut (Cœur vide ou Plein selon votre logique de likes)
-    // Ici, pour simplifier, on revient à "Cœur Vide" (far fa-heart)
-    if (!reactionType) {
-        // Note : Si vous voulez qu'il affiche un cœur PLEIN quand l'user a liké, il faudrait vérifier 'like' explicitement
-        icon.className = "far fa-heart text-slate-400 text-xl group-active:scale-125 transition-transform";
-    } else {
-        // Récupérer le style associé au type (Ex: Support -> Pink Heart)
-        const style = REACTION_STYLES[reactionType];
-        // On applique la nouvelle classe (Icon + Couleur)
-        icon.className = `fas ${style.icon} ${style.color} text-xl group-active:scale-125 transition-transform`;
-    }
-}
-/* --- 3. TAGS & MENTIONS (Highlighting) --- */
-function formatTextWithHighlights(text) {
-    if (!text) return '';
-
-    // 1. Protection XSS basique (Remplacer < et > par des entités HTML)
-    let safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-    // 2. Remplacer les Mentions (@user)
-    safeText = safeText.replace(/@(\w+)/g, '<span class="mention-highlight">@$1</span>');
-
-    // 3. Remplacer les Tags (#hashtag)
-    safeText = safeText.replace(/#(\w+)/g, '<span class="hashtag-highlight">#$1</span>');
-
-    return safeText;
-}
-
-/* --- 4. MODE ZEN (LECTURE VIDÉO) --- */
-function openZenMode(url) {
-    // On utilise l'élément HTML existant au lieu d'en créer un nouveau
-    const modal = document.getElementById('zen-mode-modal');
-    const video = document.getElementById('zen-video-player');
-
-    if (!modal || !video) {
-        console.error("Element Zen Mode introuvable");
-        return;
-    }
-
-    video.src = url;
-    modal.classList.add('active'); // Affiche le modal via CSS
-    document.body.style.overflow = 'hidden'; // Bloque le scroll du corps
-
-    // Lecture automatique
-    video.play().catch(e => console.log("Autoplay bloqué par le navigateur", e));
-}
-
-function closeZenMode() {
-    const modal = document.getElementById('zen-mode-modal');
-    const video = document.getElementById('zen-video-player');
-
-    if (video) {
-        video.pause();
-        video.src = ''; // Vide la source pour arrêter le chargement
-    }
-
-    if (modal) {
-        modal.classList.remove('active');
-    }
-
-    document.body.style.overflow = 'auto'; // Réactive le scroll
-}
-
-// --- VARIABLES GLOBALES MODALE ---
-let currentModalPostId = null;
-
-// --- NOUVELLE VERSION ROBUSTE OPEN POST MODAL ---
-async function openPostModal(postId) {
-    console.log("Ouverture modale pour:", postId);
-    const overlay = document.getElementById('post-modal-overlay');
-    if (!overlay) return;
-
-    // 1. On affiche le conteneur immédiatement avec un style inline fort
-    overlay.classList.remove('hidden');
-    overlay.classList.add('active');
-    overlay.style.cssText = "display: flex !important; opacity: 1 !important; z-index: 99999 !important; pointer-events: auto !important;";
-
-    // 2. On bloque le scroll du body
-    document.body.style.overflow = 'hidden';
-
-    // 3. On injecte un loader le temps du chargement
-    overlay.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-black/90"><i class="fas fa-spinner fa-spin text-4xl text-white"></i></div>`;
-
-    try {
-        // Récupération des données
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        const { data: post, error } = await supabaseClient.from('posts').select('*').eq('id', postId).single();
-        if (error) throw error;
-
-        const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', post.user_id).single();
-        currentModalPostId = postId;
-        const isMyPost = (user && user.id === post.user_id);
-
-        // 4. Injection du HTML final
-        // Note: J'ai réduit les arrondis ici aussi pour la modale (rounded-2xl au lieu de 3xl)
-        overlay.innerHTML = `
-            <div class="bg-white dark:bg-slate-900 w-full max-w-5xl h-[90vh] rounded-2xl flex flex-col md:flex-row overflow-hidden shadow-2xl relative" onclick="event.stopPropagation()">
-                
-                <!-- PARTIE GAUCHE : MEDIA -->
-                <div class="flex-1 bg-black flex items-center justify-center relative">
-                    ${post.is_short && post.video_url
-                ? `<video src="${post.video_url}" controls autoplay class="max-h-full max-w-full"></video>`
-                : `<img src="${post.image_url}" class="max-h-full max-w-full object-contain">`
-            }
-                </div>
-
-                <!-- PARTIE DROITE : INFOS -->
-                <div class="w-full md:w-[400px] flex flex-col border-l border-slate-100 dark:border-slate-700">
-                    <!-- Header -->
-                    <div class="p-4 border-b dark:border-slate-700 flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <img src="${profile?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg'}" class="w-10 h-10 rounded-full">
-                            <div>
-                                <div class="font-bold text-sm text-slate-900 dark:text-white">${profile?.full_name || 'Utilisateur'}</div>
-                                <div class="text-xs text-slate-400">${typeof getTimeAgo === 'function' ? getTimeAgo(new Date(post.created_at)) : ''}</div>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2 relative">
-                            <button onclick="toggleModalMenu()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500">
-                                <i class="fas fa-ellipsis-h"></i>
-                            </button>
-                            <div id="modal-dropdown-menu" class="post-dropdown-menu hidden absolute top-10 right-0 bg-white dark:bg-slate-800 shadow-xl rounded-lg w-48 py-1 border dark:border-slate-700 z-50"></div>
-                            <button onclick="closePostModal()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <!-- Corps -->
-                    <div id="modal-comments-container" class="flex-1 overflow-y-auto p-4">
-                        <p class="text-sm mb-4 text-slate-700 dark:text-slate-300">
-                            <span class="font-bold text-slate-900 dark:text-white mr-2">${profile?.full_name || 'User'}</span> 
-                            ${post.caption || ''}
-                        </p>
-                        <div id="modal-comments-list" class="space-y-3 text-sm"></div>
-                    </div>
-                    <!-- Footer -->
-                    <div class="p-4 border-t dark:border-slate-700">
-                        <form onsubmit="submitModalComment(event)" class="flex items-center gap-2">
-                            <input type="text" id="modal-comment-input" placeholder="Commenter..." class="flex-1 text-sm outline-none bg-transparent">
-                            <button type="submit" class="text-indigo-600 font-bold text-xs">Envoyer</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        renderModalMenu(isMyPost, post.user_id);
-
-    } catch (err) {
-        console.error("Erreur modale:", err);
-        closePostModal();
-        showToast("Impossible de charger cette publication", "error");
-    }
-}
-
-// 2. Fermer la modale
-function closePostModal() {
-    const overlay = document.getElementById('post-modal-overlay');
-    if (overlay) {
-        overlay.classList.remove('active');
-        overlay.classList.add('hidden');
-        overlay.innerHTML = '';
-    }
-    document.body.style.overflow = 'auto';
-}
-
-// 3. Générer le menu (FONCTION MANQUANTE CORRIGÉE)
-function renderModalMenu(isOwner, targetUserId) {
-    const menu = document.getElementById('modal-dropdown-menu');
-    if (!menu) return;
-
-    if (isOwner) {
-        menu.innerHTML = `
-            <div onclick="deletePostAction()" class="post-dropdown-item danger">
-                <i class="fas fa-trash-alt"></i> Supprimer
-            </div>`;
-    } else {
-        menu.innerHTML = `
-            <div onclick="reportPostAction()" class="post-dropdown-item danger">
-                <i class="fas fa-flag"></i> Signaler
-            </div>`;
-    }
-}
-
-// 4. Actions simples
-function toggleModalMenu() {
-    const menu = document.getElementById('modal-dropdown-menu');
-    if (menu) menu.classList.toggle('hidden');
-}
-
-async function deletePostAction() {
-    if (!confirm("Supprimer ?")) return;
-    await supabaseClient.from('posts').delete().eq('id', currentModalPostId);
-    showToast("Supprimé", "success");
-    closePostModal();
-    if (typeof loadGlobalFeed === 'function') loadGlobalFeed();
-}
-
-function reportPostAction() {
-    showToast("Signalé", "success");
-    closePostModal();
-}
-
-async function submitModalComment(e) {
-    e.preventDefault();
-    const input = document.getElementById('modal-comment-input');
-    const content = input.value.trim();
-    if (!content) return;
-
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    await supabaseClient.from('post_comments').insert([{ user_id: user.id, post_id: currentModalPostId, content: content }]);
-    input.value = '';
-    showToast("Commenté", "success");
-    openPostModal(currentModalPostId); // Recharge
-}
-
-// 5. Attacher les fonctions au window pour être sûr qu'elles sont accessibles globalement
-window.openPostModal = openPostModal;
-window.closePostModal = closePostModal;
-window.toggleModalMenu = toggleModalMenu;
-window.deletePostAction = deletePostAction;
-window.reportPostAction = reportPostAction;
-window.submitModalComment = submitModalComment;
-
-function handleSortClick(element, filterType) {
-    const allButtons = document.querySelectorAll('.sort-btn');
-
-    allButtons.forEach(btn => {
-        // Reset Styles : Gris + Carré/Cercle (px-3 pour icône seule)
-        btn.classList.remove('bg-blue-50', 'text-blue-600', 'dark:bg-blue-900/30', 'dark:text-blue-400');
-        btn.classList.add('bg-slate-100', 'text-slate-600', 'dark:bg-slate-800', 'dark:text-slate-300');
-        btn.classList.replace('px-4', 'px-3');
-
-        const textSpan = btn.querySelector('.btn-text');
-        if (textSpan) textSpan.classList.add('hidden');
-    });
-
-    // Active Style : Bleu + Largeur auto (px-4 pour texte + icône)
-    element.classList.remove('bg-slate-100', 'text-slate-600', 'dark:bg-slate-800', 'dark:text-slate-300');
-    element.classList.add('bg-blue-50', 'text-blue-600', 'dark:bg-blue-900/30', 'dark:text-blue-400');
-    element.classList.replace('px-3', 'px-4');
-
-    const activeText = element.querySelector('.btn-text');
-    if (activeText) activeText.classList.remove('hidden');
-
-    // Appel des fonctions de tri
-    filterType === 'shorts' ? filterFeed('shorts') : sortFeed(filterType);
-}
-// --- CHARGER LES INFOS DANS LE MENU SIDEBAR ---
-async function loadSidebarUser() {
-    try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        if (!user) return;
-
-        const { data: profile } = await supabaseClient
-            .from('profiles')
-            .select('full_name, avatar_url')
-            .eq('id', user.id)
-            .single();
-
-        if (profile) {
-            const imgEl = document.getElementById('sidebar-avatar');
-            const nameEl = document.getElementById('sidebar-username');
-
-            if (imgEl) {
-                imgEl.src = profile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.full_name || 'User')}&background=e2e8f0&color=64748b`;
-            }
-            if (nameEl) {
-                nameEl.innerText = profile.full_name || 'Utilisateur';
-            }
-        }
-    } catch (e) {
-        console.error("Erreur chargement sidebar user:", e);
-    }
-}
-async function blockUser(targetUserId) {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return;
-
-    const { error } = await supabaseClient
-        .from('blocked_users')
-        .insert([{ blocker_id: user.id, blocked_id: targetUserId }]);
-
-    if (!error) {
-        showToast("Utilisateur bloqué", "success");
-        // Optionnel : Retirer ses posts du feed actuel
-        document.querySelectorAll(`[data-user-id="${targetUserId}"]`).forEach(el => el.remove());
-    }
-}
-/* --- GESTION DU BOUTON DYNAMIQUE (VOIX / ENVOI) --- */
-function toggleChatSendButton() {
-    const input = document.getElementById('chat-input');
-    const voiceBtn = document.getElementById('voice-btn');
-    const sendBtn = document.getElementById('send-btn');
-
-    if (!input || !voiceBtn || !sendBtn) return;
-
-    // Si du texte est tapé (longueur > 0)
-    if (input.value.trim().length > 0) {
-        voiceBtn.classList.add('hidden');      // Cache Micro
-        sendBtn.classList.remove('hidden');    // Affiche Envoi
-    } else {
-        voiceBtn.classList.remove('hidden');   // Affiche Micro
-        sendBtn.classList.add('hidden');       // Cache Envoi
-    }
-}
-async function sendChatMessage(e) {
-    if (e) e.preventDefault();
-    const input = document.getElementById('chat-input');
-    const content = input.value.trim();
-
-    if (!content || !currentChatId) return;
-
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return;
-
-    input.value = '';
-
-    const tempId = 'temp-' + Date.now();
-
-    // Création du message optimiste
-    const tempMsg = {
-        id: tempId,
-        content: content,
-        created_at: new Date().toISOString(),
-        is_read: false // Forcé à false
-    };
-
-    const container = document.getElementById('chat-messages-container');
-
-    // On utilise createMessageBubble, mais on ajoute une classe spéciale pour le retrouver
-    const row = createMessageBubble(tempMsg, true);
-    row.classList.add('opacity-70'); // Légèrement transparent (envoi en cours)
-    row.setAttribute('data-temp-id', tempId); // Marqueur temporaire
-
-    container.appendChild(row);
-    container.scrollTop = container.scrollHeight;
-
-    // Envoi réel
-    const { error } = await supabaseClient
-        .from('messages')
-        .insert([{
-            chat_id: currentChatId,
-            sender_id: user.id,
-            content: content
-        }]);
-
-    if (error) {
-        showToast("Erreur d'envoi", "error");
-        row.classList.add('bg-red-50'); // Erreur visuelle
-    } else {
-        // Succès : on enlève la transparence.
-        // Note: Le listener Realtime (INSERT) va remplacer cette bulle par la version définitive.
-        row.classList.remove('opacity-70');
-    }
-}
-let longPressTimer = null;
-let selectedMessage = null;
-
-// 1. Fonction pour attacher les écouteurs (à appeler dans createMessageBubble)
-function addContextMenuListeners(element, msg) {
-    // Événements tactiles (Mobile)
-    element.addEventListener('touchstart', (e) => {
-        longPressTimer = setTimeout(() => {
-            showContextMenu(e.touches[0].clientX, e.touches[0].clientY, msg);
-            navigator.vibrate(50); // Petit retour haptique
-        }, 500); // 500ms pour un appui long
-    }, { passive: true });
-
-    element.addEventListener('touchend', () => clearTimeout(longPressTimer));
-    element.addEventListener('touchmove', () => clearTimeout(longPressTimer));
-
-    // Événement souris (Desktop - Clic droit)
-    element.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        showContextMenu(e.clientX, e.clientY, msg);
-    });
-}
-
-// 2. Afficher le menu
-function showContextMenu(x, y, msg) {
-    selectedMessage = msg;
-
-    // Supprimer l'ancien menu s'il existe
-    const existing = document.querySelector('.context-menu');
-    if (existing) existing.remove();
-
-    const menu = document.createElement('div');
-    menu.className = 'context-menu';
-
-    // Positionnement intelligent (éviter de sortir de l'écran)
-    menu.style.left = `${Math.min(x, window.innerWidth - 200)}px`;
-    menu.style.top = `${Math.min(y, window.innerHeight - 200)}px`;
-
-    // Contenu du menu
-    menu.innerHTML = `
-        <div class="context-menu-item" onclick="replyToMessage()">
-            <i class="fas fa-reply text-blue-500"></i> Répondre
-        </div>
-        <div class="context-menu-item" onclick="copyMessage()">
-            <i class="fas fa-copy text-slate-500"></i> Copier
-        </div>
-        <div class="context-menu-item" onclick="forwardMessage()">
-            <i class="fas fa-share text-indigo-500"></i> Transférer
-        </div>
-        ${msg.sender_id === myId ? `
-        <div class="context-menu-item" onclick="editMessage()">
-            <i class="fas fa-pencil-alt text-orange-500"></i> Modifier
-        </div>
-        <div class="context-menu-item danger" onclick="deleteMessage()">
-            <i class="fas fa-trash"></i> Supprimer
-        </div>
-        ` : ''}
-    `;
-
-    document.body.appendChild(menu);
-
-    // Fermer si on clique ailleurs
-    setTimeout(() => {
-        document.addEventListener('click', closeContextMenu, { once: true });
-    }, 10);
-}
-
-function closeContextMenu() {
-    const menu = document.querySelector('.context-menu');
-    if (menu) menu.remove();
-}
-
-// 3. Actions du Menu
-
-// A. Répondre
-function replyToMessage() {
-    closeContextMenu();
-    if (!selectedMessage) return;
-
-    // Afficher la barre de réponse
-    const replyContainer = document.getElementById('reply-container');
-    const replyPreview = document.getElementById('reply-preview-text');
-
-    replyPreview.innerText = selectedMessage.content.substring(0, 50);
-    replyContainer.classList.remove('hidden');
-
-    // Focus sur l'input
-    document.getElementById('chat-input').focus();
-}
-function cancelReply() {
-    document.getElementById('reply-container').classList.add('hidden');
-    selectedMessage = null; // On réinitialise la sélection pour l'envoi
-}
-
-// B. Copier
-function copyMessage() {
-    closeContextMenu();
-    if (!selectedMessage) return;
-    navigator.clipboard.writeText(selectedMessage.content);
-    showToast("Message copié", "success");
-}
-
-// C. Supprimer
-async function deleteMessage() {
-    closeContextMenu();
-    if (!selectedMessage) return;
-
-    if (confirm("Supprimer ce message ?")) {
-        // Option 1 : Suppression réelle (si autorisé par RLS)
-        const { error } = await supabaseClient
-            .from('messages')
-            .delete()
-            .eq('id', selectedMessage.id);
-
-        if (!error) {
-            // Suppression visuelle
-            const el = document.querySelector(`[data-msg-id="${selectedMessage.id}"]`);
-            if (el) el.innerHTML = '<div class="text-center text-slate-400 italic text-xs p-2">Message supprimé</div>';
-            showToast("Supprimé", "success");
-        } else {
-            showToast("Erreur suppression", "error");
-        }
-    }
-}
-
-// D. Modifier (Basique - ouvre l'input avec le texte)
-function editMessage() {
-    closeContextMenu();
-    if (!selectedMessage) return;
-
-    const input = document.getElementById('chat-input');
-    input.value = selectedMessage.content;
-    input.focus();
-
-    // On sauvegarde qu'on est en mode édition
-    window.isEditing = selectedMessage.id;
-
-    showToast("Modifiez le message et envoyez", "info");
-}
-
-// E. Transférer (Ouvre la liste des contacts)
-function forwardMessage() {
-    closeContextMenu();
-    if (!selectedMessage) return;
-
-    // Logique simple : on sauvegarde le message et on va sur la liste des chats
-    window.forwardContent = selectedMessage.content;
-    showToast("Sélectionnez un destinataire", "info");
-    switchPage('messages');
-}
-/* ==========================================================
-DÉFINITION DE LA FONCTION D'INITIALISATION (GLOBALE)
-========================================================== */
-/* ==========================================================
-   DÉFINITION DE LA FONCTION D'INITIALISATION (CORRIGÉE)
-   ========================================================== */
-async function initialiserApplication() {
-    try {
-        console.log("Démarrage progressif...");
-
-        // 1. Afficher la page d'accueil immédiatement
-        const homeView = document.getElementById('home-view');
-        if (homeView) {
-            homeView.style.display = 'block';
-            setTimeout(() => homeView.classList.add('active'), 50);
-        }
-
-        // 2. Fonction utilitaire d'attente
-        const wait = ms => new Promise(res => setTimeout(res, ms));
-
-        // 3. Fonction de chargement cadencé ET SÉCURISÉE
-        const charger = async (nom, fonction, delai) => {
-            try {
-                await wait(delai);
-                await fonction();
-                console.log(`✅ ${nom} chargé`);
-            } catch (e) {
-                // CORRECTION : On ignore l'erreur 'AbortError' (signifie juste qu'on a quitté la page)
-                if (e.name === 'AbortError') {
-                    console.log(`ℹ️ Chargement ${nom} annulé (navigation).`);
-                    return;
-                }
-                console.warn(`⚠️ Échec ${nom}:`, e.message);
-            }
-        };
-
-        // 4. Lancement des chargements
-        await Promise.allSettled([
-            charger("Sidebar", loadSidebarUser, 0),
-            charger("Flux", loadGlobalFeed, 50),
-            charger("Profil", loadSocialProfile, 150),
-            charger("Stories", loadStories, 100),
-            charger("Notifs", loadNotifications, 300),
-            charger("Messages", loadChatList, 450)
-        ]);
-
-    } catch (error) {
-        // On ignore aussi ici les erreurs d'annulation globale
-        if (error.name !== 'AbortError') {
-            console.error("Erreur critique au démarrage :", error);
-        }
-    } finally {
-        // 5. Afficher le contenu
-        document.body.classList.remove('app-loading');
-        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-
-        // 6. Cacher le loader
-        const loader = document.getElementById('loader');
-        if (loader) {
-            loader.style.opacity = '0';
-            setTimeout(() => { loader.style.display = 'none'; }, 500);
-        }
-    }
-}
-
-/* ==========================================================
-   ÉCOUTEUR PRINCIPAL AU CHARGEMENT DE LA PAGE
-   ========================================================== */
-document.addEventListener('DOMContentLoaded', async () => {
-
-    // --- 1. VÉRIFICATION DE SESSION ---
-    const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
-
-    if (!session || sessionError) {
-        console.log("Session expirée.");
-        window.location.replace('login.html');
-        return;
-    }
-
-    // --- 2. CONFIGURATION INITIALE ---
-    const savedLang = localStorage.getItem('printbam-lang') || 'fr';
-    const langSelect = document.getElementById('language-select');
-    if (langSelect) langSelect.value = savedLang;
-
-    updateLanguage(savedLang);
-    setTheme(localStorage.getItem('printbam-theme') || 'light', false);
-
-    // --- 3. LANCEMENT DE L'APPLICATION ---
-    await initialiserApplication();
-
-    // --- 4. SERVICES D'ARRIERE-PLAN ---
-
-    // A. Notifications globales (Realtime)
-    if (typeof initGlobalRealtimeListeners === 'function') {
-        initGlobalRealtimeListeners();
-    }
-
-    // B. Badges
-    updateMessageBadge();
-    updateNotificationBadge();
-
-    // --- 5. FONCTIONNALITÉS D'INTERFACE ---
-
-    // A. Scroll Infini
-    if (typeof setupInfiniteScroll === 'function') {
-        setupInfiniteScroll();
-    }
-
-    // B. Effets visuels
-    if (typeof initScrollReveal === 'function') {
-        initScrollReveal();
-    }
-
-    // C. Auto-Hide Header/Dock
-    let lastScrollY = window.scrollY;
-    window.addEventListener('scroll', () => {
-        const currentScrollY = window.scrollY;
-        const explorerBar = document.querySelector('.feed-sticky-header');
-        const dock = document.querySelector('.mobile-dock');
-
-        if (currentScrollY <= 7) return;
-
-        if (currentScrollY > lastScrollY && currentScrollY > 50) {
-            if (explorerBar) explorerBar.classList.add('nav-hidden');
-            if (dock) dock.classList.add('nav-hidden');
-        } else {
-            if (explorerBar) explorerBar.classList.remove('nav-hidden');
-            if (dock) dock.classList.remove('nav-hidden');
-        }
-        lastScrollY = currentScrollY;
-    }, { passive: true });
-
-    // D. Swipe Retour (Messages)
-    const messagesView = document.getElementById('messages-view');
-    if (messagesView) {
-        let touchStartX = 0;
-        messagesView.addEventListener('touchstart', function (event) {
-            touchStartX = event.changedTouches[0].screenX;
-        }, false);
-
-        messagesView.addEventListener('touchend', function (event) {
-            const touchEndX = event.changedTouches[0].screenX;
-            if (touchStartX - touchEndX > 120) {
-                switchPage('home');
-            }
-        }, false);
-    }
-
-    // ============================================================
-    // --- E. GESTION DE LA PRÉSENCE EN LIGNE (STATUT) ---
-    // ============================================================
-
-    // 1. Mise à jour immédiate
-    if (typeof updateMyPresence === 'function') {
-        updateMyPresence();
-    }
-
-    // 2. Répétition toutes les 30 secondes
-    setInterval(() => {
-        if (typeof updateMyPresence === 'function') {
-            updateMyPresence();
-        }
-    }, 30000);
-
-    // 3. Mise à jour au retour sur l'onglet
-    document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) {
-            if (typeof updateMyPresence === 'function') {
-                updateMyPresence();
-            }
-            updateMessageBadge();
-        }
-    });
-
-});
-// Ouvrir la modale
-function openNewChatModal() {
-    const modal = document.getElementById('new-chat-modal');
-    modal.classList.remove('hidden');
-    modal.style.display = 'flex';
-    loadPotentialContacts(); // Charger la liste
-}
-
-// Fermer la modale
-function closeNewChatModal() {
-    const modal = document.getElementById('new-chat-modal');
-    modal.classList.add('hidden');
-    modal.style.display = 'none';
-}
-
-// Charger les abonnés et suivis
-async function loadPotentialContacts() {
-    const container = document.getElementById('new-chat-list');
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return;
-
-    container.innerHTML = `<div class="text-center py-10 text-slate-400"><i class="fas fa-spinner fa-spin"></i></div>`;
-
-    try {
-        // 1. Récupérer les gens que je suis (followings)
-        const { data: followings } = await supabaseClient
-            .from('follows')
-            .select('following_id')
-            .eq('follower_id', user.id);
-
-        // 2. Récupérer mes abonnés (followers)
-        const { data: followers } = await supabaseClient
-            .from('follows')
-            .select('follower_id')
-            .eq('following_id', user.id);
-
-        // Fusionner les IDs uniques
-        const ids = new Set();
-        followings?.forEach(f => ids.add(f.following_id));
-        followers?.forEach(f => ids.add(f.follower_id));
-
-        // Enlever mon propre ID
-        ids.delete(user.id);
-
-        if (ids.size === 0) {
-            container.innerHTML = `<div class="text-center py-10 text-slate-400">Vous n'avez pas encore d'abonnés.</div>`;
-            return;
-        }
-
-        // 3. Récupérer les profils
-        const idsArray = Array.from(ids);
-        const { data: profiles } = await supabaseClient
-            .from('profiles')
-            .select('id, full_name, avatar_url, is_certified')
-            .in('id', idsArray);
-
-        // 4. Afficher
-        container.innerHTML = profiles.map(p => {
-            // Protection contre les caractères spéciaux dans le nom
-            const safeName = p.full_name.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            const avatarUrl = p.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.full_name)}&background=random`;
-
-            return `
-    <div class="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition group">
-        <div class="flex items-center gap-3 cursor-pointer flex-1" onclick="viewUserProfile('${p.id}')">
-            <div class="relative">
-                <img src="${avatarUrl}" 
-                     onerror="this.src='https://ui-avatars.com/api/?name=?';" 
-                     class="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700"
-                     alt="${safeName}">
-                ${p.is_online ? '<span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full"></span>' : ''}
-            </div>
-            <div class="flex flex-col">
-                <div class="flex items-center gap-1">
-                    <span class="font-semibold text-sm text-slate-900 dark:text-slate-100">${safeName}</span>
-                    ${p.is_certified ? '<i class="fas fa-check-circle text-blue-500 text-[10px]" title="Compte certifié"></i>' : ''}
-                </div>
-                <span class="text-[10px] text-slate-500 truncate max-w-[120px]">Membre vérifié</span>
-            </div>
-        </div>
-        
-        <div class="flex items-center gap-2">
-            <button onclick="closeNewChatModal(); startChat('${p.id}')" 
-                    class="btn-sky-yellow px-4 py-1.5 rounded-full text-xs font-bold transform active:scale-95 transition-transform shadow-sm"
-                    aria-label="Envoyer un message à ${safeName}">
-                Message
-            </button>
         </div>
     </div>
-    `;
-        }).join('');
-    } catch (err) {
-        console.error("Erreur chargement contacts:", err);
-    }
-}
 
-// --- FONCTION PUBLICATION (CORRIGÉE) ---
-async function handleNewPost(e) {
-    e.preventDefault();
-
-    const btn = e.target.querySelector('button[type="submit"]');
-    const originalText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Publication...';
-
-    try {
-        // 1. Récupération des valeurs
-        const caption = document.getElementById('post-caption').value;
-        const visibility = document.getElementById('post-visibility').value;
-        const postType = document.getElementById('current-post-type').value; // 'image' ou 'short'
-
-        let fileInput = postType === 'short'
-            ? document.getElementById('post-video-input')
-            : document.getElementById('post-file-input');
-
-        const file = fileInput?.files[0];
-
-        if (!file) {
-            showToast("Veuillez sélectionner un fichier", "error");
-            throw new Error("No file");
-        }
-
-        // 2. Vérification utilisateur
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        if (!user) throw new Error("Non connecté");
-
-        // 3. Préparation du fichier
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-
-        // --- CORRECTION CRITIQUE ICI ---
-        // On définit le nom du bucket en dur (string), pas un booléen
-        // Assurez-vous d'avoir créé un bucket nommé "posts" dans Supabase Storage
-        const bucketName = 'posts';
-
-        // 4. Upload du fichier
-        const { data: uploadData, error: uploadError } = await supabaseClient.storage
-            .from(bucketName)
-            .upload(fileName, file, {
-                cacheControl: '3600',
-                upsert: false
-            });
-
-        if (uploadError) throw uploadError;
-
-        // 5. Récupérer l'URL publique
-        const { data: urlData } = supabaseClient.storage.from(bucketName).getPublicUrl(fileName);
-        const publicUrl = urlData.publicUrl;
-
-        // 6. Préparation des données pour la table 'posts'
-        const newPost = {
-            user_id: user.id,
-            caption: caption,
-            visibility: visibility,
-            // Logique corrigée : on définit l'URL selon le type
-            image_url: postType === 'image' ? publicUrl : null,
-            video_url: postType === 'short' ? publicUrl : null,
-            is_short: postType === 'short'
-        };
-
-        // 7. Insertion dans la base de données
-        const { error: insertError } = await supabaseClient.from('posts').insert([newPost]);
-
-        if (insertError) throw insertError;
-
-        // Succès
-        showToast("Publication réussie ! 🎉", "success");
-        closeNewPostModal();
-
-        // Nettoyage
-        document.getElementById('new-post-form').reset();
-        resetPreview();
-
-        // Rafraîchir le feed
-        if (typeof loadGlobalFeed === 'function') loadGlobalFeed();
-
-    } catch (err) {
-        console.error("Erreur publication:", err);
-        if (err.message !== "No file") {
-            showToast("Erreur : " + (err.message || "Impossible de publier"), "error");
-        }
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-    }
-}
-
-async function loadStories() {
-    const container = document.getElementById('stories-bar');
-    if (!container) return;
-
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return;
-
-    try {
-        // --- CORRECTION 1 : Récupérer VRAIMENT mon profil pour avoir ma photo ---
-        const { data: myProfile } = await supabaseClient
-            .from('profiles')
-            .select('id, full_name, avatar_url')
-            .eq('id', user.id)
-            .maybeSingle();
-
-        // Récupération des stories (moins de 24h)
-        const { data: stories, error } = await supabaseClient
-            .from('stories')
-            .select('*, profiles(id, full_name, avatar_url)')
-            .gt('created_at', new Date(Date.now() - 86400000).toISOString())
-            .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        // Séparation de mes stories et de celles des autres
-        const myStories = stories ? stories.filter(s => s.user_id === user.id) : [];
-        const othersStories = stories ? stories.filter(s => s.user_id !== user.id) : [];
-
-        // Utilisation de l'avatar du profil, ou fallback
-        const myAvatar = myProfile?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(myProfile?.full_name || 'U')}&background=random`;
-
-        let htmlContent = '';
-
-        // --- MA STORY (Bulle "Votre Story" ou "Ajouter") ---
-        if (myStories.length > 0) {
-            // J'ai déjà une story -> Afficher avec l'anneau coloré
-            htmlContent += `
-                <div class="flex flex-col items-center gap-1 cursor-pointer flex-shrink-0" onclick="openStoryViewer('${user.id}')">
-                    <div class="p-0.5 rounded-full bg-gradient-to-tr from-sky-400 via-cyan-300 to-yellow-400">
-                        <img src="${myAvatar}" class="w-16 h-16 rounded-full border-2 border-white object-cover">
-                    </div>
-                    <span class="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Votre Story</span>
-                </div>
-            `;
-        } else {
-            // Je n'ai pas de story -> Afficher le bouton "+"
-            htmlContent += `
-                <input type="file" id="story-upload-input" accept="image/*,video/*" class="hidden" onchange="handleStoryUpload(this)">
-                <div class="flex flex-col items-center gap-1 cursor-pointer flex-shrink-0" onclick="document.getElementById('story-upload-input').click()">
-                    <div class="relative">
-                        <!-- Photo de profil en fond (grisée) -->
-                        <div class="w-16 h-16 rounded-full border-2 border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800">
-                            <img src="${myAvatar}" class="w-full h-full object-cover opacity-60">
-                        </div>
-                        <!-- Bouton + Bleu -->
-                        <div class="absolute bottom-0 right-0 w-6 h-6 bg-blue-600 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center shadow-md">
-                            <i class="fas fa-plus text-white text-xs"></i>
-                        </div>
-                    </div>
-                    <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Ajouter</span>
-                </div>
-            `;
-        }
-
-        // --- STORIES DES AUTRES ---
-        const grouped = {};
-        othersStories.forEach(s => {
-            if (!grouped[s.user_id]) grouped[s.user_id] = { profile: s.profiles, items: [] };
-            grouped[s.user_id].items.push(s);
-        });
-
-        Object.values(grouped).forEach(u => {
-            // Gestion des données manquantes
-            const profile = u.profile || {};
-            const userName = profile.full_name || 'Utilisateur';
-            const avatarUrl = profile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=random`;
-            const userId = profile.id || u.items[0].user_id;
-
-            htmlContent += `
-                <div class="flex flex-col items-center gap-1 cursor-pointer flex-shrink-0" onclick="openStoryViewer('${userId}')">
-                    <div class="p-0.5 rounded-full bg-gradient-to-tr from-sky-400 via-cyan-300 to-yellow-400">
-                        <img src="${avatarUrl}" class="w-16 h-16 rounded-full border-2 border-white object-cover">
-                    </div>
-                    <span class="text-[11px] font-medium text-slate-700 dark:text-slate-300 truncate w-16 text-center">${userName}</span>
-                </div>
-            `;
-        });
-
-        // Injection
-        container.className = "relative z-30 flex gap-4 overflow-x-auto px-4 pt-4 pb-2 bg-white dark:bg-slate-900 max-w-2xl mx-auto mb-2";
-        container.innerHTML = htmlContent;
-
-    } catch (err) {
-        console.error("Erreur critique loadStories:", err);
-    }
-}
-
-// Ouvrir/Fermer le panneau des vues
-// Ouvrir/Fermer le panneau des vues AVEC GESTION PAUSE
-function toggleViewersPanel() {
-    const panel = document.getElementById('story-viewers-panel');
-    // On vérifie s'il est actuellement fermé (contient la classe de fermeture)
-    const isCurrentlyClosed = panel.classList.contains('translate-y-full');
-
-    if (isCurrentlyClosed) {
-        // 1. On ouvre le panneau
-        panel.classList.remove('translate-y-full');
-        // 2. On met en pause la story
-        pauseStory();
-    } else {
-        // 1. On ferme le panneau
-        panel.classList.add('translate-y-full');
-        // 2. On reprend la lecture
-        resumeStory();
-    }
-}
-
-// Charger la liste des gens qui ont vu
-// Charger la liste des gens qui ont vu
-// Fonction pour charger les vues (VERSION CORRIGÉE - SANS JOINTURE AUTO)
-async function loadStoryViews(storyId) {
-    const list = document.getElementById('story-viewers-list');
-    const countSpan = document.getElementById('story-seen-count');
-
-    try {
-        // 1. Récupérer les vues (juste les IDs et la date)
-        const { data: views, error } = await supabaseClient
-            .from('story_views')
-            .select('created_at, viewer_id')
-            .eq('story_id', storyId);
-
-        if (error) throw error;
-
-        if (!views || views.length === 0) {
-            countSpan.innerText = "0";
-            list.innerHTML = '<p class="text-center text-slate-400 text-sm py-10">Aucune vue pour le moment</p>';
-            return;
-        }
-
-        // Mise à jour du compteur
-        countSpan.innerText = views.length;
-
-        // 2. Récupérer les IDs uniques des viewers
-        const viewerIds = [...new Set(views.map(v => v.viewer_id))];
-
-        // 3. Récupérer les profils de ces utilisateurs
-        const { data: profiles, error: profilesError } = await supabaseClient
-            .from('profiles')
-            .select('id, full_name, avatar_url')
-            .in('id', viewerIds);
-
-        if (profilesError) throw profilesError;
-
-        // 4. Créer une "Map" (dictionnaire) pour trouver un profil rapidement par son ID
-        const profilesMap = new Map(profiles.map(p => [p.id, p]));
-
-        // 5. Afficher la liste en combinant les deux
-        list.innerHTML = views.map(v => {
-            // On trouve le profil correspondant à l'ID du viewer
-            const profile = profilesMap.get(v.viewer_id) || { full_name: 'Utilisateur', avatar_url: '' };
-            const avatar = profile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.full_name)}&background=random`;
-            const time = typeof getTimeAgoSimple === 'function' ? getTimeAgoSimple(new Date(v.created_at)) : '';
-
-            return `
-                <div class="flex items-center gap-3">
-                    <img src="${avatar}" class="w-10 h-10 rounded-full object-cover">
-                    <div>
-                        <p class="font-semibold text-sm text-slate-800 dark:text-white">${profile.full_name}</p>
-                        <p class="text-[10px] text-slate-400">${time}</p>
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-    } catch (err) {
-        console.error("Erreur chargement vues:", err);
-        list.innerHTML = '<p class="text-center text-red-500 text-sm py-10">Erreur de chargement des vues</p>';
-    }
-}
-
-// 3. Afficher l'item Story actuel (VERSION COMPLÈTE)
-// --- GESTION RECONNEXION REALTIME (À COLLER À LA FIN DU FICHIER) ---
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-        console.log("App active : Re-synchronisation...");
-
-        // 1. Relancer la présence (Mettre à jour "En ligne")
-        if (typeof updateMyPresence === 'function') updateMyPresence();
-
-        // 2. Rafraîchir les badges (Messages, Notifs)
-        if (typeof updateMessageBadge === 'function') updateMessageBadge();
-
-        // 3. Forcer le rechargement de la liste des messages si on est sur la page chat
-        const chatView = document.getElementById('chat-view');
-        if (chatView && chatView.classList.contains('active')) {
-            if (typeof loadChatList === 'function') loadChatList();
-        }
-    }
-});
-
-/* ==========================================================
-   FONCTIONS UTILITAIRES STORIES (A COLLER APRÈS playCurrentStory)
-   ========================================================== */
-
-// Variables globales nécessaires pour la gestion du temps
-let currentStoryDuration = 5000; // Durée par défaut (5s)
-let isPaused = false;
-
-// 1. Mise à jour visuelle de la barre de progression
-function updateProgressBar() {
-    const container = document.getElementById('story-progress-bar');
-    if (!container) return;
-
-    container.innerHTML = '';
-
-    currentUserStories.forEach((story, index) => {
-        const segment = document.createElement('div');
-        segment.className = 'h-0.5 flex-1 bg-white/30 rounded-full overflow-hidden mx-0.5';
-
-        const fill = document.createElement('div');
-        fill.className = 'h-full bg-white';
-
-        // ASTUCE : On prépare le navigateur à animer la largeur
-        fill.style.willChange = 'width';
-
-        if (index < currentStoryIndex) {
-            fill.style.width = '100%';
-        } else if (index === currentStoryIndex) {
-            fill.style.width = '0%';
-            fill.id = 'active-progress-fill';
-        } else {
-            fill.style.width = '0%';
-        }
-
-        segment.appendChild(fill);
-        container.appendChild(segment);
-    });
-}
-
-// 2. Démarrer le minuteur et l'animation
-function startProgressTimer(duration) {
-    clearTimeout(storyProgressTimer);
-    currentStoryDuration = duration;
-    isPaused = false;
-
-    const fill = document.getElementById('active-progress-fill');
-    if (!fill) return;
-
-    // 1. RESET : On s'assure que la barre est à 0% SANS animation
-    fill.style.transition = 'none';
-    fill.style.width = '0%';
-
-    // 2. FORCE REPAINT (L'astuce magique)
-    // En lisant offsetHeight, le navigateur est obligé de calculer le layout
-    // actuel (donc la largeur à 0%) avant de passer à la suite.
-    void fill.offsetHeight;
-
-    // 3. LANCEMENT : On applique la transition et la largeur finale
-    // On attend la prochaine frame pour être sûr
-    requestAnimationFrame(() => {
-        fill.style.transition = `width ${duration}ms linear`;
-        fill.style.width = '100%';
-    });
-
-    // 4. MINUTEUR : Passer à la suite après le temps écoulé
-    storyProgressTimer = setTimeout(() => {
-        nextStory();
-    }, duration);
-}
-
-// 3. Story Suivante
-function nextStory() {
-    if (isPaused) return;
-
-    currentStoryIndex++;
-    if (currentStoryIndex < currentUserStories.length) {
-        playCurrentStory();
-    } else {
-        closeStoryViewer(); // Fermer si c'était la dernière
-    }
-}
-
-// 4. Story Précédente
-function prevStory() {
-    if (isPaused) return;
-
-    if (currentStoryIndex > 0) {
-        currentStoryIndex--;
-        playCurrentStory();
-    }
-}
-
-// 5. Mettre en pause (Appui long)
-function pauseStory() {
-    isPaused = true;
-    clearTimeout(storyProgressTimer); // Arrêter le minuteur
-
-    // Mettre la vidéo en pause si c'en est une
-    const video = document.querySelector('#story-media-container video');
-    if (video) video.pause();
-
-    // Geler la barre de progression
-    const fill = document.getElementById('active-progress-fill');
-    if (fill) {
-        // Calculer le temps restant basé sur la largeur actuelle
-        const currentWidth = fill.getBoundingClientRect().width;
-        const parentWidth = fill.parentElement.getBoundingClientRect().width;
-        const percent = currentWidth / parentWidth;
-
-        // On fixe la largeur actuelle pour arrêter l'animation CSS
-        fill.style.transition = 'none';
-        fill.style.width = `${currentWidth}px`;
-
-        // Calculer le temps restant en millisecondes
-        remainingTime = currentStoryDuration * (1 - percent);
-    }
-}
-
-// 6. Reprendre la lecture (Relâchement)
-function resumeStory() {
-    if (!isPaused) return;
-    isPaused = false;
-
-    // Relancer la vidéo
-    const video = document.querySelector('#story-media-container video');
-    if (video) video.play();
-
-    // Relancer l'animation pour le temps restant
-    const fill = document.getElementById('active-progress-fill');
-    if (fill) {
-        const duration = remainingTime > 0 ? remainingTime : 100;
-
-        // Reset pour l'animation finale
-        fill.style.transition = `width ${duration}ms linear`;
-        fill.style.width = '100%';
-
-        // Relancer le minuteur
-        storyProgressTimer = setTimeout(() => {
-            nextStory();
-        }, duration);
-    }
-}
-
-// Variable pour le temps restant (utilisée par pause/resume)
-let remainingTime = 0;
-/* ==========================================================
-   MODULE STORIES (VERSION PRO - COMPLÈTE)
-   ========================================================== */
-
-// 1. VARIABLES GLOBALES D'ÉTAT
-let currentUserStories = [];
-let currentStoryIndex = 0;
-let storyProgressTimer = null;
-let progressInterval = null;
-let currentViewingUserId = null;
-
-/* ==========================================================
-   MODULE LECTEUR DE STORIES (VERSION CORRIGÉE ET COMPLÈTE)
-   ========================================================== */
-
-// 1. Initialisation de l'interface (HTML)
-function initStoryViewerUI() {
-    const oldOverlay = document.getElementById('story-viewer-overlay');
-    if (oldOverlay) oldOverlay.remove();
-
-    const viewerHTML = `
-    <div id="story-viewer-overlay" class="fixed inset-0 z-[9999] bg-black hidden flex-col items-center justify-center">
-        <div class="relative w-full h-full max-w-md mx-auto flex flex-col">
-            
-            <!-- A. BARRE DE PROGRESSION -->
-            <div id="story-progress-bar" class="absolute top-0 left-0 right-0 z-20 flex gap-1 p-2 px-4"></div>
-
-            <!-- B. HEADER (AVEC BOUTON MENU AJOUTÉ) -->
-            <div class="absolute top-6 left-0 right-0 z-20 flex items-center justify-between px-4">
-                <div class="flex items-center gap-2 cursor-pointer flex-1" onclick="viewUserProfile(currentViewingUserId)">
-                    <img id="story-user-avatar" src="" class="w-8 h-8 rounded-full border-2 border-white shadow">
-                    <div class="flex flex-col">
-                        <span id="story-username" class="text-white text-sm font-bold drop-shadow-md"></span>
-                        <span id="story-time" class="text-white/70 text-[10px] drop-shadow"></span>
-                    </div>
-                </div>
-                
-                <!-- BOUTON MENU (3 POINTS) -->
-                <button onclick="toggleStoryMenu()" class="text-white/80 hover:text-white p-2 z-30 relative">
-                    <i class="fas fa-ellipsis-vertical text-lg"></i>
-                </button>
-                
-                <!-- MENU DÉROULANT (Caché par défaut) -->
-                <div id="story-dropdown-menu" class="hidden absolute top-12 right-4 bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-48 py-2 z-50 border border-slate-200 dark:border-slate-700">
-                    <!-- Contenu injecté par JS -->
-                </div>
-
-                <button onclick="closeStoryViewer()" class="text-white/80 hover:text-white p-2 ml-2">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
+    <!-- MODALE AJOUT PHOTO (Simple et blanche) -->
+    <div id="new-post-modal"
+        class="fixed inset-0 z-[9500] hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl">
+            <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 class="font-bold text-black">Nouvelle publication</h3>
+                <button onclick="closeNewPostModal()" class="text-blue-500 font-bold text-sm">Annuler</button>
             </div>
+            <div class="p-4">
+                <form id="new-post-form" onsubmit="handleNewPost(event)" class="space-y-4">
 
-            <!-- C. MEDIA -->
-            <div id="story-media-container" class="flex-1 bg-black flex items-center justify-center overflow-hidden relative"></div>
-            
-            <!-- D. ZONE BAS & D1/D2/D3 (Garder votre code existant pour les vues/réponses ici) -->
-             <!-- ... (Collez ici votre code pour D1, D2, D3 si nécessaire, sinon je le mets en bas) -->
-             
-             <!-- Exemple simplifié pour que ça tienne, mais utilisez votre code complet pour D1/D2/D3 -->
-             <div id="story-seen-btn" class="absolute bottom-4 left-4 z-20 hidden cursor-pointer bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full text-white text-xs flex items-center gap-2 hover:bg-black/50 transition-all" onclick="toggleViewersPanel()">
-                <i class="fas fa-eye"></i>
-                <span id="story-seen-count">0</span>
-            </div>
-             <div id="story-reply-container" class="absolute bottom-0 left-0 right-0 p-4 z-20 bg-gradient-to-t from-black/50 to-transparent">
-                <form onsubmit="sendStoryReply(event)" class="flex items-center gap-2">
-                    <input type="text" id="story-reply-input" placeholder="Répondre..." class="flex-1 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-full px-4 py-2 text-sm focus:outline-none placeholder-white/50">
-                    <button type="submit" class="text-white hover:text-blue-400 transition p-2"><i class="fas fa-paper-plane"></i></button>
+                    <!-- SÉLECTEUR DE TYPE -->
+                    <div class="flex p-1 bg-slate-100 rounded-lg mb-2">
+                        <button type="button" onclick="setPostType('image')" id="btn-type-image"
+                            class="flex-1 py-2 text-xs font-bold rounded-md bg-white shadow-sm text-slate-900 transition">
+                            Photo
+                        </button>
+                        <button type="button" onclick="setPostType('short')" id="btn-type-short"
+                            class="flex-1 py-2 text-xs font-bold rounded-md text-slate-500 hover:text-slate-900 transition">
+                            Short Vidéo
+                        </button>
+                    </div>
+
+                    <!-- INPUT IMAGE -->
+                    <div id="upload-image-box"
+                        class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:bg-gray-50 transition cursor-pointer"
+                        onclick="document.getElementById('post-file-input').click()">
+                        <input type="file" id="post-file-input" accept="image/*" class="hidden"
+                            onchange="previewFile(this, 'image')">
+                        <i class="fas fa-images text-3xl text-gray-400 mb-2"></i>
+                        <p class="text-xs text-gray-500 font-medium">Choisir une photo</p>
+                    </div>
+
+                    <!-- INPUT VIDÉO (Caché par défaut) -->
+                    <div id="upload-video-box"
+                        class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:bg-gray-50 transition cursor-pointer hidden"
+                        onclick="document.getElementById('post-video-input').click()">
+                        <input type="file" id="post-video-input" accept="video/mp4,video/quicktime,video/x-msvideo"
+                            class="hidden" onchange="previewFile(this, 'video')">
+                        <i class="fas fa-video text-3xl text-gray-400 mb-2"></i>
+                        <p class="text-xs text-gray-500 font-medium">Choisir une vidéo (Max 10 min)</p>
+                        <p id="video-error-msg" class="text-[10px] text-red-500 font-bold mt-2 hidden"></p>
+                    </div>
+
+                    <!-- ZONE DE PRÉVISUALISATION -->
+                    <div id="preview-area"
+                        class="w-full aspect-video bg-black rounded-lg hidden overflow-hidden relative flex items-center justify-center mb-2">
+                        <img id="preview-img-el" class="max-h-full object-contain hidden">
+                        <video id="preview-video-el" class="max-h-full object-contain hidden" controls></video>
+                    </div>
+                    <!-- Ajoutez ceci DANS le formulaire, avant le bouton de publication -->
+                    <div class="mb-4">
+                        <label class="text-xs font-bold text-slate-500 mb-1 block">Visibilité</label>
+                        <select id="post-visibility"
+                            class="w-full bg-slate-100 dark:bg-slate-800 rounded-lg p-2.5 text-sm border-none">
+                            <option value="public">🌍 Public</option>
+                            <option value="friends">👥 Abonnés uniquement</option>
+                            <option value="private">🔒 Privé (Moi uniquement)</option>
+                        </select>
+                    </div>
+                    <textarea id="post-caption" rows="3" placeholder="Écrivez une légende..."
+                        class="w-full text-sm p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 resize-none"></textarea>
+
+                    <input type="hidden" id="current-post-type" value="image">
+
+                    <button type="submit"
+                        class="w-full py-3 font-bold rounded-lg transition bg-indigo-600 text-white hover:bg-indigo-700">
+                        Publier
+                    </button>
                 </form>
             </div>
-            <div id="story-viewers-panel" class="absolute bottom-0 left-0 right-0 h-1/2 bg-white dark:bg-slate-900 rounded-t-3xl z-30 transform translate-y-full transition-transform duration-300 shadow-lg overflow-hidden flex flex-col">
-                 <div class="p-4 border-b dark:border-slate-700 flex justify-between items-center">
-                    <h3 class="font-bold text-slate-800 dark:text-white">Vues</h3>
-                    <button onclick="toggleViewersPanel()" class="text-slate-500 hover:text-slate-700"><i class="fas fa-times"></i></button>
-                </div>
-                <div id="story-viewers-list" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+        </div>
+    </div>
+
+    <!-- VUE : CENTRE DE NOTIFICATIONS -->
+    <div id="notifications-view" class="page-view">
+        <section class="max-w-2xl mx-auto h-screen flex flex-col bg-white dark:bg-slate-900">
+
+            <!-- Header -->
+            <div
+                class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center sticky top-85 mt-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur z-10">
+                <h2 class="text-xl font-bold text-slate-900 dark:text-white">Notifications</h2>
+                <button onclick="markAllNotificationsRead()"
+                    class="text-xs font-bold text-indigo-600 hover:underline">Tout marquer comme lu</button>
             </div>
 
-            <!-- E. NAVIGATION -->
-            <div class="absolute inset-0 top-16 bottom-20 flex z-10">
-                <div class="w-1/3 h-full cursor-pointer" onclick="prevStory()"></div>
-                <div class="w-1/3 h-full" onmousedown="pauseStory()" onmouseup="resumeStory()" ontouchstart="pauseStory()" ontouchend="resumeStory()"></div>
-                <div class="w-1/3 h-full cursor-pointer" onclick="nextStory()"></div>
+            <!-- Liste des notifications -->
+            <div id="notifications-list-container" class="flex-1 overflow-y-auto">
+                <!-- Injecté par JS -->
+            </div>
+        </section>
+    </div>
+
+    <!-- VUE 1 : LISTE DES MESSAGES (Style Photo 1) -->
+    <div id="messages-view" class="page-view">
+        <section class="fixed inset-0 z-50 max-w-2xl mx-auto h-screen flex flex-col translate-y-12">
+
+            <!-- Header -->
+            <div class="py-1 px-4 border-b border-slate-200 flex justify-between items-center sticky top-0 z-10">
+                <h2 class="text-xl font-bold text-slate-900">Discussions</h2>
+                <button onclick="openNewChatModal()" class="text-indigo-600"><i
+                        class="far fa-edit text-lg"></i></button>
+            </div>
+
+            <!-- Liste des conversations -->
+            <div id="chat-list-container" class="flex-1 overflow-y-auto">
+                <!-- Les éléments seront injectés ici par JS -->
+                <div class="flex flex-col items-center justify-center h-full text-slate-400">
+                    <i class="fas fa-comments text-4xl mb-3 opacity-20"></i>
+                    <p>Aucune discussion pour le moment.</p>
+                </div>
+            </div>
+
+            <!-- Barre de recherche (Optionnelle) -->
+            <div class="px-4 -translate-y-14 bg-transparent">
+                <div class="relative">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10"></i>
+
+                    <input type="text" placeholder="Rechercher une discussion..." class="w-full pl-10 pr-4 py-2 rounded-full 
+                          bg-white/70 dark:bg-slate-800/60 
+                          backdrop-blur-md 
+                          border border-white/20 dark:border-slate-700/50
+                          text-sm shadow-xl 
+                          focus:outline-none focus:ring-2 focus:ring-indigo-500/50 
+                          dark:text-white transition-all">
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- VUE 2 : DISCUSSION (Structure Fixe) -->
+    <div id="chat-view" class="page-view">
+        <!-- Wrapper plein écran -->
+        <section class="fixed inset-0 max-w-2xl mx-auto w-full flex flex-col z-[10000] shadow-2xl">
+
+            <!-- HEADER FIXE -->
+            <div
+                class="wa-header p-3 flex items-center gap-3 shadow-sm z-10000 flex-shrink-0 border-b border-slate-700">
+                <button onclick="switchPage('messages')" class="text-white/80 hover:text-white">
+                    <i class="fas fa-arrow-left text-lg"></i>
+                </button>
+
+                <div class="flex items-center gap-3 flex-1 cursor-pointer"
+                    onclick="viewUserProfile(currentTargetUserId)">
+                    <div class="relative">
+                        <img id="chat-header-avatar" src=""
+                            class="w-10 h-10 rounded-full object-cover border-2 border-white/20">
+                        <div id="chat-status-dot"
+                            class="absolute bottom-0 right-0 w-3 h-3 bg-white rounded-full border-2 border-[#00a884]">
+                        </div>
+                    </div>
+                    <div class="flex flex-col justify-center">
+                        <h3 id="chat-header-name" class="text-sm font-semibold text-white leading-tight">...</h3>
+                        <p id="chat-header-status-text" class="text-[11px] text-emerald-100">En ligne</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 text-white/90">
+                    <i class="fas fa-video cursor-pointer hover:text-white"></i>
+                    <i class="fas fa-phone cursor-pointer hover:text-white"></i>
+                </div>
+            </div>
+
+            <!-- MESSAGES (Flex-1 pour prendre l'espace restant) -->
+            <div id="chat-messages-container" class="flex-1 overflow-y-auto p-4 scroll-smooth"
+                style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23000000\' fill-opacity=\'0.03\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');">
+                <!-- Messages injectés ici -->
+            </div>
+
+            <!-- Zone de Réponse (Cachée par défaut) -->
+            <div id="reply-container"
+                class="hidden bg-white dark:bg-slate-800 px-4 py-2 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                <div class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                    <i class="fas fa-reply text-indigo-500"></i>
+                    <span id="reply-preview-text" class="truncate max-w-[200px]"></span>
+                </div>
+                <button onclick="cancelReply()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- ZONE DE SAISIE -->
+            <div class="p-2 flex items-end gap-2 z-20">
+
+                <!-- Boutons Gauche (Smileys / Fichier) -->
+                <div class="flex gap-1 text-slate-500">
+                    <button type="button" class="p-2 hover:bg-slate-200 rounded-full transition">
+                        <i class="far fa-smile text-xl"></i>
+                    </button>
+                    <button type="button" class="p-2 rounded-full transition">
+                        <i class="fas fa-paperclip text-xl"></i>
+                    </button>
+                </div>
+
+                <!-- Formulaire de saisie -->
+                <form id="chat-form" onsubmit="sendChatMessage(event)" class="flex-1 relative">
+                    <input type="text" id="chat-input" placeholder="Écrivez un message..." autocomplete="off"
+                        oninput="toggleChatSendButton()"
+                        class="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                </form>
+
+                <!-- CONTENEUR DU BOUTON DYNAMIQUE -->
+                <div id="chat-action-btn-wrapper">
+                    <!-- BOUTON VOCAL (Par défaut) -->
+                    <button type="button" id="voice-btn"
+                        class="w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-all duration-300 btn-sky-yellow"
+                        style="color: white !important;">
+                        <i class="fas fa-microphone text-lg"></i>
+                    </button>
+
+                    <!-- BOUTON ENVOYER (Caché par défaut) -->
+                    <button type="submit" form="chat-form" id="send-btn"
+                        class="w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-all duration-300 btn-sky-yellow hidden"
+                        style="color: white !important;">
+                        <i class="fas fa-paper-plane text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
+    <!-- deuxième donné en haut -->
+
+    <!-- MODALE NOUVELLE DISCUSSION -->
+    <div id="new-chat-modal"
+        class="fixed inset-0 z-[10000] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div
+            class="bg-white dark:bg-slate-900 w-full max-w-md h-[80vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+
+            <!-- Header -->
+            <div class="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                <h3 class="font-bold text-lg">Nouvelle discussion</h3>
+                <button onclick="closeNewChatModal()"
+                    class="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+            </div>
+
+            <!-- Liste des contacts -->
+            <div id="new-chat-list" class="flex-1 overflow-y-auto p-2">
+                <!-- Les contacts seront injectés ici -->
             </div>
         </div>
     </div>
-    `;
 
-    document.body.insertAdjacentHTML('beforeend', viewerHTML);
-}
+    <!-- MODAL MODE ZEN -->
+    <div id="zen-mode-modal">
+        <!-- Bouton Fermer -->
+        <button onclick="closeZenMode()" class="zen-close-btn">
+            <i class="fas fa-times text-xl"></i>
+        </button>
 
-// 2. Ouvrir le visualiseur
-async function openStoryViewer(userId) {
-    currentChatId = null;
+        <!-- Conteneur Vidéo -->
+        <div class="zen-video-container">
+            <video id="zen-video-player" controls></video>
+        </div>
 
-    // Définir si c'est MA story
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (user) {
-        isViewingOwnStory = (userId === user.id);
-    } else {
-        isViewingOwnStory = false;
-    }
-
-    // Charger les données
-    const { data: stories, error } = await supabaseClient
-        .from('stories')
-        .select('*, profiles(id, full_name, avatar_url)')
-        .eq('user_id', userId)
-        .gt('created_at', new Date(Date.now() - 86400000).toISOString())
-        .order('created_at', { ascending: true });
-
-    if (error || !stories || stories.length === 0) {
-        showToast("Story non disponible", "error");
-        return;
-    }
-
-    // Mise à jour des variables globales
-    currentUserStories = stories;
-    currentStoryIndex = 0;
-    currentViewingUserId = userId;
-
-    // Affichage
-    const overlay = document.getElementById('story-viewer-overlay');
-    if (!overlay) initStoryViewerUI(); // Créer si inexistant
-
-    const currentOverlay = document.getElementById('story-viewer-overlay');
-    currentOverlay.classList.remove('hidden');
-    currentOverlay.classList.add('flex');
-    document.body.style.overflow = 'hidden';
-
-    playCurrentStory();
-}
-
-// 3. Jouer la story actuelle
-function playCurrentStory() {
-    if (currentStoryIndex >= currentUserStories.length) {
-        closeStoryViewer();
-        return;
-    }
-
-    const story = currentUserStories[currentStoryIndex];
-    if (!story) { closeStoryViewer(); return; }
-
-    // --- CORRECTION 1 : Créer la barre AVANT de lancer le timer ---
-    updateProgressBar();
-
-    // Mise à jour du Header
-    document.getElementById('story-user-avatar').src = story.profiles?.avatar_url || '';
-    document.getElementById('story-username').innerText = story.profiles?.full_name || 'Utilisateur';
-    document.getElementById('story-time').innerText = typeof getTimeAgoSimple === 'function' ? getTimeAgoSimple(new Date(story.created_at)) : '';
-
-    // Mise à jour Média
-    const mediaContainer = document.getElementById('story-media-container');
-    if (story.type === 'video' || story.media_url?.endsWith('.mp4')) {
-        mediaContainer.innerHTML = `<video src="${story.media_url}" autoplay muted playsinline class="max-h-full max-w-full"></video>`;
-        // Maintenant on peut lancer le timer car la barre existe
-        startProgressTimer(15000);
-    } else {
-        mediaContainer.innerHTML = `<img src="${story.media_url}" class="w-full h-full object-contain">`;
-        startProgressTimer(5000);
-    }
-
-    // --- NOUVEAU : RENDU DU MENU (3 points) ---
-    renderStoryMenu(isViewingOwnStory, currentViewingUserId);
-
-    // Logique Conditionnelle (Vues vs Réponse)
-    const replyContainer = document.getElementById('story-reply-container');
-    const seenBtn = document.getElementById('story-seen-btn');
-    const viewersPanel = document.getElementById('story-viewers-panel');
-
-    if (viewersPanel) viewersPanel.classList.add('translate-y-full');
-
-    if (isViewingOwnStory) {
-        if (replyContainer) replyContainer.classList.add('hidden');
-        if (seenBtn) seenBtn.classList.remove('hidden');
-        loadStoryViews(story.id);
-    } else {
-        if (replyContainer) replyContainer.classList.remove('hidden');
-        if (seenBtn) seenBtn.classList.add('hidden');
-        markStoryAsViewed(story.id);
-    }
-}
-
-// 4. FONCTION : FERMER LE LECTEUR
-function closeStoryViewer() {
-    const overlay = document.getElementById('story-viewer-overlay');
-
-    // Arrêter tout
-    clearTimeout(storyProgressTimer);
-    clearInterval(progressInterval);
-
-    // Reset vidéo si en cours
-    const video = document.querySelector('#story-media-container video');
-    if (video) video.pause();
-
-    overlay.classList.add('hidden');
-    overlay.classList.remove('flex');
-    document.body.style.overflow = 'auto';
-
-    // Vider l'état
-    currentUserStories = [];
-    currentStoryIndex = 0;
-}
-
-// 8. FONCTION : UPLOAD (MANQUANTE)
-async function handleStoryUpload(input) {
-    const file = input.files[0];
-    if (!file) return;
-
-    showToast("Publication de la story...", "info");
-
-    try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        if (!user) return;
-
-        // 1. Upload Fichier
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-        const isVideo = file.type.startsWith('video');
-
-        const { data: uploadData, error: uploadError } = await supabaseClient.storage
-            .from('stories') // Créez un bucket 'stories' dans Supabase
-            .upload(fileName, file);
-
-        if (uploadError) throw uploadError;
-
-        // 2. Get URL
-        const { data: urlData } = supabaseClient.storage.from('stories').getPublicUrl(fileName);
-
-        // 3. Insert DB
-        const { error: insertError } = await supabaseClient.from('stories').insert([{
-            user_id: user.id,
-            media_url: urlData.publicUrl,
-            type: isVideo ? 'video' : 'image'
-        }]);
-
-        if (insertError) throw insertError;
-
-        showToast("Story publiée ! ✅", "success");
-
-        // 4. Rafraîchir l'affichage
-        loadStories();
-
-    } catch (err) {
-        console.error(err);
-        showToast("Erreur lors de l'upload", "error");
-    }
-}
-
-// 10. FONCTION : MARQUER COMME VUE (SANS ERREUR 409)
-async function markStoryAsViewed(storyId) {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return;
-
-    // On utilise UPSERT : "Insère, ou ignore si conflit"
-    const { error } = await supabaseClient
-        .from('story_views')
-        .upsert([{
-            story_id: storyId,
-            viewer_id: user.id
-        }], {
-            // IMPORTANT : On spécifie quelles colonnes définissent l'unicité
-            // Cela permet à Supabase de savoir quand il doit ignorer l'insertion
-            onConflict: 'story_id,viewer_id'
-        });
-
-    if (error && error.code !== '23505') {
-        // On ignore l'erreur 23505 (doublon), mais on log les autres
-        console.warn("Erreur mineure vue story:", error.message);
-    }
-}
-// 10. INITIALISATION AU CHARGEMENT
-// Ajoutez ceci à votre DOMContentLoaded existant :
-document.addEventListener('DOMContentLoaded', () => {
-    initStoryViewerUI(); // Construit l'interface invisible prête à l'emploi
-});
-
-// Fonction pour répondre à une story (envoie un message privé)
-async function sendStoryReply(e) {
-    e.preventDefault();
-    const input = document.getElementById('story-reply-input');
-    const message = input.value.trim();
-
-    if (!message || !currentViewingUserId) return;
-
-    // On réutilise la fonction de chat existante
-    // 1. On ouvre le chat avec l'auteur de la story
-    // Note: Cela va fermer la story viewer, ce qui est normal pour aller sur le chat
-
-    try {
-        // Sauvegarder le message à envoyer
-        const tempMsg = message;
-
-        // Fermer la story
-        closeStoryViewer();
-
-        // Ouvrir le chat (cette fonction vient de votre module messagerie)
-        await startChat(currentViewingUserId);
-
-        // Remplir l'input et envoyer (petit hack pour l'UX)
-        setTimeout(() => {
-            const chatInput = document.getElementById('chat-input');
-            if (chatInput) {
-                chatInput.value = tempMsg;
-                // On peut même déclencher l'envoi automatiquement si souhaité :
-                // document.getElementById('chat-form').dispatchEvent(new Event('submit'));
-            }
-        }, 500);
-
-    } catch (err) {
-        console.error("Erreur réponse story:", err);
-    }
-}
-
-// 1. Ouvrir/Fermer le menu
-// Ouvrir/Fermer le menu AVEC GESTION PAUSE
-function toggleStoryMenu() {
-    const menu = document.getElementById('story-dropdown-menu');
-    const isHidden = menu.classList.contains('hidden');
-
-    if (isHidden) {
-        // 1. Afficher le menu
-        menu.classList.remove('hidden');
-        // 2. Mettre en pause la story
-        pauseStory();
-    } else {
-        // 1. Cacher le menu
-        menu.classList.add('hidden');
-        // 2. Reprendre la lecture
-        resumeStory();
-    }
-}
-
-// 2. Générer le contenu du menu selon le propriétaire
-function renderStoryMenu(isOwner, targetUserId) {
-    const menu = document.getElementById('story-dropdown-menu');
-    if (!menu) return;
-
-    // Gestion du clic extérieur pour fermer ET REPRENDRE
-    // On utilise une fonction nommée pour pouvoir la retirer si besoin, ou un flag simple
-    document.addEventListener('click', function closeMenuOnOutsideClick(e) {
-        const isClickInsideMenu = e.target.closest('#story-dropdown-menu');
-        const isClickOnButton = e.target.closest('[onclick="toggleStoryMenu()"]');
-
-        // Si on clique dehors (et que le menu n'est pas déjà caché)
-        if (!isClickInsideMenu && !isClickOnButton && !menu.classList.contains('hidden')) {
-            menu.classList.add('hidden');
-            resumeStory(); // IMPORTANT : Reprendre la lecture
-            // Optionnel : retirer l'écouteur après exécution pour propreté
-            // document.removeEventListener('click', closeMenuOnOutsideClick); 
-        }
-    });
-
-    if (isOwner) {
-        // MENU POUR MA STORY
-        menu.innerHTML = `
-            <div onclick="deleteCurrentStory()" class="px-4 py-3 text-sm text-red-600 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer flex items-center gap-3 font-medium">
-                <i class="fas fa-trash-alt w-5"></i> Supprimer la story
+        <!-- Contrôles superposés (Style TikTok) -->
+        <div class="zen-controls-overlay">
+            <div class="flex flex-col gap-4">
+                <button class="text-white text-2xl hover:text-indigo-400 transition"><i
+                        class="fas fa-heart"></i></button>
+                <button class="text-white text-2xl hover:text-indigo-400 transition"><i
+                        class="fas fa-comment-dots"></i></button>
+                <button class="text-white text-2xl hover:text-indigo-400 transition"><i
+                        class="fas fa-share"></i></button>
             </div>
-        `;
-    } else {
-        // MENU POUR UNE AUTRE STORY
-        menu.innerHTML = `
-            <div onclick="handleMuteUser('${targetUserId}')" class="px-4 py-3 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer flex items-center gap-3 font-medium">
-                <i class="fas fa-eye-slash w-5"></i> Voir moins ses stories
+            <div class="mt-4 bg-black/50 px-4 py-2 rounded-full text-white text-xs font-bold">
+                Mode Lecture Zen
             </div>
-            <div onclick="blockUser('${targetUserId}')" class="px-4 py-3 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer flex items-center gap-3 font-medium">
-                <i class="fas fa-ban w-5"></i> Bloquer l'utilisateur
+        </div>
+    </div>
+    <!-- STRUCTURE HTML DE LA MODALE -->
+    <div id="post-modal-overlay"
+        class="fixed inset-0 z-[99999] bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div
+            class="bg-white dark:bg-slate-900 w-full max-w-5xl h-[90vh] rounded-2xl flex flex-col md:flex-row overflow-hidden shadow-2xl relative">
+
+            <!-- Gauche : Média -->
+            <div id="modal-media-area" class="flex-1 bg-black flex items-center justify-center">
+                <!-- Injecté par JS -->
             </div>
-            <div onclick="reportStory()" class="px-4 py-3 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer flex items-center gap-3 font-medium border-t dark:border-slate-700">
-                <i class="fas fa-flag w-5"></i> Signaler
-            </div>
-        `;
-    }
-}
 
-// 3. ACTION : Supprimer ma story
-async function deleteCurrentStory() {
-    if (!currentUserStories[currentStoryIndex]) return;
-    const storyId = currentUserStories[currentStoryIndex].id;
-
-    if (confirm("Supprimer cette story ?")) {
-        const { error } = await supabaseClient
-            .from('stories')
-            .delete()
-            .eq('id', storyId);
-
-        if (error) {
-            showToast("Erreur suppression", "error");
-        } else {
-            showToast("Story supprimée", "success");
-            closeStoryViewer();
-            loadStories(); // Rafraîchir la liste
-        }
-    }
-    toggleStoryMenu(); // Fermer le menu
-}
-
-// 4. ACTION : Voir moins (Mettre en sourdine)
-async function handleMuteUser(userId) {
-    // Note : Cela nécessite une table 'muted_stories' ou une colonne dans profiles
-    // Exemple simple avec une table 'muted_stories' (à créer dans Supabase)
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return;
-
-    // Essayer d'insérer, si la table n'existe pas, on affiche juste un message
-    const { error } = await supabaseClient
-        .from('muted_stories')
-        .insert([{ user_id: user.id, muted_user_id: userId }]);
-
-    if (error) {
-        showToast("Fonctionnalité à configurer en BDD", "info");
-        console.error("Créez une table 'muted_stories' pour activer cette fonction.");
-    } else {
-        showToast("Stories masquées", "success");
-    }
-    toggleStoryMenu();
-}
-
-// 5. ACTION : Signaler (Placeholder)
-function reportStory() {
-    showToast("Story signalée aux modérateurs", "success");
-    toggleStoryMenu();
-}
-
-// 1. Ouvrir et charger (VERSION AVEC DATE)
-async function openEditProfileModal() {
-    const modal = document.getElementById('edit-profile-modal');
-    modal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-
-    try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        if (!user) return;
-
-        const { data: profile, error } = await supabaseClient
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .maybeSingle();
-
-        if (error) throw error;
-
-        const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.full_name || 'User')}&background=random`;
-
-        document.getElementById('edit-avatar-preview').src = profile?.avatar_url || defaultAvatar;
-        document.getElementById('edit-name').value = profile?.full_name || '';
-        document.getElementById('edit-username').value = profile?.username || '';
-        document.getElementById('edit-bio').value = profile?.bio || '';
-        document.getElementById('edit-phone').value = profile?.phone || '';
-
-        // --- GESTION DE LA DATE ---
-        // Si la date existe dans la BDD, on la formate pour l'input (YYYY-MM-DD)
-        if (profile?.dob) {
-            const dateObj = new Date(profile.dob);
-            // Correction du décalage horaire pour l'input date
-            const formattedDate = dateObj.toISOString().split('T')[0];
-            document.getElementById('edit-dob').value = formattedDate;
-        } else {
-            document.getElementById('edit-dob').value = '';
-        }
-
-    } catch (err) {
-        console.error("Erreur chargement profil:", err);
-        showToast("Impossible de charger vos informations", "error");
-    }
-}
-
-// 2. Sauvegarder (VERSION AVEC DATE)
-async function submitEditProfile() {
-    const btn = document.querySelector('#edit-profile-modal button[onclick="submitEditProfile()"]');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-    btn.disabled = true;
-
-    try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        if (!user) throw new Error("Non connecté");
-
-        // Récupération des valeurs
-        const fullName = document.getElementById('edit-name').value.trim();
-        const username = document.getElementById('edit-username').value.trim();
-        const bio = document.getElementById('edit-bio').value.trim();
-        const phone = document.getElementById('edit-phone').value.trim();
-        const dob = document.getElementById('edit-dob').value; // Récupère la date (format YYYY-MM-DD)
-        const avatarFile = document.getElementById('edit-avatar-input').files[0];
-
-        let avatarUrl = null;
-
-        // A. Upload avatar si nouveau fichier
-        if (avatarFile) {
-            const fileExt = avatarFile.name.split('.').pop();
-            const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-
-            const { error: uploadError } = await supabaseClient.storage
-                .from('avatars')
-                .upload(fileName, avatarFile, { upsert: true });
-
-            if (uploadError) throw new Error("Erreur upload image");
-
-            const { data: publicUrlData } = supabaseClient.storage.from('avatars').getPublicUrl(fileName);
-            avatarUrl = publicUrlData.publicUrl;
-        }
-
-        // B. Préparation de la mise à jour
-        const updates = {
-            id: user.id,
-            full_name: fullName,
-            username: username,
-            bio: bio,
-            phone: phone,
-            dob: dob || null, // On ajoute la date ici (null si vide)
-            updated_at: new Date().toISOString()
-        };
-
-        if (avatarUrl) updates.avatar_url = avatarUrl;
-
-        // C. Envoi à Supabase
-        const { error: updateError } = await supabaseClient
-            .from('profiles')
-            .upsert(updates, { onConflict: 'id' });
-
-        if (updateError) throw updateError;
-
-        // D. Succès et rafraîchissement
-        showToast("Profil mis à jour !", "success");
-        closeEditProfileModal();
-
-        if (avatarUrl && typeof updateDockAvatar === 'function') {
-            updateDockAvatar(avatarUrl);
-            const sideAvatar = document.getElementById('sidebar-avatar');
-            if (sideAvatar) sideAvatar.src = avatarUrl;
-        }
-
-        if (typeof loadSocialProfile === 'function') loadSocialProfile();
-
-    } catch (err) {
-        console.error("Erreur sauvegarde:", err);
-        showToast(err.message || "Erreur lors de la sauvegarde", "error");
-    } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    }
-}
-/* ==========================================================
-   FONCTIONS UTILITAIRES MODIFICATION PROFIL
-   ========================================================== */
-
-// 1. Ouvrir la modale et charger les données existantes
-async function openEditProfileModal() {
-    const modal = document.getElementById('edit-profile-modal');
-    modal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden'; // Bloquer le scroll du fond
-
-    try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        if (!user) return;
-
-        const { data: profile, error } = await supabaseClient
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .maybeSingle();
-
-        if (error) throw error;
-
-        // Remplir les champs
-        const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.full_name || 'User')}&background=random`;
-
-        document.getElementById('edit-avatar-preview').src = profile?.avatar_url || defaultAvatar;
-        document.getElementById('edit-name').value = profile?.full_name || '';
-        document.getElementById('edit-username').value = profile?.username || '';
-        document.getElementById('edit-bio').value = profile?.bio || '';
-        document.getElementById('edit-phone').value = profile?.phone || '';
-
-        // Gestion de la date
-        if (profile?.dob) {
-            const d = new Date(profile.dob);
-            document.getElementById('edit-dob').value = d.toISOString().split('T')[0];
-        } else {
-            document.getElementById('edit-dob').value = '';
-        }
-
-    } catch (err) {
-        console.error("Erreur chargement profil:", err);
-        showToast("Impossible de charger vos informations", "error");
-    }
-}
-
-// 2. Fermer la modale
-function closeEditProfileModal() {
-    const modal = document.getElementById('edit-profile-modal');
-    if (modal) modal.classList.add('hidden');
-    document.body.style.overflow = 'auto'; // Réactiver le scroll
-}
-
-// 3. Prévisualiser l'avatar avant upload
-function previewEditAvatar(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function (e) {
-            document.getElementById('edit-avatar-preview').src = e.target.result;
-        }
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-
-/* ==========================================================
-   MODULE RECHERCHE & DECOUVERTE (VERSION CORRIGÉE)
-   ========================================================== */
-
-// --- VARIABLES ---
-let currentSearchFilter = 'top';
-let searchQuery = "";
-// Déclarez ceci si ce n'est pas déjà fait plus haut dans le fichier :
-// let searchDebounceTimer = null; 
-
-// 1. Ouvrir l'overlay
-function openSearchOverlay() {
-    const overlay = document.getElementById('search-overlay');
-    const tabs = document.getElementById('header-tabs-container');
-
-    if (overlay) overlay.classList.remove('hidden');
-    if (tabs) {
-        tabs.classList.add('hidden');
-        tabs.classList.remove('flex');
-    }
-
-    // Charger le contenu par défaut
-    loadDefaultSearchContent();
-
-    document.getElementById('global-search-input')?.focus();
-}
-
-// 2. Fermer l'overlay
-function closeSearchOverlay() {
-    const overlay = document.getElementById('search-overlay');
-    const tabs = document.getElementById('header-tabs-container');
-
-    if (overlay) overlay.classList.add('hidden');
-    if (tabs) {
-        tabs.classList.remove('hidden');
-        tabs.classList.add('flex');
-    }
-
-    const input = document.getElementById('global-search-input');
-    if (input) input.value = "";
-    searchQuery = "";
-}
-
-// 3. Charger le contenu (Défaut ou Recherche)
-async function loadDefaultSearchContent() {
-    const list = document.getElementById('search-results-list');
-    const trendingSection = document.getElementById('trending-section');
-    const resultsSection = document.getElementById('results-section');
-
-    // CAS 1 : Pas de recherche (Affichage par défaut)
-    if (searchQuery.length < 2) {
-        
-        // Si on est sur l'onglet "Top"
-        if (currentSearchFilter === 'top') {
-            // On affiche les deux sections pour "Top" (Hashtags ET Posts)
-            if(trendingSection) trendingSection.classList.remove('hidden');
-            if(resultsSection) resultsSection.classList.remove('hidden');
-            
-            // Charger les Hashtags
-            if (document.getElementById('trending-list').innerHTML.trim() === '') {
-                await loadTrendingTopics();
-            }
-            
-            // Charger les Posts Populaires
-            list.innerHTML = '<div class="text-center py-4 text-slate-400"><i class="fas fa-spinner fa-spin"></i></div>';
-            await loadTrendingPosts();
-        } 
-        // Si on est sur "Personnes" ou "Hashtags"
-        else {
-            // On cache la section tendances (hashtags en haut)
-            if(trendingSection) trendingSection.classList.add('hidden');
-            if(resultsSection) resultsSection.classList.remove('hidden');
-            
-            list.innerHTML = '<div class="text-center py-10 text-slate-400"><i class="fas fa-spinner fa-spin"></i></div>';
-
-            if (currentSearchFilter === 'people') await loadPopularPeople();
-            if (currentSearchFilter === 'hashtags') await loadTrendingHashtags();
-        }
-    } 
-    // CAS 2 : Recherche en cours
-    else {
-        if(trendingSection) trendingSection.classList.add('hidden');
-        if(resultsSection) resultsSection.classList.remove('hidden');
-        // La fonction performGlobalSearch gère l'affichage
-        await performGlobalSearch(searchQuery);
-    }
-}
-
-// 4. Changement d'onglet
-function setSearchFilter(filter) {
-    currentSearchFilter = filter;
-
-    // MAJ visuelle boutons
-    document.querySelectorAll('#search-tabs-sticky button').forEach(btn => {
-        btn.classList.remove('border-b-2', 'border-sky-500', 'text-sky-500');
-        btn.classList.add('text-slate-400');
-    });
-    const activeBtn = document.getElementById(`filter-${filter}`);
-    if (activeBtn) {
-        activeBtn.classList.add('border-b-2', 'border-sky-500', 'text-sky-500');
-        activeBtn.classList.remove('text-slate-400');
-    }
-
-    // Recharger
-    loadDefaultSearchContent();
-}
-
-// 5. Input Recherche
-function handleGlobalSearch(query) {
-    searchQuery = query.trim();
-
-    if (searchQuery.length < 2) {
-        // Si on efface la recherche, on revient au défaut
-        loadDefaultSearchContent();
-        return;
-    }
-
-    // Si on tape, on lance la recherche
-    clearTimeout(searchDebounceTimer);
-    searchDebounceTimer = setTimeout(() => loadDefaultSearchContent(), 400);
-}
-
-// 6. Exécution Recherche
-async function performGlobalSearch(query) {
-    const list = document.getElementById('search-results-list');
-    list.innerHTML = '<div class="text-center py-10 text-slate-400"><i class="fas fa-spinner fa-spin"></i></div>';
-
-    try {
-        // Recherche Users
-        const { data: users } = await supabaseClient
-            .from('profiles')
-            .select('id, full_name, username, avatar_url, is_certified, followers_count')
-            .or(`full_name.ilike.%${query}%,username.ilike.%${query}%`)
-            .limit(5);
-
-        // Recherche Posts
-        const { data: posts } = await supabaseClient
-            .from('posts')
-            .select('id, caption, image_url')
-            .ilike('caption', `%${query}%`)
-            .limit(5);
-
-        let html = '';
-
-        // Affichage selon l'onglet actif
-        if (currentSearchFilter === 'top' || currentSearchFilter === 'people') {
-            if (users && users.length > 0) {
-                html += `<div class="mb-4"><h4 class="text-xs font-bold text-slate-500 uppercase mb-2">Personnes</h4>`;
-                users.forEach(u => {
-                    const avatar = u.avatar_url || `https://ui-avatars.com/api/?name=${u.full_name}`;
-                    html += `
-                    <div class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer" onclick="closeSearchOverlay(); viewUserProfile('${u.id}')">
-                        <img src="${avatar}" class="w-12 h-12 rounded-full object-cover">
-                        <div class="flex-1">
-                            <p class="font-bold text-sm">${u.full_name}</p>
-                            <p class="text-xs text-slate-400">@${u.username || 'user'}</p>
+            <!-- Droite : Infos -->
+            <div class="w-full md:w-[400px] flex flex-col border-l border-slate-100 dark:border-slate-700">
+                <!-- Header -->
+                <div class="p-4 border-b dark:border-slate-700 flex justify-between items-center">
+                    <div id="modal-user-info" class="flex items-center gap-3"></div>
+                    <div class="flex items-center gap-2 relative">
+                        <button onclick="window.toggleModalMenu()"
+                            class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-500">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                        <div id="modal-dropdown-menu"
+                            class="post-dropdown-menu hidden absolute top-10 right-0 bg-white dark:bg-slate-800 shadow-xl rounded-lg w-48 py-1 border dark:border-slate-700 z-50">
                         </div>
-                        <button onclick="event.stopPropagation(); toggleFollow('${u.id}', this)" class="btn-follow-small">Suivre</button>
+                        <button onclick="window.closePostModal()"
+                            class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-500">
+                            <i class="fas fa-times"></i>
+                        </button>
                     </div>
-                    `;
-                });
-                html += `</div>`;
-            }
-        }
-
-        if (currentSearchFilter === 'top' || currentSearchFilter === 'hashtags') {
-            if (posts && posts.length > 0) {
-                html += `<div><h4 class="text-xs font-bold text-slate-500 uppercase mb-2">Publications</h4>`;
-                html += `<div class="grid grid-cols-3 gap-1">`;
-                posts.forEach(p => {
-                    html += `
-                    <div class="aspect-square bg-slate-100 cursor-pointer" onclick="closeSearchOverlay(); openPostModal('${p.id}')">
-                        <img src="${p.image_url || 'https://via.placeholder.com/100'}" class="w-full h-full object-cover">
-                    </div>
-                    `;
-                });
-                html += `</div></div>`;
-            }
-        }
-
-        if (!html) html = '<div class="text-center text-slate-400 py-10">Aucun résultat</div>';
-        list.innerHTML = html;
-
-    } catch (err) {
-        console.error("Erreur recherche:", err);
-        list.innerHTML = '<div class="text-center text-red-400 py-10">Erreur</div>';
-    }
-}
-
-// 7. Chargeurs Spécifiques (Pour le défaut)
-
-// A. Tendances (Posts Populaires - Images ET Vidéos)
-async function loadTrendingPosts() {
-    const list = document.getElementById('search-results-list');
-    list.innerHTML = '<div class="text-center py-10 text-slate-400"><i class="fas fa-spinner fa-spin"></i></div>';
-
-    try {
-        // 1. Récupérer les posts (Images ET Vidéos)
-        const { data: posts, error } = await supabaseClient
-            .from('posts')
-            .select(`
-                id, 
-                image_url, 
-                video_url,
-                is_short,
-                caption,
-                created_at,
-                post_likes(count),
-                post_comments(count)
-            `)
-            .or(`image_url.not.is.null,video_url.not.is.null`) // Prend ceux qui ont AU MOINS une image OU une vidéo
-            .order('created_at', { ascending: false })
-            .limit(30); 
-
-        if (error) throw error;
-
-        // 2. Calcul du score
-        const scoredPosts = posts.map(p => {
-            const likes = p.post_likes?.[0]?.count || 0;
-            const comments = p.post_comments?.[0]?.count || 0;
-            const timeBonus = (Date.now() - new Date(p.created_at)) < 3600000 ? 5 : 0;
-            return {
-                ...p,
-                score: (likes * 2) + comments + timeBonus
-            };
-        });
-
-        // Trier par score
-        scoredPosts.sort((a, b) => b.score - a.score);
-
-        // Prendre les 12 meilleurs
-        const topPosts = scoredPosts.slice(0, 12);
-
-        // 3. Affichage
-        let html = `<h4 class="text-sm font-bold text-slate-500 uppercase mb-2">En tendance</h4>`;
-        html += `<div class="grid grid-cols-3 gap-1">`;
-
-        if (topPosts.length === 0) {
-             list.innerHTML = '<p class="text-center text-slate-400 text-xs py-4">Aucune publication populaire</p>';
-             return;
-        }
-
-        topPosts.forEach(p => {
-            // Déterminer la source visuelle
-            const isVideo = p.video_url || p.is_short;
-            const src = p.image_url || p.video_url; // Si pas d'image, on prend la video (le navigateur affichera la 1ère frame)
-
-            // Si vraiment rien, on skip
-            if (!src) return;
-
-            // Badge "Reel" si c'est une vidéo
-            const badgeHtml = isVideo 
-                ? `<div class="absolute top-1 right-1 bg-black/50 text-white text-[8px] px-1.5 py-0.5 rounded-full flex items-center gap-1">
-                       <i class="fas fa-play text-[6px]"></i> Vidéo
-                   </div>` 
-                : '';
-
-            html += `
-            <div class="aspect-square bg-slate-900 cursor-pointer relative group overflow-hidden" onclick="closeSearchOverlay(); openPostModal('${p.id}')">
-                ${ isVideo 
-                    ? `<video src="${src}" muted class="w-full h-full object-cover"></video>` 
-                    : `<img src="${src}" class="w-full h-full object-cover">`
-                }
-                
-                <!-- Overlay Infos -->
-                <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2 text-white text-xs font-bold">
-                    <span><i class="fas fa-heart"></i> ${p.post_likes?.[0]?.count || 0}</span>
                 </div>
-                
-                <!-- Badge Vidéo -->
-                ${badgeHtml}
+                <!-- Corps -->
+                <div id="modal-comments-container" class="flex-1 overflow-y-auto p-4"></div>
+                <!-- Footer -->
+                <div class="p-4 border-t dark:border-slate-700">
+                    <form onsubmit="window.submitModalComment(event)" class="flex gap-2">
+                        <input type="text" id="modal-comment-input" placeholder="Commenter..."
+                            class="flex-1 text-sm outline-none bg-transparent">
+                        <button type="submit" class="text-indigo-600 font-bold text-xs">Envoyer</button>
+                    </form>
+                </div>
             </div>
-            `;
-        });
-        
-        html += `</div>`;
-        list.innerHTML = html;
-
-    } catch (err) {
-        console.error("Erreur loadTrendingPosts:", err);
-        list.innerHTML = '<p class="text-center text-red-400 text-xs py-4">Erreur de chargement</p>';
-    }
-}
-
-// B. Personnes (Pour "Personnes" par défaut)
-async function loadPopularPeople() {
-    const list = document.getElementById('search-results-list');
-    list.innerHTML = '<div class="text-center py-10 text-slate-400"><i class="fas fa-spinner fa-spin"></i></div>';
-
-    const { data: users } = await supabaseClient
-        .from('profiles')
-        .select('id, full_name, username, avatar_url, is_certified, followers_count')
-        // ON TRIE PAR NOMBRE D'ABONNÉS (DÉCROISSANT)
-        .order('followers_count', { ascending: false })
-        .limit(20);
-
-    if (!users || users.length === 0) {
-        list.innerHTML = '<p class="text-center text-slate-400 py-10">Aucun utilisateur</p>';
-        return;
-    }
-
-    list.innerHTML = users.map(u => {
-        const avatar = u.avatar_url || `https://ui-avatars.com/api/?name=${u.full_name}`;
-        return `
-        <div class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer" onclick="closeSearchOverlay(); viewUserProfile('${u.id}')">
-            <img src="${avatar}" class="w-12 h-12 rounded-full object-cover">
-            <div class="flex-1">
-                <p class="font-bold text-sm">${u.full_name}</p>
-                <p class="text-xs text-slate-400">@${u.username || 'user'} • ${formatNumber(u.followers_count || 0)} abonnés</p>
-            </div>
-            <button onclick="event.stopPropagation(); toggleFollow('${u.id}', this)" class="btn-follow-small">Suivre</button>
         </div>
-        `;
-    }).join('');
-}
+    </div>
 
-// C. Hashtags (Pour "Hashtags" par défaut)
-async function loadTrendingHashtags() {
-    // Même logique que loadTrendingTopics mais affiché dans la liste
-    const list = document.getElementById('search-results-list');
-    list.innerHTML = '<div class="text-center py-10 text-slate-400"><i class="fas fa-spinner fa-spin"></i></div>';
+    <!-- MODALE MODIFICATION PROFIL (Style Page Complète) -->
+    <div id="edit-profile-modal"
+        class="fixed inset-0 z-[9999] hidden bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+        <div
+            class="bg-white dark:bg-slate-900 w-full max-w-lg h-full md:h-[90vh] md:rounded-2xl flex flex-col shadow-2xl overflow-hidden">
 
-    const { data: posts } = await supabaseClient
-        .from('posts')
-        .select('caption')
-        .not('caption', 'is', null)
-        .limit(100);
+            <!-- HEADER -->
+            <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+                <button onclick="closeEditProfileModal()"
+                    class="text-slate-600 dark:text-slate-300 hover:text-slate-900">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+                <h3 class="font-bold text-lg text-slate-900 dark:text-white">Modifier le profil</h3>
+                <button onclick="submitEditProfile()" class="text-indigo-600 font-bold text-sm hover:text-indigo-800">
+                    Enregistrer
+                </button>
+            </div>
 
-    const tags = {};
-    posts?.forEach(p => {
-        const matches = p.caption?.match(/#\w+/g);
-        matches?.forEach(tag => tags[tag] = (tags[tag] || 0) + 1);
-    });
+            <!-- CONTENU (Scrollable) -->
+            <div class="flex-1 overflow-y-auto p-6 space-y-8">
 
-    const sorted = Object.entries(tags).sort((a, b) => b[1] - a[1]).slice(0, 10);
+                <!-- SECTION AVATAR -->
+                <div class="flex flex-col items-center gap-4">
+                    <div class="relative">
+                        <img id="edit-avatar-preview" src="https://ui-avatars.com/api/?name=John+Doe&background=random"
+                            class="w-24 h-24 rounded-full object-cover border-4 border-slate-100 shadow-sm">
+                        <!-- Bouton Changement Photo -->
+                        <label
+                            class="absolute bottom-0 right-0 w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-indigo-700 transition shadow-lg border-2 border-white">
+                            <i class="fas fa-camera text-white text-xs"></i>
+                            <input type="file" id="edit-avatar-input" accept="image/*" class="hidden"
+                                onchange="previewEditAvatar(this)">
+                        </label>
+                    </div>
+                    <button onclick="document.getElementById('edit-avatar-input').click()"
+                        class="text-indigo-600 font-semibold text-sm hover:underline">
+                        Changer la photo de profil
+                    </button>
+                </div>
 
-    if (sorted.length === 0) {
-        list.innerHTML = '<p class="text-center text-slate-400 py-10">Aucun hashtag tendance</p>';
-        return;
-    }
+                <!-- FORMULAIRE -->
+                <form id="edit-profile-form" class="space-y-5">
 
-    list.innerHTML = sorted.map(([tag, count]) => `
-        <div class="p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer" onclick="closeSearchOverlay(); openHashtagPage('${tag.substring(1)}')">
-            <p class="font-bold text-slate-800 dark:text-white">${tag}</p>
-            <p class="text-xs text-slate-400">${count} publications</p>
+                    <!-- Nom Complet -->
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Nom complet</label>
+                        <input type="text" id="edit-name" placeholder="Votre nom"
+                            class="mt-1 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white">
+                    </div>
+
+                    <!-- Username -->
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Nom
+                            d'utilisateur</label>
+                        <div
+                            class="mt-1 flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500">
+                            <span class="pl-4 text-slate-400">@</span>
+                            <input type="text" id="edit-username" placeholder="username"
+                                class="flex-1 bg-transparent px-2 py-3 focus:outline-none text-slate-900 dark:text-white">
+                        </div>
+                    </div>
+
+                    <!-- Bio -->
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Bio</label>
+                        <textarea id="edit-bio" rows="3" placeholder="Parlez-nous de vous..."
+                            class="mt-1 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none text-slate-900 dark:text-white"></textarea>
+                    </div>
+
+                    <!-- Téléphone -->
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Téléphone</label>
+                        <input type="tel" id="edit-phone" placeholder="+243 ..."
+                            class="mt-1 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white">
+                    </div>
+                    <!-- Date de naissance -->
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Date de
+                            naissance</label>
+                        <input type="date" id="edit-dob"
+                            class="mt-1 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white">
+                    </div>
+                </form>
+            </div>
         </div>
-    `).join('');
-}
+    </div>
+</body>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./js/app.js" defer></script>
 
-// 8. Helpers
-function formatNumber(num) {
-    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-    return num.toString();
-}
-
-// Gestion clic fermeture
-document.addEventListener('click', (e) => {
-    const overlay = document.getElementById('search-overlay');
-    if (!overlay || overlay.classList.contains('hidden')) return;
-    const input = document.getElementById('global-search-input');
-    const header = document.querySelector('.fixed-explorer-header');
-    if (!overlay.contains(e.target) && !header?.contains(e.target)) {
-        closeSearchOverlay();
-    }
-});
-
-// 1. Ouvrir la recherche
-function openSearchOverlay() {
-    const overlay = document.getElementById('search-overlay');
-    const tabs = document.getElementById('header-tabs-container');
-
-    if (overlay) {
-        overlay.classList.remove('hidden');
-        // On scrolle le contenu de l'overlay tout en haut pour voir les tendances
-        overlay.scrollTop = 0;
-    }
-
-    if (tabs) {
-        tabs.classList.add('hidden');
-        tabs.classList.remove('flex');
-    }
-
-    // Chargement initial : On charge le contenu par défaut de l'onglet actif
-    loadDefaultSearchContent();
-
-    // Focus input
-    const input = document.getElementById('global-search-input');
-    if (input) input.focus();
-
-    // Charger les tendances
-    if (document.getElementById('trending-list')?.innerHTML.trim() === '') {
-        loadTrendingTopics();
-    }
-}
-
-// 7. Page Hashtag (Réutilise la vue Modal ou Page)
-async function openHashtagPage(tag) {
-    closeSearchOverlay();
-
-    // On réutilise la vue "hashtag-view" si elle existe, sinon on l'injecte
-    let view = document.getElementById('hashtag-view');
-    if (!view) {
-        const newView = document.createElement('div');
-        newView.id = 'hashtag-view';
-        newView.className = 'page-view';
-        newView.innerHTML = `
-            <div class="sticky top-0 z-40 bg-white dark:bg-slate-900 border-b p-4 flex items-center gap-4">
-                <button onclick="switchPage('home')" class="text-slate-600 dark:text-slate-300"><i class="fas fa-arrow-left"></i></button>
-                <h2 id="hashtag-title" class="font-bold text-lg text-slate-800 dark:text-white">#tag</h2>
-            </div>
-            <div id="hashtag-posts-container" class="grid grid-cols-3 gap-1 p-1"></div>
-        `;
-        document.body.appendChild(newView);
-        view = newView;
-    }
-
-    document.getElementById('hashtag-title').innerText = `#${tag}`;
-
-    const postContainer = document.getElementById('hashtag-posts-container');
-    postContainer.innerHTML = '';
-
-    switchPage('hashtag');
-
-    // Charger les posts
-    const { data: posts } = await supabaseClient
-        .from('posts')
-        .select('id, image_url, caption')
-        .ilike('caption', `%#${tag}%`)
-        .limit(30);
-
-    if (posts && posts.length > 0) {
-        postContainer.innerHTML = posts.map(p => `
-            <div class="aspect-square bg-slate-100 cursor-pointer group relative" onclick="openPostModal('${p.id}')">
-                <img src="${p.image_url || 'https://ui-avatars.com/api/?name=John+Doe&background=random'}" class="w-full h-full object-cover">
-            </div>
-        `).join('');
-    } else {
-        postContainer.innerHTML = '<p class="col-span-3 text-center text-slate-400 py-10">Aucune publication pour ce hashtag</p>';
-    }
-}
-
-// 8. Rendre les hashtags cliquables dans les posts
-// Modifiez votre fonction formatTextWithHighlights existante :
-function formatTextWithHighlights(text) {
-    if (!text) return '';
-    let safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-    // Mentions
-    safeText = safeText.replace(/@(\w+)/g, '<span class="text-sky-500 hover:underline cursor-pointer" onclick="viewUserProfileFromText(\'$1\')">@$1</span>');
-
-    // Hashtags -> Ouvre l'overlay ou la page hashtag
-    safeText = safeText.replace(/#(\w+)/g, '<span class="text-sky-500 hover:underline cursor-pointer" onclick="openHashtagPage(\'$1\')">#$1</span>');
-
-    return safeText;
-}
+</html>
