@@ -1853,26 +1853,30 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
             }
 
             // Média HTML
-            let mediaHtml = '';
             if (post.is_short && post.video_url) {
-                mediaHtml = `
-                    <div onclick="openPostModal('${post.id}')" class="relative bg-slate-900 flex justify-center overflow-hidden group rounded-2xl mb-4 shadow-lg border border-slate-200/10 cursor-pointer" 
-                         onmouseenter="if(this.querySelector('video')) this.querySelector('video').play()"
-                         onmouseleave="if(this.querySelector('video')) { this.querySelector('video').pause(); this.querySelector('video').currentTime = 0; }">
-                        <div class="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-2 py-1 bg-black/50 backdrop-blur-md rounded-lg text-white text-[10px] font-bold tracking-wider uppercase">
-                            <i class="fas fa-bolt text-yellow-400"></i> Short
-                        </div>
-                        <video src="${post.video_url}" class="w-full aspect-[9/16] max-h-[650px] object-cover transition-transform duration-700 group-hover:scale-105" loop muted playsinline preload="metadata"></video>
-                        <div class="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <div class="w-16 h-16 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white shadow-2xl">
-                                <i class="fas fa-expand text-2xl"></i>
-                            </div>
-                        </div>
-                    </div>`;
-            } else if (post.image_url) {
-                mediaHtml = `<img src="${post.image_url}" onclick="openPostModal('${post.id}')" class="w-full h-auto object-cover rounded-lg mb-1 cursor-pointer hover:opacity-95 transition" loading="lazy" alt="Post">`;
-            }
-
+    mediaHtml = `
+    <div onclick="openVideoPlayer('${post.video_url}', '${post.id}')" 
+         class="relative bg-slate-900 flex justify-center overflow-hidden group rounded-2xl mb-4 shadow-lg border border-slate-200/10 cursor-pointer" 
+         onmouseenter="if(this.querySelector('video')) this.querySelector('video').play()"
+         onmouseleave="if(this.querySelector('video')) { this.querySelector('video').pause(); this.querySelector('video').currentTime = 0; }">
+        
+        <div class="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-2 py-1 bg-black/50 backdrop-blur-md rounded-lg text-white text-[10px] font-bold tracking-wider uppercase">
+            <i class="fas fa-bolt text-yellow-400"></i> Vidéo
+        </div>
+        
+        <video src="${post.video_url}" class="w-full aspect-[9/16] max-h-[650px] object-cover transition-transform duration-700 group-hover:scale-105" loop muted playsinline preload="metadata"></video>
+        
+        <div class="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div class="w-16 h-16 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white shadow-2xl">
+                <i class="fas fa-play text-2xl ml-1"></i>
+            </div>
+        </div>
+    </div>`;
+} 
+// Si c'est une image
+else if (post.image_url) {
+    mediaHtml = `<img src="${post.image_url}" onclick="openPostModal('${post.id}')" class="w-full h-auto object-cover rounded-lg mb-1 cursor-pointer hover:opacity-95 transition" loading="lazy" alt="Post">`;
+}
             // Création de l'élément Article (Node DOM)
             const article = document.createElement('article');
             article.className = 'bg-white dark:bg-black overflow-hidden border-b border-slate-100 dark:border-slate-800';
@@ -6398,4 +6402,50 @@ function handleSortClick(element, filterType) {
         // Style spécifique pour actif
         element.classList.add('bg-blue-50', 'text-blue-600', 'dark:bg-blue-900/30', 'dark:text-blue-400');
     }
+}
+
+/**
+ * Ouvre le lecteur vidéo plein écran (Zen Mode)
+ * @param {string} url - L'URL de la vidéo
+ * @param {string} postId - L'ID du post (pour voir les commentaires si besoin)
+ */
+window.openVideoPlayer = function(url, postId) {
+    const modal = document.getElementById('zen-mode-modal');
+    const videoPlayer = document.getElementById('zen-video-player');
+    
+    if (!modal || !videoPlayer) {
+        // Fallback si le modal n'existe pas : on ouvre le modal normal
+        openPostModal(postId);
+        return;
+    }
+
+    // Configuration de la vidéo
+    videoPlayer.src = url;
+    videoPlayer.muted = false; // On active le son par défaut pour le lecteur
+    videoPlayer.loop = true;
+    
+    // Afficher le modal
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden'; // Bloque le scroll
+    
+    // Lancer la lecture
+    videoPlayer.play().catch(e => console.log("Autoplay nécessite une interaction manuelle"));
+    
+    // Bouton pour voir les détails (commentaires)
+    // On ajoute un bouton dynamiquement si nécessaire, ou on utilise celui existant dans le HTML
+}
+
+// S'assurer que la fermeture fonctionne
+window.closeZenMode = function() {
+    const modal = document.getElementById('zen-mode-modal');
+    const videoPlayer = document.getElementById('zen-video-player');
+    
+    if(videoPlayer) {
+        videoPlayer.pause();
+        videoPlayer.src = ''; // Vide la source pour arrêter le chargement
+    }
+    if(modal) {
+        modal.classList.remove('active');
+    }
+    document.body.style.overflow = 'auto';
 }
