@@ -1807,6 +1807,48 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
                 calculatedScore: calculatePostScore(post.post_likes?.[0]?.count || 0, post.post_comments?.[0]?.count || 0, post.created_at)
             })).sort((a, b) => b.calculatedScore - a.calculatedScore);
         }
+        
+        // --- NOUVEAU : ALGORITHME DE PRIORITÉ VIDÉO ---
+
+        // 1. Séparer les vidéos des images
+        const videoPosts = processedPosts.filter(p => p.is_short);
+        const imagePosts = processedPosts.filter(p => !p.is_short);
+
+        // 2. Fonction pour mélanger un tableau (aléatoire) - Optionnel si vous voulez varier l'ordre
+        const shuffleArray = (array) => {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        };
+
+        // 3. Stratégie de mixage : 2 Vidéos pour 1 Image (Ratio 2:1)
+        const mixedPosts = [];
+        let vIdx = 0, iIdx = 0;
+
+        // On boucle tant qu'on a des vidéos
+        while (vIdx < videoPosts.length) {
+            // Ajouter 2 vidéos (si disponibles)
+            // Exemple Ratio 3:1
+            if (videoPosts[vIdx]) { mixedPosts.push(videoPosts[vIdx]); vIdx++; }
+            if (videoPosts[vIdx]) { mixedPosts.push(videoPosts[vIdx]); vIdx++; }
+            if (videoPosts[vIdx]) { mixedPosts.push(videoPosts[vIdx]); vIdx++; }
+            if (imagePosts[iIdx]) { mixedPosts.push(imagePosts[iIdx]); iIdx++; }
+
+            // Ajouter 1 image (si disponibles)
+            if (imagePosts[iIdx]) { mixedPosts.push(imagePosts[iIdx]); iIdx++; }
+        }
+
+        // 4. Ajouter le reste des images à la fin (si il y en a plus que de vidéos)
+        while (iIdx < imagePosts.length) {
+            mixedPosts.push(imagePosts[iIdx]);
+            iIdx++;
+        }
+
+        // 5. On remplace processedPosts par notre liste mixée
+        processedPosts = mixedPosts;
+        // --- FIN DE L'ALGORITHME ---
 
         // --- 7. GÉNÉRATION HTML (AVEC DOCUMENTFRAGMENT) ---
         // Création d'un fragment mémoire (hors DOM) pour optimiser le rendu
