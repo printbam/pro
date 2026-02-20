@@ -1850,8 +1850,10 @@ body.dark-mode .modal-top-controls .modal-btn:hover { background: rgba(255,255,2
 /* Conteneur principal : Plein écran, fond noir */
 .shorts-scroll-container {
     position: fixed;
-    top: 0;
+    top: 60;
     left: 0;
+    right: 0;
+    bottom: 0;
     width: 100%;
     height: 100%;
     background: #000;
@@ -1885,11 +1887,12 @@ body.dark-mode .modal-top-controls .modal-btn:hover { background: rgba(255,255,2
     object-fit: contain; /* Respecte le ratio sans couper */
 }
 
-/* --- BARRE D'ACTIONS À GAUCHE (Design Élégant) --- */
-.short-actions-left {
+/* Barre d'actions À DROITE */
+.short-actions-left { /* On garde le nom de classe mais on change la position */
     position: absolute;
-    left: 16px;
-    bottom: 120px; /* Au-dessus de la barre du bas */
+    right: 22px !important; /* Collé à droite */
+    left: auto !important;  /* Enlève le gauche */
+    bottom: 50px;          /* Au-dessus de la barre de nav */
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -1924,16 +1927,17 @@ body.dark-mode .modal-top-controls .modal-btn:hover { background: rgba(255,255,2
     animation: heartPop 0.3s ease-out;
 }
 
-/* Infos Auteur (En bas à droite) */
+/* Infos Auteur en BAS À GAUCHE (pour ne pas gêner les boutons à droite) */
 .short-info-bottom {
     position: absolute;
-    bottom: 100px;
-    right: 16px;
-    left: 80px; /* Espace pour ne pas chevaucher les boutons gauche */
+    bottom: 20px;
+    left: 25px;       /* Aligné à gauche */
+    right: 80px;      /* Espace pour ne pas chevaucher les boutons */
     color: white;
     z-index: 20;
     text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
+
 .short-author-row {
     display: flex;
     align-items: center;
@@ -1993,4 +1997,172 @@ body.dark-mode .modal-top-controls .modal-btn:hover { background: rgba(255,255,2
     font-size: 24px;
     cursor: pointer;
     text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* --- STYLE BOUTON FAVORI & MENU OPTIONS --- */
+
+/* Animation du Favori (Bookmark) */
+.short-action-btn.saved i {
+    color: #facc15; /* Jaune doré */
+    animation: heartPop 0.3s ease-out;
+}
+
+/* Menu Déroulant (Apparaît à gauche des boutons) */
+.short-dropdown-menu {
+    position: absolute;
+    right: 70px; /* Distance par rapport aux boutons à droite */
+    bottom: 10px; /* Aligné en bas */
+    background: white;
+    min-width: 180px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    z-index: 100;
+    overflow: hidden;
+    animation: fadeInScale 0.2s ease-out;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Style des lignes du menu */
+.short-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    color: #333;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.short-menu-item:hover {
+    background: #f1f5f9;
+}
+
+/* Mode Sombre pour le menu */
+body.dark-mode .short-dropdown-menu {
+    background: #2c2c2c;
+    border-color: rgba(255,255,255,0.1);
+}
+body.dark-mode .short-menu-item {
+    color: #e5e7eb;
+}
+body.dark-mode .short-menu-item:hover {
+    background: #404040;
+}
+
+/* Animation d'apparition */
+@keyframes fadeInScale {
+    from { opacity: 0; transform: scale(0.9) translateX(10px); }
+    to { opacity: 1; transform: scale(1) translateX(0); }
+}
+
+/* --- PAUSE ICON (CENTRAL) --- */
+.short-video-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+.short-pause-icon {
+    position: absolute;
+    z-index: 25;
+    width: 70px;
+    height: 70px;
+    background: rgba(0,0,0,0.5);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.short-pause-icon.show {
+    opacity: 1;
+    animation: fadeOutPause 0.8s forwards; /* Disparaît après 0.8s */
+}
+@keyframes fadeOutPause {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; }
+    100% { opacity: 0; transform: scale(1.2); }
+}
+
+/* --- PANNEAU COMMENTAIRES (BOTTOM SHEET) --- */
+.short-comments-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60vh; /* Hauteur de la fenêtre */
+    background: #1e293b; /* Fond sombre style TikTok */
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    z-index: 100;
+    transform: translateY(100%); /* Caché par défaut en bas */
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 -5px 30px rgba(0,0,0,0.5);
+}
+.short-comments-sheet.active {
+    transform: translateY(0); /* Apparaît */
+}
+
+/* Header de la section commentaires */
+.short-comments-header {
+    padding: 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+}
+.short-comments-close {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* Liste des commentaires */
+.short-comments-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    color: white;
+}
+
+/* Input commentaires */
+.short-comments-input {
+    padding: 12px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    background: #111827;
+    display: flex;
+    gap: 10px;
+}
+.short-comments-input input {
+    flex: 1;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    padding: 10px 16px;
+    border-radius: 20px;
+    color: white;
+    outline: none;
+}
+.short-comments-input button {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 0 20px;
+    border-radius: 20px;
+    font-weight: bold;
+    cursor: pointer;
 }
