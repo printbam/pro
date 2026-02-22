@@ -1953,8 +1953,8 @@ body.dark-mode .modal-top-controls .modal-btn:hover { background: rgba(255,255,2
 .short-author-name { font-weight: 700; font-size: 15px; }
 
 .short-follow-btn {
-    background: linear-gradient(135deg, #87CEEB 0%, #FFD700 100%);
-    color: rgb(0, 0, 0);
+    background: linear-gradient(135deg, #000000c2);
+    color: rgb(255, 253, 253);
     font-size: 12px;
     padding: 4px 12px;
     border-radius: 4px;
@@ -2004,7 +2004,7 @@ body.dark-mode .modal-top-controls .modal-btn:hover { background: rgba(255,255,2
 
 /* Animation du Favori (Bookmark) */
 .short-action-btn.saved i {
-    color: #facc15; /* Jaune doré */
+    color: #000000; /* Jaune doré */
     animation: heartPop 0.3s ease-out;
 }
 
@@ -2232,11 +2232,11 @@ body.dark-mode .story-injection-widget {
 /* INPUT (Centre) */
 .short-comment-bar input {
     flex: 1;
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(253, 253, 253, 0.15) !important;
     border: none;
     border-radius: 20px;
     padding: 8px 16px;
-    color: white;
+    color:  rgb(0, 0, 0)!important;
     font-size: 13px;
     outline: none;
     min-width: 0; /* Évite les débordements flex */
@@ -2247,9 +2247,9 @@ body.dark-mode .story-injection-widget {
 }
 
 .short-comment-bar button {
-    background: #00000085; /* Bleu style Instagram/Facebook */
+    background: #e4dfdf85; /* Bleu style Instagram/Facebook */
     border: none;
-    color: white;
+    color: rgb(0, 0, 0);
     font-weight: 600;
     font-size: 13px;
     cursor: pointer;
@@ -2301,25 +2301,26 @@ body.dark-mode .story-injection-widget {
     color: #fe2c55; /* Rouge */
 }
 
-/* MINI MENU RÉACTIONS (POPUP) */
-.bar-reaction-menu {
+/* --- MENU POPUP (Réactions) --- */
+.reaction-popup-bar {
     position: absolute;
-    bottom: 45px; /* Au-dessus du bouton */
-    left: 0;
+    bottom: 55px; /* Légèrement au-dessus de la barre */
+    left: 10px;
     background: white;
     border-radius: 30px;
-    padding: 8px 12px;
+    padding: 8px 15px;
     display: none;
-    gap: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    z-index: 100;
+    gap: 15px;
+    box-shadow: 0 5px 25px rgba(0,0,0,0.4);
+    z-index: 200; /* Z-Index très haut pour être au-dessus de la vidéo */
     animation: popUp 0.2s ease-out;
 }
-body.dark-mode .bar-reaction-menu {
-    background: #333;
-}
+.dark .reaction-popup-bar { background: #333; }
 
-@keyframes popUp {
-    from { transform: scale(0.8) translateY(10px); opacity: 0; }
-    to { transform: scale(1) translateY(0); opacity: 1; }
+.emoji-react {
+    font-size: 26px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    user-select: none;
 }
+.emoji-react:active { transform: scale(1.3); }
