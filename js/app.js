@@ -31,6 +31,8 @@ let globalNotifListener = null;
 let myChatIdsCache = new Set(); // Cache des IDs de chat de l'utilisateur
 let chatStatusInterval = null;
 let isViewingOwnStory = false; // Variable globale pour l'état
+let globalFeedVideoCount = 0;
+let globalFeedImageCount = 0;
 
 // 3. Configuration des Réactions (Doit être accessible pour le Feed)
 const REACTIONS = [
@@ -58,6 +60,45 @@ let feedObserver = null;
 // --- VARIABLES DU TERMINAL (Si elles n'existent pas déjà) ---
 let currentStep = 1;
 let options = { reliure: false, plastique: false };
+
+// --- GESTIONNAIRE D'HISTORIQUE DE VUE ---
+const ViewHistory = {
+    key: 'linko_view_history',
+    maxViews: 2, // Vu 2 fois max
+
+    // Récupérer l'historique
+    getHistory: function () {
+        const data = localStorage.getItem(this.key);
+        return data ? JSON.parse(data) : {};
+    },
+
+    // Vérifier si un post peut être affiché
+    canShow: function (postId) {
+        const history = this.getHistory();
+        const views = history[postId] || 0;
+        return views < this.maxViews;
+    },
+
+    // Enregistrer une vue
+    registerView: function (postId) {
+        const history = this.getHistory();
+        history[postId] = (history[postId] || 0) + 1;
+
+        // Optionnel : Nettoyer si l'historique devient trop gros (> 500 posts)
+        const keys = Object.keys(history);
+        if (keys.length > 500) {
+            delete history[keys[0]]; // Supprime le plus ancien
+        }
+
+        localStorage.setItem(this.key, JSON.stringify(history));
+    }
+};
+
+// Limite un texte à X caractères et ajoute "..."
+function truncateText(text, maxLength = 5) {
+    if (!text) return '';
+    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+}
 
 // --- FONCTION MANQUANTE À AJOUTER ---
 function updateControls() {
@@ -105,8 +146,8 @@ function switchPage(pageId) {
     });
     const target = document.getElementById(pageId + '-view');
     if (target) {
-        target.style.display = 'block'; 
-        setTimeout(() => target.classList.add('active'), 10); 
+        target.style.display = 'block';
+        setTimeout(() => target.classList.add('active'), 10);
         window.scrollTo(0, 0);
     }
 
@@ -141,7 +182,7 @@ function switchPage(pageId) {
         loadAdminArticles();
         loadAdminUsers();
     }
-    
+
     if (pageId === 'profile-social') {
         loadSocialProfile();
     }
@@ -1728,7 +1769,7 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
         const { data: userData } = await supabaseClient.auth.getUser();
         const myId = userData?.user?.id || null;
 
-        // B. Récupération de mes abonnements (Pour la confidentialité "Friends")
+        // A. Récupération de mes abonnements
         let myFollowingSet = new Set();
         if (myId) {
             const { data: followingData } = await supabaseClient
@@ -1738,7 +1779,20 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
             if (followingData) myFollowingSet = new Set(followingData.map(f => f.following_id));
         }
 
-        // --- 3. RÉCUPÉRATION DES POSTS (Query principale) ---
+        // --- NOUVEAU : Récupérer les stories pour l'injection ---
+        let storiesToInject = [];
+        try {
+            const { data: storiesData } = await supabaseClient
+                .from('stories')
+                .select('*, profiles(id, full_name, avatar_url)')
+                .gt('created_at', new Date(Date.now() - 86400000).toISOString())
+                .limit(10);
+
+            if (storiesData) storiesToInject = storiesData;
+        } catch (e) { console.warn("Pas de stories pour l'injection"); }
+        // -------------------------------------------------------------
+
+        // --- 3. RÉCUPÉRATION DES POSTS ---
         const { data: posts, error } = await supabaseClient
             .from('posts')
             .select(`
@@ -1762,25 +1816,19 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
             return;
         }
 
-        // --- 4. FILTRAGE CÔTÉ CLIENT (Confidentialité & Blocage) ---
+        // --- 4. FILTRAGE CÔTÉ CLIENT ---
         const visiblePosts = posts.filter(post => {
             if (post.user_id === myId) return true;
-
             const visibility = post.visibility || 'public';
-
             if (visibility === 'public') return true;
             if (visibility === 'private') return false;
-
-            if (visibility === 'friends') {
-                return myFollowingSet.has(post.user_id);
-            }
+            if (visibility === 'friends') return myFollowingSet.has(post.user_id);
             return false;
         });
 
         // --- 5. RÉACTIONS UTILISATEUR ---
         let myLikedPostIds = new Set();
         const postIds = visiblePosts.map(p => p.id);
-
         if (myId && postIds.length > 0) {
             const { data: myLikes } = await supabaseClient
                 .from('post_likes')
@@ -1791,14 +1839,12 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
             if (myLikes) {
                 myLikedPostIds = new Set(myLikes.map(l => l.post_id));
                 if (typeof userReactions !== 'undefined') {
-                    myLikes.forEach(like => {
-                        userReactions.set(like.post_id, like.reaction_type);
-                    });
+                    myLikes.forEach(like => userReactions.set(like.post_id, like.reaction_type));
                 }
             }
         }
 
-        // --- 6. FILTRE SECONDaire (Shorts) & TRI ---
+        // --- 6. FILTRE & TRI ---
         let processedPosts = filterType === 'shorts' ? visiblePosts.filter(p => p.is_short) : visiblePosts;
 
         if (sortBy === 'popular' && typeof calculatePostScore === 'function') {
@@ -1807,54 +1853,96 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
                 calculatedScore: calculatePostScore(post.post_likes?.[0]?.count || 0, post.post_comments?.[0]?.count || 0, post.created_at)
             })).sort((a, b) => b.calculatedScore - a.calculatedScore);
         }
-        
-        // --- NOUVEAU : ALGORITHME DE PRIORITÉ VIDÉO ---
 
-        // 1. Séparer les vidéos des images
+        // --- NOUVEAU : ALGORITHME DE PRIORITÉ VIDÉO (3 VIDÉOS / 1 IMAGE) ---
         const videoPosts = processedPosts.filter(p => p.is_short);
         const imagePosts = processedPosts.filter(p => !p.is_short);
-
-        // 2. Fonction pour mélanger un tableau (aléatoire) - Optionnel si vous voulez varier l'ordre
-        const shuffleArray = (array) => {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
-        };
-
-        // 3. Stratégie de mixage : 2 Vidéos pour 1 Image (Ratio 2:1)
         const mixedPosts = [];
         let vIdx = 0, iIdx = 0;
 
-        // On boucle tant qu'on a des vidéos
+        // Stratégie 3:1
         while (vIdx < videoPosts.length) {
-            // Ajouter 2 vidéos (si disponibles)
-            // Exemple Ratio 3:1
             if (videoPosts[vIdx]) { mixedPosts.push(videoPosts[vIdx]); vIdx++; }
             if (videoPosts[vIdx]) { mixedPosts.push(videoPosts[vIdx]); vIdx++; }
             if (videoPosts[vIdx]) { mixedPosts.push(videoPosts[vIdx]); vIdx++; }
-            if (imagePosts[iIdx]) { mixedPosts.push(imagePosts[iIdx]); iIdx++; }
-
-            // Ajouter 1 image (si disponibles)
             if (imagePosts[iIdx]) { mixedPosts.push(imagePosts[iIdx]); iIdx++; }
         }
-
-        // 4. Ajouter le reste des images à la fin (si il y en a plus que de vidéos)
+        // Ajout du reste des images
         while (iIdx < imagePosts.length) {
             mixedPosts.push(imagePosts[iIdx]);
             iIdx++;
         }
-
-        // 5. On remplace processedPosts par notre liste mixée
         processedPosts = mixedPosts;
-        // --- FIN DE L'ALGORITHME ---
+        // ----------------------------------------------------------------
 
-        // --- 7. GÉNÉRATION HTML (AVEC DOCUMENTFRAGMENT) ---
-        // Création d'un fragment mémoire (hors DOM) pour optimiser le rendu
+        // --- NOUVEAU : FILTRE ANTI-REPETITION (MAX 2 FOIS) ---
+        // On filtre les posts pour ne garder que ceux qu'on a vu moins de 2 fois
+        processedPosts = processedPosts.filter(post => ViewHistory.canShow(post.id));
+
+        // Si après filtrage il ne reste rien, on arrête ou on charge plus (optionnel)
+        if (processedPosts.length === 0 && posts.length > 0) {
+            // Si le filtre a tout bloqué, on peut forcer un rechargement du lot suivant
+            // Pour éviter une boucle infinie, on charge juste le lot suivant
+            feedOffset += posts.length;
+            loadMoreFeed();
+            return;
+        }
+
+        // --- 7. GÉNÉRATION HTML ---
         const fragment = document.createDocumentFragment();
 
-        processedPosts.forEach(post => {
+        // Compteurs pour l'injection de Stories
+        let videoCounter = 0;
+        let postCounter = 0;
+        let lastInjectionIndex = -20; // Evite les injections trop proches
+
+        processedPosts.forEach((post, index) => {
+            // IMPORTANT : Enregistrer cette vue pour cet ID
+            ViewHistory.registerView(post.id);
+
+            // Mise à jour compteurs pour stories...
+            if (post.is_short) globalFeedVideoCount++;
+            else globalFeedImageCount++;
+            // Mise à jour compteurs
+            if (post.is_short) videoCounter++;
+            else postCounter++;
+
+            // --- LOGIQUE INJECTION STORY (APRÈS 5 VIDÉOS ET 3 POSTS) ---
+            // 1. Mise à jour des compteurs GLOBAUX
+            if (post.is_short) globalFeedVideoCount++;
+            else globalFeedImageCount++;
+
+            // --- LOGIQUE INJECTION STORY ---
+            // On vérifie si on a atteint le seuil (5 vidéos ET 3 images) depuis la dernière injection
+            // On ajoute aussi une condition d'index pour ne pas spammer
+            if (globalFeedVideoCount >= 5 && globalFeedImageCount >= 3 && storiesToInject.length > 0) {
+
+                const storyWidget = document.createElement('div');
+                storyWidget.className = 'story-injection-widget';
+                storyWidget.innerHTML = `
+                    <div class="flex items-center justify-between px-4 mb-2 mt-2">
+                        <h3 class="font-bold text-slate-800 dark:text-white text-sm">Stories à ne pas manquer</h3>
+                        <a onclick="window.scrollToStories()" class="text-indigo-600 text-xs font-bold cursor-pointer hover:underline">Voir tout</a>
+                    </div>
+                    <div class="flex gap-4 overflow-x-auto px-4 pb-2 no-scrollbar">
+                        ${storiesToInject.map(s => `
+                            <div onclick="openStoryViewer('${s.user_id}')" class="flex flex-col items-center gap-1 cursor-pointer flex-shrink-0">
+                                <div class="w-14 h-14 rounded-full p-0.5 bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600">
+                                    <img src="${s.profiles?.avatar_url}" class="w-full h-full rounded-full border-2 border-white dark:border-slate-900 object-cover">
+                                </div>
+                                <span class="text-[10px] text-slate-600 dark:text-slate-300 truncate w-14 text-center">${s.profiles?.full_name?.split(' ')[0]}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                fragment.appendChild(storyWidget);
+
+                // 2. RESET des compteurs globaux après injection
+                globalFeedVideoCount = 0;
+                globalFeedImageCount = 0;
+            }
+            // -------------------------------------------------------------
+
             const profile = post.profiles || {};
             const avatarUrl = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username || 'user'}`;
             const userName = profile.full_name || 'Utilisateur';
@@ -1894,39 +1982,34 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
                     <div onclick="reportPost('${post.id}')" class="post-dropdown-item danger"><i class="fas fa-flag"></i> Signaler</div>`;
             }
 
-            // Dans loadGlobalFeed, remplacez le bloc 'if (post.is_short && post.video_url)' par ceci :
-
+            // Média HTML (Vidéo Style TikTok Preview / Image)
+            let mediaHtml = '';
             if (post.is_short && post.video_url) {
                 mediaHtml = `
-    <div onclick="event.stopPropagation(); switchPage('shorts')" 
-         class="relative bg-slate-900 flex justify-center overflow-hidden group rounded-2xl mb-4 shadow-lg border border-slate-200/10 cursor-pointer aspect-[9/16] max-h-[500px]">
-        
-        <!-- Badge Vidéo -->
-        <div class="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-2 py-1 bg-black/50 backdrop-blur-md rounded-lg text-white text-[10px] font-bold tracking-wider uppercase">
-            <i class="fas fa-play text-white"></i> Vidéo
-        </div>
-        
-        <!-- Miniature/Vidéo (en boucle muette pour la prévisualisation) -->
-        <video src="${post.video_url}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loop muted playsinline preload="metadata"
-               onmouseenter="this.play()" onmouseleave="this.pause(); this.currentTime=0;"></video>
-        
-        <!-- Bouton Play central au survol -->
-        <div class="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-            <div class="w-16 h-16 flex items-center justify-center rounded-full bg-white/30 backdrop-blur-md text-white shadow-2xl">
-                <i class="fas fa-play text-2xl ml-1"></i>
-            </div>
-        </div>
-    </div>`;
-            }
-            // Si c'est une image
-            else if (post.image_url) {
+                <div onclick="event.stopPropagation(); switchPage('shorts')" 
+                     class="relative bg-slate-900 flex justify-center overflow-hidden group rounded-2xl mb-4 shadow-lg border border-slate-200/10 cursor-pointer aspect-[9/16] max-h-[500px]">
+                    
+                    <div class="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-2 py-1 bg-black/50 backdrop-blur-md rounded-lg text-white text-[10px] font-bold tracking-wider uppercase">
+                        <i class="fas fa-play text-white"></i> SHORTS
+                    </div>
+                    
+                    <video src="${post.video_url}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loop muted playsinline preload="metadata"
+                           onmouseenter="this.play()" onmouseleave="this.pause(); this.currentTime=0;"></video>
+                    
+                    <div class="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                        <div class="w-16 h-16 flex items-center justify-center rounded-full bg-white/30 backdrop-blur-md text-white shadow-2xl">
+                            <i class="fas fa-play text-2xl ml-1"></i>
+                        </div>
+                    </div>
+                </div>`;
+            } else if (post.image_url) {
                 mediaHtml = `<img src="${post.image_url}" onclick="openPostModal('${post.id}')" class="w-full h-auto object-cover rounded-lg mb-1 cursor-pointer hover:opacity-95 transition" loading="lazy" alt="Post">`;
             }
-            // Création de l'élément Article (Node DOM)
+
+            // Création de l'élément Article
             const article = document.createElement('article');
             article.className = 'bg-white dark:bg-black overflow-hidden border-b border-slate-100 dark:border-slate-800';
 
-            // Injection du HTML dans le node (Design préservé)
             article.innerHTML = `
                 <div class="p-4 flex items-center justify-between">
                     <div class="flex items-center gap-3 cursor-pointer" onclick="viewUserProfile('${post.user_id}')">
@@ -1983,45 +2066,33 @@ async function loadGlobalFeed(sortBy = 'recent', filterType = 'all', appendMode 
                     </form>
                 </div>`;
 
-            // Ajout de l'article au fragment (en mémoire, pas encore visible)
             fragment.appendChild(article);
         });
 
-        // --- 8. INJECTION DOM (UNE SEULE FOIS) ---
-
-        // Si on remplace tout (pas appendMode), on vide le container
-        if (!appendMode) {
-            container.innerHTML = '';
-        }
-
-        // On injecte tout le fragment d'un coup (Ultra performant)
+        // --- 8. INJECTION DOM ---
+        if (!appendMode) container.innerHTML = '';
         container.appendChild(fragment);
 
-        // Gestion du scroll infini
+        // Gestion Pagination
         feedOffset += posts.length;
-
-        if (processedPosts.length === 0 && posts.length === FEED_BATCH_SIZE) {
-            loadMoreFeed();
-            return;
-        }
-
-        if (posts.length < FEED_BATCH_SIZE) {
-            hasMorePosts = false;
-            if (loader) loader.classList.add('hidden');
-        }
+        if (processedPosts.length === 0 && posts.length === FEED_BATCH_SIZE) { loadMoreFeed(); return; }
+        if (posts.length < FEED_BATCH_SIZE) { hasMorePosts = false; if (loader) loader.classList.add('hidden'); }
 
     } catch (error) {
         if (error.name !== 'AbortError') {
             console.error("Erreur Feed:", error);
-            if (!appendMode) {
-                container.innerHTML = `<div class="p-8 text-center bg-red-50 text-red-600 rounded-2xl"><i class="fas fa-exclamation-triangle mb-2 text-xl"></i><p class="text-sm font-bold">Verifier votre connexion</p></div>`;
-            }
+            if (!appendMode) container.innerHTML = `<div class="p-8 text-center bg-red-50 text-red-600 rounded-2xl"><i class="fas fa-exclamation-triangle mb-2 text-xl"></i><p class="text-sm font-bold">Verifier votre connexion</p></div>`;
         }
     } finally {
         isLoadingFeed = false;
         if (loader && !hasMorePosts) loader.classList.add('hidden');
         else if (loader) loader.classList.remove('hidden');
     }
+}
+
+// Ajoutez cette petite fonction helper si elle n'existe pas
+window.scrollToStories = function () {
+    document.getElementById('stories-bar')?.scrollIntoView({ behavior: 'smooth' });
 }
 
 // 1. Ouvrir/Fermer le menu spécifique
@@ -2912,7 +2983,7 @@ async function initGlobalRealtimeListeners() {
 
             // C. Mettre à jour le compteur dans le header/sidebar
             updateNotificationBadge();
-            
+
             // D. Rafraîchir la liste si on est sur la page Notifs
             const notifView = document.getElementById('notifications-view');
             if (notifView && notifView.classList.contains('active')) {
@@ -3196,7 +3267,7 @@ function initRealtimeNotifications() {
 async function loadNotifications() {
     const container = document.getElementById('notifications-list-container');
     if (!container) return;
-    
+
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) return;
 
@@ -3901,7 +3972,7 @@ function closeZenMode() {
 let currentReplyTarget = null;
 
 // --- 1. FONCTION PRINCIPALE : OUVERTURE MODAL ---
-window.openPostModal = async function(postId) {
+window.openPostModal = async function (postId) {
     const overlay = document.getElementById('post-modal-overlay');
     if (!overlay) return;
 
@@ -3916,7 +3987,7 @@ window.openPostModal = async function(postId) {
         if (error) throw error;
 
         const { data: reactions } = await supabaseClient.from('post_likes').select('reaction_type, profiles!user_id(id, full_name, avatar_url)').eq('post_id', postId);
-        
+
         // Récupération commentaires avec compte des likes
         const { data: comments } = await supabaseClient
             .from('post_comments')
@@ -3927,7 +3998,7 @@ window.openPostModal = async function(postId) {
         const author = post.profiles || {};
         const isMyPost = (user && post.user_id === user.id);
 
-        const mediaHtml = post.is_short 
+        const mediaHtml = post.is_short
             ? `<video src="${post.video_url}" controls autoplay class="max-h-full max-w-full"></video>`
             : `<img src="${post.image_url}" class="max-h-full max-w-full object-contain">`;
 
@@ -4002,7 +4073,7 @@ window.openPostModal = async function(postId) {
 }
 
 // Fonction pour ouvrir/fermer le menu des 3 points
-window.toggleModalMenu = function() {
+window.toggleModalMenu = function () {
     const menu = document.getElementById('modal-menu-dropdown');
     if (menu) {
         menu.classList.toggle('hidden');
@@ -4022,7 +4093,7 @@ function renderCommentsTree(comments, currentUser) {
         const isMyComment = currentUser && currentUser.id === comment.user_id;
         const time = getTimeAgo(new Date(comment.created_at));
         const replies = children.filter(c => c.parent_comment_id === comment.id);
-        
+
         // CORRECTION : Image par défaut si null
         const avatar = comment.profiles?.avatar_url || `https://ui-avatars.com/api/?name=${comment.profiles?.full_name || 'User'}&background=random`;
         const userName = comment.profiles?.full_name || 'Utilisateur';
@@ -4064,14 +4135,14 @@ function renderCommentsTree(comments, currentUser) {
 // --- 3. ACTIONS COMMENTAIRES ---
 
 // A. Envoyer un commentaire ou une réponse
-window.submitModalComment = async function(e, postId) {
+window.submitModalComment = async function (e, postId) {
     e.preventDefault();
     const input = document.getElementById('modal-comment-input');
     const content = input.value.trim();
     if (!content) return;
 
     const { data: { user } } = await supabaseClient.auth.getUser();
-    
+
     // Insertion
     const { error } = await supabaseClient.from('post_comments').insert([{
         post_id: postId,
@@ -4092,7 +4163,7 @@ window.submitModalComment = async function(e, postId) {
 }
 
 // B. Préparer le mode réponse
-window.setupReply = function(commentId, userName) {
+window.setupReply = function (commentId, userName) {
     currentReplyTarget = commentId;
     const indicator = document.getElementById('reply-indicator');
     const nameSpan = document.getElementById('reply-name');
@@ -4105,15 +4176,15 @@ window.setupReply = function(commentId, userName) {
 }
 
 // C. Annuler la réponse
-window.cancelReply = function() {
+window.cancelReply = function () {
     currentReplyTarget = null;
     document.getElementById('reply-indicator')?.classList.add('hidden');
     const input = document.getElementById('modal-comment-input');
-    if(input) input.placeholder = "Ajouter un commentaire...";
+    if (input) input.placeholder = "Ajouter un commentaire...";
 }
 
 // D. Liker un commentaire
-window.likeComment = async function(commentId) {
+window.likeComment = async function (commentId) {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) return alert("Connectez-vous");
 
@@ -4132,26 +4203,26 @@ window.likeComment = async function(commentId) {
         // Like
         await supabaseClient.from('comment_likes').insert([{ user_id: user.id, comment_id: commentId }]);
     }
-    
+
     // Pour voir le changement instantané, on peut manipuler le DOM ici, ou recharger
     // Pour faire simple, on force un petit refresh visuel du bouton
     // (Optionnel : openPostModal mettrait à jour tout le bloc)
 }
 
 // E. Supprimer un commentaire
-window.deleteComment = async function(commentId) {
-    if(!confirm("Supprimer ce commentaire ?")) return;
-    
+window.deleteComment = async function (commentId) {
+    if (!confirm("Supprimer ce commentaire ?")) return;
+
     const { error } = await supabaseClient.from('post_comments').delete().eq('id', commentId);
-    if(!error) {
+    if (!error) {
         // Suppression visuelle fluide
         const el = document.querySelector(`[data-comment-id="${commentId}"]`);
-        if(el) el.remove();
+        if (el) el.remove();
     }
 }
 
 // F. Fermeture Modal (Rappel)
-window.closeModalPro = function() {
+window.closeModalPro = function () {
     document.getElementById('post-modal-overlay')?.classList.remove('active');
     document.body.style.overflow = 'auto';
 }
@@ -4264,7 +4335,7 @@ async function sendChatMessage(e) {
         row.classList.remove('opacity-70');
     }
 }
-let longPressTimer = null;
+
 let selectedMessage = null;
 
 // 1. Fonction pour attacher les écouteurs (à appeler dans createMessageBubble)
@@ -5778,38 +5849,38 @@ async function loadDefaultSearchContent() {
 
     // CAS 1 : Pas de recherche (Affichage par défaut)
     if (searchQuery.length < 2) {
-        
+
         // Si on est sur l'onglet "Top"
         if (currentSearchFilter === 'top') {
             // On affiche les deux sections pour "Top" (Hashtags ET Posts)
-            if(trendingSection) trendingSection.classList.remove('hidden');
-            if(resultsSection) resultsSection.classList.remove('hidden');
-            
+            if (trendingSection) trendingSection.classList.remove('hidden');
+            if (resultsSection) resultsSection.classList.remove('hidden');
+
             // Charger les Hashtags
             if (document.getElementById('trending-list').innerHTML.trim() === '') {
                 await loadTrendingTopics();
             }
-            
+
             // Charger les Posts Populaires
             list.innerHTML = '<div class="text-center py-4 text-slate-400"><i class="fas fa-spinner fa-spin"></i></div>';
             await loadTrendingPosts();
-        } 
+        }
         // Si on est sur "Personnes" ou "Hashtags"
         else {
             // On cache la section tendances (hashtags en haut)
-            if(trendingSection) trendingSection.classList.add('hidden');
-            if(resultsSection) resultsSection.classList.remove('hidden');
-            
+            if (trendingSection) trendingSection.classList.add('hidden');
+            if (resultsSection) resultsSection.classList.remove('hidden');
+
             list.innerHTML = '<div class="text-center py-10 text-slate-400"><i class="fas fa-spinner fa-spin"></i></div>';
 
             if (currentSearchFilter === 'people') await loadPopularPeople();
             if (currentSearchFilter === 'hashtags') await loadTrendingHashtags();
         }
-    } 
+    }
     // CAS 2 : Recherche en cours
     else {
-        if(trendingSection) trendingSection.classList.add('hidden');
-        if(resultsSection) resultsSection.classList.remove('hidden');
+        if (trendingSection) trendingSection.classList.add('hidden');
+        if (resultsSection) resultsSection.classList.remove('hidden');
         // La fonction performGlobalSearch gère l'affichage
         await performGlobalSearch(searchQuery);
     }
@@ -5939,7 +6010,7 @@ async function loadTrendingPosts() {
             `)
             .or(`image_url.not.is.null,video_url.not.is.null`) // Prend ceux qui ont AU MOINS une image OU une vidéo
             .order('created_at', { ascending: false })
-            .limit(30); 
+            .limit(30);
 
         if (error) throw error;
 
@@ -5965,8 +6036,8 @@ async function loadTrendingPosts() {
         html += `<div class="grid grid-cols-3 gap-1">`;
 
         if (topPosts.length === 0) {
-             list.innerHTML = '<p class="text-center text-slate-400 text-xs py-4">Aucune publication populaire</p>';
-             return;
+            list.innerHTML = '<p class="text-center text-slate-400 text-xs py-4">Aucune publication populaire</p>';
+            return;
         }
 
         topPosts.forEach(p => {
@@ -5978,16 +6049,16 @@ async function loadTrendingPosts() {
             if (!src) return;
 
             // Badge "Reel" si c'est une vidéo
-            const badgeHtml = isVideo 
+            const badgeHtml = isVideo
                 ? `<div class="absolute top-1 right-1 bg-black/50 text-white text-[8px] px-1.5 py-0.5 rounded-full flex items-center gap-1">
                        <i class="fas fa-play text-[6px]"></i> Vidéo
-                   </div>` 
+                   </div>`
                 : '';
 
             html += `
             <div class="aspect-square bg-slate-900 cursor-pointer relative group overflow-hidden" onclick="closeSearchOverlay(); openPostModal('${p.id}')">
-                ${ isVideo 
-                    ? `<video src="${src}" muted class="w-full h-full object-cover"></video>` 
+                ${isVideo
+                    ? `<video src="${src}" muted class="w-full h-full object-cover"></video>`
                     : `<img src="${src}" class="w-full h-full object-cover">`
                 }
                 
@@ -6001,7 +6072,7 @@ async function loadTrendingPosts() {
             </div>
             `;
         });
-        
+
         html += `</div>`;
         list.innerHTML = html;
 
@@ -6195,7 +6266,7 @@ function showProNotificationToast(data) {
     // Création de l'élément Toast
     const toast = document.createElement('div');
     toast.className = 'toast notification-toast'; // Classes CSS à définir (étape 3)
-    
+
     // Icône selon le type
     const icons = {
         'like': '<i class="fas fa-heart text-red-500"></i>',
@@ -6203,7 +6274,7 @@ function showProNotificationToast(data) {
         'follow': '<i class="fas fa-user-plus text-green-500"></i>',
         'share': '<i class="fas fa-share text-purple-500"></i>'
     };
-    
+
     // Texte dynamique
     const messages = {
         'like': 'a aimé votre publication.',
@@ -6246,7 +6317,7 @@ function showProNotificationToast(data) {
         toast.style.animation = 'slideOut 0.3s forwards';
         setTimeout(() => toast.remove(), 300);
     }, 6000);
-    
+
     // Petit son (Optionnel)
     // const audio = new Audio('notif-sound.mp3'); audio.volume = 0.2; audio.play();
 }
@@ -6268,129 +6339,228 @@ let shortsDataCache = [];
 let currentShortIndex = 0;
 
 // 1. Charger et Afficher les Shorts
-window.loadShortsView = async function() {
+// --- CHARGEMENT ET AFFICHAGE DES SHORTS ---
+window.loadShortsView = async function () {
     const container = document.getElementById('shorts-container');
     if (!container) return;
-    
-    // --- NOUVEAU : Cacher la barre du bas ---
-    const dock = document.querySelector('.mobile-dock');
-    if (dock) dock.classList.add('dock-hidden');
 
-    container.innerHTML = `<div class="flex items-center justify-center h-full text-white"><i class="fas fa-spinner fa-spin text-3xl"></i></div>`;
+    container.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-black/90"><i class="fas fa-spinner fa-spin text-4xl text-white"></i></div>`;
+
+    // Masquer Header et Dock
+    document.querySelector('.mobile-dock').classList.add('dock-hidden');
 
     try {
-        // Récupérer uniquement les vidéos (is_short = true)
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return switchPage('home');
+
+        // 1. Récupérer les vidéos
         const { data: shorts, error } = await supabaseClient
             .from('posts')
             .select('*, profiles(id, full_name, avatar_url, is_certified), post_likes(count), post_comments(count)')
             .eq('is_short', true)
             .order('created_at', { ascending: false })
-            .limit(20); // Charge par lot de 20
+            .limit(20);
 
         if (error) throw error;
-        
-        shortsDataCache = shorts || [];
-        
-        if (shortsDataCache.length === 0) {
-            container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-white"><i class="fas fa-video-slash text-4xl mb-4 opacity-50"></i><p>Aucune vidéo pour le moment</p></div>`;
-            return;
+        if (shorts.length === 0) {
+            container.innerHTML = `<div class="text-white text-center py-20">Aucune vidéo</div>`; return;
         }
 
-                container.innerHTML = shortsDataCache.map((post, index) => {
-            const user = post.profiles || {};
+        const postIds = shorts.map(p => p.id);
+        const authorIds = [...new Set(shorts.map(p => p.user_id))]; // Liste unique des auteurs
+
+        // 2. Récupérer mes Likes (pour le cœur rouge)
+        const { data: myLikes } = await supabaseClient.from('post_likes').select('post_id').eq('user_id', user.id).in('post_id', postIds);
+        const likedIds = new Set(myLikes?.map(l => l.post_id));
+
+        // 3. Récupérer mes Saves (Favoris) + Compte total
+        // On récupère tous les saves pour ces posts
+        const { data: allSaves } = await supabaseClient.from('saved_posts').select('post_id, user_id').in('post_id', postIds);
+
+        // Compter les saves par post
+        const saveCounts = {};
+        allSaves?.forEach(s => {
+            saveCounts[s.post_id] = (saveCounts[s.post_id] || 0) + 1;
+        });
+        // Savoir lesquels sont à moi
+        const mySavedIds = new Set(allSaves?.filter(s => s.user_id === user.id).map(s => s.post_id));
+
+        // 4. Récupérer mes Abonnements (Follows)
+        const { data: myFollows } = await supabaseClient.from('follows').select('following_id').eq('follower_id', user.id).in('following_id', authorIds);
+        const followingIds = new Set(myFollows?.map(f => f.following_id));
+
+        // 5. Génération du HTML
+        container.innerHTML = shorts.map((post) => {
+            const u = post.profiles || {};
             const likes = post.post_likes?.[0]?.count || 0;
             const comments = post.post_comments?.[0]?.count || 0;
-            
-            return `
-            <div class="short-card" data-index="${index}" data-post-id="${post.id}">
-                
-                <!-- Bouton Fermer -->
-                <div class="short-close-btn" onclick="switchPage('home')">
-                    <i class="fas fa-times"></i>
-                </div>
+            const saves = saveCounts[post.id] || 0;
 
-                <!-- CONTENEUR VIDEO + CLIQUE POUR PAUSE -->
+            const isLiked = likedIds.has(post.id);
+            const isSaved = mySavedIds.has(post.id);
+            const isFollowing = followingIds.has(post.user_id);
+
+            // --- NOUVEAU : Troncature du nom ---
+            const displayName = truncateText(u.full_name, 13);
+            // ----------------------------------
+
+            return `
+            <div class="short-card" data-post-id="${post.id}">
+                <div class="short-close-btn" onclick="switchPage('home')"><i class="fas fa-times"></i></div>
+
+                <!-- VIDÉO -->
                 <div class="short-video-wrapper" onclick="toggleVideoPause(this)">
                     <video class="short-video-player" loop playsinline muted preload="metadata">
                         <source src="${post.video_url}" type="video/mp4">
                     </video>
-                    
-                    <!-- Icône Play/Pause (Cachée par défaut) -->
-                    <div class="short-pause-icon hidden">
-                        <i class="fas fa-play"></i>
-                    </div>
+                    <div class="short-pause-icon hidden"><i class="fas fa-play"></i></div>
                 </div>
 
-                <!-- Barre de progression -->
-                <div class="short-progress-bar"><div class="short-progress-fill" id="progress-${post.id}"></div></div>
-
-                                <!-- ACTIONS À DROITE -->
+                <!-- ACTIONS À DROITE -->
                 <div class="short-actions-left">
-                    <!-- LIKE (Correction: stopPropagation + maj compteur) -->
-                    <div class="short-action-btn" onclick="event.stopPropagation(); toggleShortLike('${post.id}', this)">
-                        <i class="fas fa-heart"></i>
+                    <!-- LIKE -->
+                    <div class="short-action-btn ${isLiked ? 'liked' : ''}" onclick="event.stopPropagation(); toggleShortLike('${post.id}', this)">
+                        <i class="fas fa-heart" style="${isLiked ? 'color: #fe2c55' : ''}"></i>
                         <span class="like-count">${formatNumber(likes)}</span>
                     </div>
                     
-                    <!-- COMMENTAIRES -->
+                    <!-- COMMENTAIRE (Icône pour ouvrir la liste complète) -->
                     <div class="short-action-btn" onclick="event.stopPropagation(); openShortComments('${post.id}')">
                         <i class="fas fa-comment-dots"></i>
                         <span>${formatNumber(comments)}</span>
                     </div>
 
-                    <!-- FAVORI -->
-                    <div class="short-action-btn" onclick="event.stopPropagation(); toggleShortFavorite('${post.id}', this)">
-                        <i class="fas fa-bookmark"></i>
-                        <span>Sauver</span>
+                    <!-- SAVE -->
+                    <div class="short-action-btn ${isSaved ? 'saved' : ''}" onclick="event.stopPropagation(); toggleShortSave('${post.id}', this)">
+                        <i class="fas fa-bookmark" style="${isSaved ? 'color: #facc15' : ''}"></i>
+                        <span class="save-count">${formatNumber(saves)}</span>
                     </div>
                     
-                    <!-- PARTAGER -->
+                    <!-- SHARE -->
                     <div class="short-action-btn" onclick="event.stopPropagation(); sharePost('${post.id}')">
                         <i class="fas fa-share"></i>
                         <span>Partager</span>
                     </div>
 
-                    <!-- 3 POINTS -->
+                    <!-- MENU -->
                     <div class="short-action-btn relative" onclick="event.stopPropagation(); toggleShortMenu('${post.id}')">
                         <i class="fas fa-ellipsis-h"></i>
                         <span>Plus</span>
                     </div>
                 </div>
 
-                <!-- MENU DÉROULANT (Caché par défaut) -->
+                <!-- MENU DÉROULANT -->
                 <div id="short-menu-${post.id}" class="short-dropdown-menu hidden">
-                    <div class="short-menu-item" onclick="reportPost('${post.id}')">
-                        <i class="fas fa-flag text-red-500"></i> Signaler
-                    </div>
-                    <div class="short-menu-item" onclick="copyLink('${post.id}')">
-                        <i class="fas fa-link"></i> Copier le lien
-                    </div>
-                    <div class="short-menu-item" onclick="notInterested('${post.id}')">
-                        <i class="fas fa-eye-slash"></i> Pas intéressé
-                    </div>
+                    <div class="short-menu-item" onclick="reportPost('${post.id}')"><i class="fas fa-flag text-red-500"></i> Signaler</div>
+                    <div class="short-menu-item" onclick="copyLink('${post.id}')"><i class="fas fa-link"></i> Copier le lien</div>
                 </div>
 
-                 <!-- INFOS EN BAS -->
+                <!-- INFOS AUTEUR (En bas à gauche) -->
                 <div class="short-info-bottom">
                     <div class="short-author-row">
-                        <img src="${user.avatar_url || 'https://api.dicebear.com/7.x/initials/svg?seed=MonUtilisateur'}" class="short-author-avatar">
-                        <span class="short-author-name">${user.full_name}</span>
-                         ${user.is_certified ? '<i class="fas fa-check-circle text-blue-400 text-sm"></i>' : ''}
-                        <button class="short-follow-btn" onclick="event.stopPropagation(); toggleFollow('${user.id}', this)">Suivre</button>
+                        <img src="${u.avatar_url}" class="short-author-avatar">
+                        <!-- Nom tronqué ici -->
+                        <span class="short-author-name">${displayName}</span>
+                        
+                        <button class="short-follow-btn ${isFollowing ? 'following' : ''}" 
+                                style="${isFollowing ? 'background: #374151; color: white;' : ''}"
+                                onclick="event.stopPropagation(); toggleShortFollow('${u.id}', this)">
+                            ${isFollowing ? 'Abonné' : 'Suivre'}
+                        </button>
                     </div>
-                    <!-- La classe short-caption gère le bloquage à 2 lignes via CSS -->
                     <p class="short-caption">${post.caption || ''}</p>
                 </div>
-            </div>
-            `;
+                <!-- BARRE DE PROGRESSION (Apparaîtra en bas: 50px grâce au CSS) -->
+                <div class="short-progress-bar">
+                    <div class="short-progress-fill" id="progress-${post.id}"></div>
+                </div>
+
+                <!-- NOUVEAU : BARRE DE COMMENTAIRE EN BAS -->
+                <!-- NOUVEAU : BARRE DE COMMENTAIRE AVEC RÉACTION -->
+                <div class="short-comment-bar" onclick="event.stopPropagation()">
+                    
+                                        <!-- BOUTON RÉACTION (Cœur) -->
+                    <div class="short-bar-reaction ${isLiked ? 'liked' : ''}" 
+                         id="bar-react-${post.id}"
+                         onclick="handleReactionClick('${post.id}', this)"
+                         onmousedown="startReactionLongPress('${post.id}', this)"
+                         onmouseup="endReactionLongPress()"
+                         onmouseleave="endReactionLongPress()"
+                         ontouchstart="startReactionLongPress('${post.id}', this)"
+                         ontouchend="endReactionLongPress()">
+                        <i class="fas fa-heart"></i>
+                    </div>
+
+                    <!-- INPUT (Centre) -->
+                    <input type="text" id="quick-comment-${post.id}" placeholder="Ajouter un commentaire...">
+
+                    <!-- BOUTON ENVOI (Droite) -->
+                    <button class="send-btn" onclick="submitQuickComment('${post.id}')">Envoyer</button>
+                </div>
+            </div>`;
         }).join('');
 
-        // Démarrer l'observateur pour la lecture auto
         initShortsObserver();
 
     } catch (err) {
-        console.error("Erreur chargement shorts:", err);
-        container.innerHTML = `<div class="text-white text-center p-10">Erreur de chargement</div>`;
+        console.error(err);
+        container.innerHTML = `<div class="text-white text-center p-10">Erreur</div>`;
+    }
+}
+
+// --- B. SAVE (FAVORI) ---
+window.toggleShortSave = async function (postId, element) {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return showToast("Connectez-vous", "error");
+
+    const countSpan = element.querySelector('.save-count');
+    let count = parseInt(countSpan.innerText) || 0;
+    const isSaved = element.classList.contains('saved');
+
+    // Optimiste UI
+    if (isSaved) {
+        element.classList.remove('saved');
+        element.querySelector('i').style.color = '';
+        countSpan.innerText = Math.max(0, count - 1);
+        showToast("Retiré des enregistrements", "info");
+    } else {
+        element.classList.add('saved');
+        element.querySelector('i').style.color = '#facc15'; // Jaune
+        countSpan.innerText = count + 1;
+        showToast("Vidéo enregistrée !", "success");
+    }
+
+    // BDD
+    if (isSaved) {
+        await supabaseClient.from('saved_posts').delete().match({ post_id: postId, user_id: user.id });
+    } else {
+        await supabaseClient.from('saved_posts').insert([{ post_id: postId, user_id: user.id }]);
+    }
+}
+
+// --- C. FOLLOW (DEPUIS SHORTS) ---
+window.toggleShortFollow = async function (targetUserId, btn) {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return;
+
+    const isFollowing = btn.classList.contains('following');
+
+    // Optimiste UI
+    if (isFollowing) {
+        btn.classList.remove('following');
+        btn.style.background = '';
+        btn.innerText = 'Suivre';
+    } else {
+        btn.classList.add('following');
+        btn.style.background = '#374151';
+        btn.innerText = 'Abonné';
+    }
+
+    // BDD
+    if (isFollowing) {
+        await supabaseClient.from('follows').delete().match({ follower_id: user.id, following_id: targetUserId });
+    } else {
+        await supabaseClient.from('follows').insert([{ follower_id: user.id, following_id: targetUserId }]);
     }
 }
 
@@ -6399,21 +6569,21 @@ function initShortsObserver() {
     if (currentShortObserver) currentShortObserver.disconnect();
 
     const options = { root: document.getElementById('shorts-container'), threshold: 0.6 };
-    
+
     currentShortObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             const video = entry.target.querySelector('video');
             const progressBar = entry.target.querySelector('.short-progress-fill');
-            
+
             if (entry.isIntersecting) {
                 // PLAY
-                video.play().catch(() => {}); // Ignore les erreurs de mute
+                video.play().catch(() => { }); // Ignore les erreurs de mute
                 video.muted = false; // On peut tenter d'unmute (les navigateurs bloquent souvent)
-                
+
                 // Mise à jour progression
                 video.ontimeupdate = () => {
                     const percent = (video.currentTime / video.duration) * 100;
-                    if(progressBar) progressBar.style.width = `${percent}%`;
+                    if (progressBar) progressBar.style.width = `${percent}%`;
                 };
             } else {
                 // PAUSE
@@ -6429,65 +6599,107 @@ function initShortsObserver() {
     });
 }
 
-// --- FONCTION LIKE AMÉLIORÉE ---
-window.toggleShortLike = async function(postId, element) {
-    // 1. Récupérer l'utilisateur
+// Envoi rapide depuis la barre du bas
+window.submitQuickComment = async function (postId) {
+    const input = document.getElementById(`quick-comment-${postId}`);
+    const content = input.value.trim();
+    if (!content) return;
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+
+    // Envoi BDD
+    const { error } = await supabaseClient.from('post_comments').insert([{
+        post_id: postId,
+        user_id: user.id,
+        content: content
+    }]);
+
+    if (!error) {
+        input.value = '';
+        showToast("Commentaire publié !", "success");
+        // Mettre à jour le compteur de l'icône commentaire (optionnel)
+        const countSpan = document.querySelector(`[data-post-id="${postId}"] .short-action-btn:nth-child(2) span`);
+        if (countSpan) {
+            let count = parseInt(countSpan.innerText) || 0;
+            countSpan.innerText = count + 1;
+        }
+    } else {
+        showToast("Erreur", "error");
+    }
+}
+
+// --- FONCTION LIKE ROBUSTE (Gère les 2 boutons) ---
+window.toggleShortLike = async function (postId, element) {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) return showToast("Connectez-vous pour aimer", "error");
 
-    // 2. Préparer l'interface (Optimiste)
-    const countSpan = element.querySelector('.like-count');
+    // 1. Éléments visuels
     const icon = element.querySelector('i');
-    
-    // On lit le chiffre actuel (on enlève le "K" ou "M" pour le calcul si besoin, ici on fait simple)
-    let currentCount = parseInt(countSpan.innerText) || 0;
-    const isCurrentlyLiked = element.classList.contains('liked');
+    const countSpan = element.querySelector('.like-count'); // Peut être null (dans la barre du bas)
 
-    // Mise à jour immédiate visuelle (avant la BDD pour que ça paraisse instantané)
+    // 2. État actuel
+    const isCurrentlyLiked = element.classList.contains('liked');
+    let currentCount = 0;
+
+    // On ne parse le count que s'il existe
+    if (countSpan) {
+        currentCount = parseInt(countSpan.innerText) || 0;
+    }
+
+    // 3. Mise à jour Optimiste (Visuelle immédiate)
     if (isCurrentlyLiked) {
         element.classList.remove('liked');
-        icon.style.color = ''; // Retour à la couleur par défaut (blanc)
-        countSpan.innerText = Math.max(0, currentCount - 1);
+        icon.style.color = ''; // Reset couleur
+        if (countSpan) countSpan.innerText = Math.max(0, currentCount - 1);
     } else {
         element.classList.add('liked');
         icon.style.color = '#fe2c55'; // Rouge TikTok
-        countSpan.innerText = currentCount + 1;
-        // Petite animation
-        icon.classList.add('animate-heart-pop');
-        setTimeout(() => icon.classList.remove('animate-heart-pop'), 300);
+        if (countSpan) countSpan.innerText = currentCount + 1;
     }
 
-    // 3. Interagir avec la Base de Données
+    // 4. Synchronisation de l'AUTRE bouton (Optionnel mais recommandé)
+    // Si on clique sur celui du bas, on met à jour celui de droite, et vice versa
+    const mainBtn = document.querySelector(`.short-actions-left .short-action-btn[onclick*="'${postId}'"]`);
+    const barBtn = document.getElementById(`bar-react-${postId}`);
+
+    // Si l'élément cliqué est le bouton principal, on met à jour la barre du bas
+    if (element !== barBtn && barBtn) {
+        if (!isCurrentlyLiked) barBtn.classList.add('liked');
+        else barBtn.classList.remove('liked');
+        const barIcon = barBtn.querySelector('i');
+        if (barIcon) barIcon.style.color = !isCurrentlyLiked ? '#fe2c55' : '';
+    }
+    // Si l'élément cliqué est la barre du bas, on met à jour le bouton principal
+    if (element !== mainBtn && mainBtn) {
+        if (!isCurrentlyLiked) mainBtn.classList.add('liked');
+        else mainBtn.classList.remove('liked');
+        // On met aussi à jour le compteur principal
+        const mainCount = mainBtn.querySelector('.like-count');
+        if (mainCount) mainCount.innerText = !isCurrentlyLiked ? currentCount + 1 : Math.max(0, currentCount - 1);
+        const mainIcon = mainBtn.querySelector('i');
+        if (mainIcon) mainIcon.style.color = !isCurrentlyLiked ? '#fe2c55' : '';
+    }
+
+    // 5. Envoi à la Base de Données
     try {
         if (isCurrentlyLiked) {
-            // Supprimer le like
-            await supabaseClient
-                .from('post_likes')
-                .delete()
-                .match({ post_id: postId, user_id: user.id });
+            await supabaseClient.from('post_likes').delete().match({ post_id: postId, user_id: user.id });
         } else {
-            // Ajouter le like
-            await supabaseClient
-                .from('post_likes')
-                .insert([{ 
-                    post_id: postId, 
-                    user_id: user.id,
-                    reaction_type: 'like' // Important pour les stats
-                }]);
+            await supabaseClient.from('post_likes').insert([{ post_id: postId, user_id: user.id }]);
         }
     } catch (err) {
-        console.error("Erreur like:", err);
-        // En cas d'erreur, on annule le changement visuel
+        console.error("Erreur Like:", err);
+        // En cas d'erreur, on annule le changement
         if (isCurrentlyLiked) {
             element.classList.add('liked');
             icon.style.color = '#fe2c55';
-            countSpan.innerText = currentCount;
+            if (countSpan) countSpan.innerText = currentCount;
         } else {
             element.classList.remove('liked');
             icon.style.color = '';
-            countSpan.innerText = currentCount;
+            if (countSpan) countSpan.innerText = currentCount;
         }
-        showToast("Erreur lors du like", "error");
+        showToast("Erreur de connexion", "error");
     }
 }
 
@@ -6498,7 +6710,7 @@ function handleSortClick(element, filterType) {
         btn.classList.remove('bg-blue-50', 'text-blue-600', 'dark:bg-blue-900/30', 'dark:text-blue-400');
         btn.classList.remove('bg-pink-50', 'text-pink-600');
         btn.classList.add('bg-slate-100', 'text-slate-600', 'dark:bg-slate-800', 'dark:text-slate-300');
-        
+
         const textSpan = btn.querySelector('.btn-text');
         if (textSpan) textSpan.classList.add('hidden');
     });
@@ -6511,12 +6723,12 @@ function handleSortClick(element, filterType) {
     // 2. LOGIQUE DE NAVIGATION
     if (filterType === 'shorts') {
         // IMPORTANT : On change de page vers l'interface TikTok
-        switchPage('shorts'); 
+        switchPage('shorts');
     } else {
         // Pour 'recent' ou 'popular', on reste sur l'accueil et on trie
         switchPage('home'); // S'assure qu'on est sur l'accueil
         sortFeed(filterType);
-        
+
         // Style spécifique pour actif
         element.classList.add('bg-blue-50', 'text-blue-600', 'dark:bg-blue-900/30', 'dark:text-blue-400');
     }
@@ -6527,10 +6739,10 @@ function handleSortClick(element, filterType) {
  * @param {string} url - L'URL de la vidéo
  * @param {string} postId - L'ID du post (pour voir les commentaires si besoin)
  */
-window.openVideoPlayer = function(url, postId) {
+window.openVideoPlayer = function (url, postId) {
     const modal = document.getElementById('zen-mode-modal');
     const videoPlayer = document.getElementById('zen-video-player');
-    
+
     if (!modal || !videoPlayer) {
         // Fallback si le modal n'existe pas : on ouvre le modal normal
         openPostModal(postId);
@@ -6541,28 +6753,28 @@ window.openVideoPlayer = function(url, postId) {
     videoPlayer.src = url;
     videoPlayer.muted = false; // On active le son par défaut pour le lecteur
     videoPlayer.loop = true;
-    
+
     // Afficher le modal
     modal.classList.add('active');
     document.body.style.overflow = 'hidden'; // Bloque le scroll
-    
+
     // Lancer la lecture
     videoPlayer.play().catch(e => console.log("Autoplay nécessite une interaction manuelle"));
-    
+
     // Bouton pour voir les détails (commentaires)
     // On ajoute un bouton dynamiquement si nécessaire, ou on utilise celui existant dans le HTML
 }
 
 // S'assurer que la fermeture fonctionne
-window.closeZenMode = function() {
+window.closeZenMode = function () {
     const modal = document.getElementById('zen-mode-modal');
     const videoPlayer = document.getElementById('zen-video-player');
-    
-    if(videoPlayer) {
+
+    if (videoPlayer) {
         videoPlayer.pause();
         videoPlayer.src = ''; // Vide la source pour arrêter le chargement
     }
-    if(modal) {
+    if (modal) {
         modal.classList.remove('active');
     }
     document.body.style.overflow = 'auto';
@@ -6571,14 +6783,14 @@ window.closeZenMode = function() {
 // --- FONCTIONS POUR LES NOUVEAUX BOUTONS ---
 
 // 1. Ajouter aux Favoris (Sauvegarder)
-window.toggleShortFavorite = async function(postId, element) {
+window.toggleShortFavorite = async function (postId, element) {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) return showToast("Connectez-vous pour sauvegarder", "error");
 
     // Simulation de l'action (à connecter à votre table 'saved_posts')
     // Ici on toggle juste la classe visuelle pour l'exemple
     const isSaved = element.classList.contains('saved');
-    
+
     if (isSaved) {
         // Logique de suppression BDD ici
         element.classList.remove('saved');
@@ -6591,7 +6803,7 @@ window.toggleShortFavorite = async function(postId, element) {
 }
 
 // 2. Ouvrir/Fermer le Menu Options
-window.toggleShortMenu = function(postId) {
+window.toggleShortMenu = function (postId) {
     // Fermer tous les autres menus ouverts
     document.querySelectorAll('.short-dropdown-menu').forEach(menu => {
         if (menu.id !== `short-menu-${postId}`) {
@@ -6608,7 +6820,7 @@ window.toggleShortMenu = function(postId) {
 
 // 3. Fermer le menu si on clique ailleurs
 // (Ajoutez cet écouteur global une seule fois)
-document.addEventListener('click', function(e) {
+document.addEventListener('click', function (e) {
     // Si on clique en dehors d'un bouton "plus" et d'un menu
     if (!e.target.closest('.short-action-btn[onclick*="toggleShortMenu"]') && !e.target.closest('.short-dropdown-menu')) {
         document.querySelectorAll('.short-dropdown-menu').forEach(menu => menu.classList.add('hidden'));
@@ -6616,14 +6828,14 @@ document.addEventListener('click', function(e) {
 });
 
 // 4. Action "Pas intéressé"
-window.notInterested = function(postId) {
+window.notInterested = function (postId) {
     document.getElementById(`short-menu-${postId}`)?.classList.add('hidden');
     showToast("Nous ne vous montrerons plus cette vidéo", "info");
     // Optionnel : logic pour cacher la carte vidéo
 }
 
 // 5. Copier le lien
-window.copyLink = function(postId) {
+window.copyLink = function (postId) {
     const url = window.location.origin + '?post=' + postId;
     navigator.clipboard.writeText(url);
     document.getElementById(`short-menu-${postId}`)?.classList.add('hidden');
@@ -6631,20 +6843,20 @@ window.copyLink = function(postId) {
 }
 
 // --- 1. GESTION DE LA PAUSE (TAP SUR ÉCRAN) ---
-window.toggleVideoPause = function(wrapperElement) {
+window.toggleVideoPause = function (wrapperElement) {
     const video = wrapperElement.querySelector('video');
     const pauseIcon = wrapperElement.querySelector('.short-pause-icon');
-    
+
     if (video.paused) {
         video.play();
         // On montre l'icône Play brièvement pour dire "Ca reprend"
-        pauseIcon.innerHTML = '<i class="fas fa-play"></i>'; 
+        pauseIcon.innerHTML = '<i class="fas fa-play"></i>';
     } else {
         video.pause();
         // On montre l'icône Pause pour dire "C'est arrêté"
         pauseIcon.innerHTML = '<i class="fas fa-pause"></i>';
     }
-    
+
     // Animation de l'icône (Apparaît puis disparaît)
     pauseIcon.classList.remove('show'); // Reset
     void pauseIcon.offsetWidth; // Force reflow
@@ -6652,10 +6864,10 @@ window.toggleVideoPause = function(wrapperElement) {
 }
 
 // --- 2. GESTION DU PANNEAU COMMENTAIRES (SUR PLACE) ---
-window.openShortComments = function(postId) {
+window.openShortComments = function (postId) {
     // Créer ou récupérer le panneau
     let sheet = document.getElementById('short-comments-sheet');
-    
+
     // Si le panneau n'existe pas encore dans le HTML, on le crée
     if (!sheet) {
         sheet = document.createElement('div');
@@ -6663,9 +6875,9 @@ window.openShortComments = function(postId) {
         sheet.className = 'short-comments-sheet';
         // On ajoute un overlay noir derrière pour fermer en cliquant dehors
         sheet.onclick = (e) => {
-            if(e.target.id === 'short-comments-sheet') closeShortComments();
+            if (e.target.id === 'short-comments-sheet') closeShortComments();
         };
-        
+
         // Structure du panneau
         sheet.innerHTML = `
             <div class="short-comments-header">
@@ -6680,10 +6892,10 @@ window.openShortComments = function(postId) {
                 <button onclick="submitShortComment('${postId}')">Envoyer</button>
             </div>
         `;
-        
+
         document.body.appendChild(sheet);
     }
-    
+
     // Mettre à jour l'ID du post actuel pour l'envoi
     sheet.dataset.currentPost = postId;
 
@@ -6694,9 +6906,9 @@ window.openShortComments = function(postId) {
     setTimeout(() => sheet.classList.add('active'), 10);
 }
 
-window.closeShortComments = function() {
+window.closeShortComments = function () {
     const sheet = document.getElementById('short-comments-sheet');
-    if(sheet) sheet.classList.remove('active');
+    if (sheet) sheet.classList.remove('active');
 }
 
 // Charger les commentaires avec réactions et réponses
@@ -6773,7 +6985,7 @@ async function loadShortComments(postId) {
     let html = '';
     parents.forEach(p => {
         html += renderComment(p);
-        
+
         // Trouver les réponses à ce commentaire
         const replies = children.filter(ch => ch.parent_comment_id === p.id);
         replies.forEach(r => {
@@ -6785,13 +6997,13 @@ async function loadShortComments(postId) {
 }
 
 // Envoyer un commentaire depuis le panneau
-window.submitShortComment = async function(postId) {
+window.submitShortComment = async function (postId) {
     const input = document.getElementById('short-comment-input');
     const content = input.value.trim();
-    if(!content) return;
+    if (!content) return;
 
     const { data: { user } } = await supabaseClient.auth.getUser();
-    
+
     await supabaseClient.from('post_comments').insert([{
         post_id: postId,
         user_id: user.id,
@@ -6804,7 +7016,7 @@ window.submitShortComment = async function(postId) {
 }
 
 // --- A. LIKER UN COMMENTAIRE ---
-window.likeShortComment = async function(commentId, postId) {
+window.likeShortComment = async function (commentId, postId) {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) return showToast("Connectez-vous", "error");
 
@@ -6829,30 +7041,30 @@ window.likeShortComment = async function(commentId, postId) {
 }
 
 // --- B. PRÉPARER UNE RÉPONSE ---
-window.replyToShortComment = function(commentId, userName) {
+window.replyToShortComment = function (commentId, userName) {
     const input = document.getElementById('short-comment-input');
     const sheet = document.getElementById('short-comments-sheet');
-    
+
     // Stocker l'ID du parent pour l'envoi
     sheet.dataset.replyTo = commentId;
-    
+
     // Changer le placeholder
     input.placeholder = `Réponse à ${userName}...`;
     input.focus();
-    
+
     // Ajouter un bouton d'annulation visuel si besoin (optionnel)
     // Ici, on efface simplement le champ pour annuler
 }
 
 // --- C. ENVOYER COMMENTAIRE OU RÉPONSE (MODIFIÉ) ---
-window.submitShortComment = async function(postId) {
+window.submitShortComment = async function (postId) {
     const input = document.getElementById('short-comment-input');
     const content = input.value.trim();
-    if(!content) return;
+    if (!content) return;
 
     const sheet = document.getElementById('short-comments-sheet');
     const { data: { user } } = await supabaseClient.auth.getUser();
-    
+
     // Récupérer l'ID de réponse s'il existe
     const parentId = sheet.dataset.replyTo || null;
 
@@ -6875,10 +7087,150 @@ window.submitShortComment = async function(postId) {
 }
 
 // --- D. SUPPRIMER MON COMMENTAIRE ---
-window.deleteShortComment = async function(commentId, postId) {
-    if(!confirm("Supprimer ce commentaire ?")) return;
-    
+window.deleteShortComment = async function (commentId, postId) {
+    if (!confirm("Supprimer ce commentaire ?")) return;
+
     await supabaseClient.from('post_comments').delete().eq('id', commentId);
     loadShortComments(postId);
     showToast("Supprimé", "success");
 }
+
+// --- GESTION APPUI LONG POUR RÉACTIONS ---
+let longPressTimer = null;
+
+// Démarre le timer (500ms pour ouvrir le menu)
+window.startLongPressReact = function (postId, element) {
+    longPressTimer = setTimeout(() => {
+        // Si on reste appuyé -> Ouvre le menu des réactions
+        openBarReactionMenu(postId, element);
+    }, 500);
+}
+
+// Annule le timer si on relâche avant 500ms
+window.endLongPressReact = function () {
+    if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+    }
+}
+
+// Gestion du clic relâché (Si pas de menu ouvert -> Like simple)
+// On attache l'événement onclick séparément pour éviter conflit
+document.querySelectorAll('.short-bar-reaction').forEach(btn => {
+    btn.onclick = function (e) {
+        // Si le timer est fini (donc clic court) ET pas de menu ouvert
+        if (!longPressTimer && !this.classList.contains('menu-open')) {
+            const postId = this.id.replace('bar-react-', '');
+            toggleShortLike(postId, this);
+        }
+    };
+});
+
+// Ouvre le mini-menu de réactions style Facebook
+window.openBarReactionMenu = function (postId, element) {
+    // Marquer visuellement qu'on est en mode menu
+    element.classList.add('menu-open');
+
+    // Créer le menu s'il n'existe pas
+    let menu = document.getElementById(`bar-menu-${postId}`);
+    if (!menu) {
+        menu = document.createElement('div');
+        menu.id = `bar-menu-${postId}`;
+        menu.className = 'bar-reaction-menu';
+
+        // Contenu : Les 4 réactions principales
+        menu.innerHTML = `
+            <span onclick="setBarReaction('${postId}', 'like', this.parentElement)" class="text-2xl cursor-pointer hover:scale-125 transition"><i class="fas fa-heart text-red-500"></i></span>
+            <span onclick="setBarReaction('${postId}', 'love', this.parentElement)" class="text-2xl cursor-pointer hover:scale-125 transition">❤️</span>
+            <span onclick="setBarReaction('${postId}', 'haha', this.parentElement)" class="text-2xl cursor-pointer hover:scale-125 transition">😂</span>
+            <span onclick="setBarReaction('${postId}', 'wow', this.parentElement)" class="text-2xl cursor-pointer hover:scale-125 transition">😮</span>
+        `;
+        element.appendChild(menu);
+    }
+
+    menu.style.display = 'flex';
+}
+
+// Ferme le menu après choix
+window.setBarReaction = function (postId, type, menuElement) {
+    // Logique d'envoi à la BDD
+    // Ici on réutilise la logique existante (ou on envoie reaction_type)
+    // Pour simplifier, on toggle le like visuellement
+    const btn = document.getElementById(`bar-react-${postId}`);
+    toggleShortLike(postId, btn);
+
+    // Fermer le menu
+    if (menuElement) menuElement.style.display = 'none';
+    const parent = btn;
+    if (parent) parent.classList.remove('menu-open');
+}
+
+// --- GESTION RÉACTIONS (VERSION SIMPLIFIÉE) ---
+
+// Variable globale pour le timer
+let reactionLongPressTimer = null;
+
+// 1. Démarre le timer pour le menu (Appui Long)
+window.startReactionLongPress = function (postId, btnElement) {
+    // On reset le flag "menu ouvert" au cas où
+    btnElement.dataset.menuOpen = "false";
+
+    if (reactionLongPressTimer) clearTimeout(reactionLongPressTimer);
+
+    reactionLongPressTimer = setTimeout(() => {
+        // Après 500ms, on ouvre le menu
+        btnElement.dataset.menuOpen = "true"; // Flag pour bloquer le clic
+        openReactionMenu(postId, btnElement);
+    }, 500);
+};
+
+// 2. Annule le timer si on relâche vite
+window.endReactionLongPress = function () {
+    if (reactionLongPressTimer) {
+        clearTimeout(reactionLongPressTimer);
+        reactionLongPressTimer = null;
+    }
+};
+
+// 3. Fonction appelée par le ONCLICK standard
+window.handleReactionClick = function (postId, btnElement) {
+    // Si le menu vient de s'ouvrir (long press), on ignore le clic
+    if (btnElement.dataset.menuOpen === "true") {
+        btnElement.dataset.menuOpen = "false"; // Reset pour la prochaine fois
+        return;
+    }
+
+    // Sinon, c'est un clic rapide -> Like
+    toggleShortLike(postId, btnElement);
+};
+
+// 4. Fonction pour ouvrir le menu
+window.openReactionMenu = function (postId, btnElement) {
+    let menu = document.getElementById(`reaction-popup-${postId}`);
+
+    if (!menu) {
+        menu = document.createElement('div');
+        menu.id = `reaction-popup-${postId}`;
+        menu.className = 'reaction-popup-bar';
+        menu.innerHTML = `
+            <span onclick="selectReaction('${postId}', 'like')" class="emoji-react">❤️</span>
+            <span onclick="selectReaction('${postId}', 'haha')" class="emoji-react">😂</span>
+            <span onclick="selectReaction('${postId}', 'wow')" class="emoji-react">😮</span>
+            <span onclick="selectReaction('${postId}', 'sad')" class="emoji-react">😢</span>
+        `;
+        btnElement.parentElement.appendChild(menu);
+    }
+
+    menu.style.display = 'flex';
+};
+
+// 5. Sélection d'une réaction
+window.selectReaction = function (postId, type) {
+    // Fermer le menu
+    const menu = document.getElementById(`reaction-popup-${postId}`);
+    if (menu) menu.style.display = 'none';
+
+    // Like simple (ou envoyer le type en BDD)
+    const btn = document.getElementById(`bar-react-${postId}`);
+    toggleShortLike(postId, btn);
+};
