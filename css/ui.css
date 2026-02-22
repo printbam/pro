@@ -57,8 +57,6 @@
 
         .glass-header {
             background: rgba(255,255,255,0.85);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
             border-bottom: 1px solid rgba(226, 232, 240, 0.8);
             box-shadow: var(--shadow-soft);
             transition: padding 0.3s ease, box-shadow 0.3s ease;
@@ -66,8 +64,6 @@
 
         .glass {
             background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(226, 232, 240, 0.8);
             border-radius: 16px;
             transition: transform 0.3s var(--ease-elastic), box-shadow 0.3s ease, border-color 0.3s ease;
@@ -236,8 +232,6 @@ body.dark-mode button.bg-slate-100 {
     height: 40px; 
     background: var(--glass-bg); 
     border: 1px solid var(--glass-border); 
-    backdrop-filter: blur(10px); 
-    -webkit-backdrop-filter: blur(10px); /* Pour Safari */
     border-radius: 50%; 
     display: flex; 
     align-items: center; 
@@ -267,8 +261,6 @@ body.dark-mode button.bg-slate-100 {
 
 #terminal-wrapper .glass { 
     background: var(--glass-bg); 
-    backdrop-filter: blur(30px); 
-    -webkit-backdrop-filter: blur(30px);
     border: 1px solid var(--glass-border); 
     border-radius: 28px; 
     box-shadow: var(--shadow-soft); 
@@ -372,7 +364,7 @@ body.dark-mode #terminal-wrapper .text-gradient {
     font-weight: 600;
 }
         /* PROFESSIONAL INVOICE MODAL */
-        #invoice-modal { display: none; position: fixed; inset: 0; z-index: [9500]; backdrop-filter: blur(8px); background: rgba(0,0,0,0.6); align-items: center; justify-content: center; padding: 20px; }
+        #invoice-modal { display: none; position: fixed; inset: 0; z-index: [9500]; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; padding: 20px; }
         #invoice-modal.active { display: flex; }
         .invoice-paper { background: white; width: 100%; max-width: 800px; max-height: 90vh; overflow-y: auto; padding: 40px; border-radius: 4px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); position: relative; }
         .invoice-header { display: flex; justify-content: space-between; margin-bottom: 40px; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; }
@@ -383,7 +375,7 @@ body.dark-mode #terminal-wrapper .text-gradient {
         @media print {
             body * { visibility: hidden; }
             #invoice-modal, #invoice-modal * { visibility: visible; }
-            #invoice-modal { position: absolute; left: 0; top: 0; background: white; backdrop-filter: none; }
+            #invoice-modal { position: absolute; left: 0; top: 0; background: white; }
             .invoice-paper { box-shadow: none; max-width: 100%; padding: 0; }
             .no-print { display: none !important; }
         }
@@ -424,8 +416,6 @@ body.dark-mode #terminal-wrapper .text-gradient {
 /* Le panneau principal : Effet verre et bordure fine */
 #chat-panel {
     background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
     box-shadow: -10px 0 40px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
@@ -732,9 +722,6 @@ body.dark-mode .chat-header { color: #94a3b8; }
     background: rgba(255, 255, 255, 0.75);
     
     /* Augmentation du flou pour un effet "givré" plus luxueux */
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    
     /* Bordure ultra-fine et Noir Pur très transparent */
     border: 0.5px solid rgba(0, 0, 0, 0.1);
     
@@ -749,7 +736,6 @@ body.dark-mode .chat-header { color: #94a3b8; }
 .dark .glass {
     background: rgba(0, 0, 0, 0.8); /* Noir pur transparent */
     border: 0.5px solid rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(25px);
 }
 
 /* 3. Optimisation des éléments Sticky (Header et Dock) */
@@ -1028,9 +1014,6 @@ article {
     left: 0;
     /* Fond blanc + Effet verre (Glassmorphism Pro) */
     background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    
     box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); /* Ombre douce */
     border-radius: 16px; /* Coins moins arrondis pour le style Pro */
     padding: 6px; /* Espace réduit */
@@ -1165,7 +1148,6 @@ body.dark-mode .post-dropdown-item.danger:hover { background: rgba(239, 68, 68, 
     inset: 0;
     z-index: 9999;
     background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(5px);
     display: none; /* Caché par défaut */
     align-items: center;
     justify-content: center;
@@ -1279,7 +1261,6 @@ body.dark-mode .post-modal-footer { border-color: #334155; }
 /* S'assure que le fond est bien visible */
 #post-modal-overlay {
     background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(8px);
 }
  /* Supprime les marges parasites du body sur mobile */
 body, html {
@@ -1584,8 +1565,6 @@ body.dark-mode #chat-input {
     
     /* Fond opaque obligatoire pour cacher le contenu qui défile derrière */
     background: rgba(255, 255, 255, 0.98);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
     
     /* Ombre pour séparer du contenu */
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
@@ -1899,7 +1878,7 @@ body.dark-mode .modal-top-controls .modal-btn:hover { background: rgba(255,255,2
     position: absolute;
     right: 9px !important; /* Collé à droite */
     left: auto !important;  /* Enlève le gauche */
-    bottom: 50px;          /* Au-dessus de la barre de nav */
+    bottom: 60px;          /* Au-dessus de la barre de nav */
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -1937,8 +1916,8 @@ body.dark-mode .modal-top-controls .modal-btn:hover { background: rgba(255,255,2
 /* Infos Auteur en BAS À GAUCHE (pour ne pas gêner les boutons à droite) */
 .short-info-bottom {
     position: absolute;
-    bottom: 20px;
-    left: 25px;       /* Aligné à gauche */
+    bottom: 60px;
+    left: 15px;       /* Aligné à gauche */
     right: 80px;      /* Espace pour ne pas chevaucher les boutons */
     color: white;
     max-height: 80px;
@@ -1972,6 +1951,7 @@ body.dark-mode .modal-top-controls .modal-btn:hover { background: rgba(255,255,2
     border: 2px solid white;
 }
 .short-author-name { font-weight: 700; font-size: 15px; }
+
 .short-follow-btn {
     background: linear-gradient(135deg, #87CEEB 0%, #FFD700 100%);
     color: rgb(0, 0, 0);
@@ -1994,12 +1974,12 @@ body.dark-mode .modal-top-controls .modal-btn:hover { background: rgba(255,255,2
 /* Progression Vidéo (Barre fine en bas) */
 .short-progress-bar {
     position: absolute;
-    bottom: 0;
+    bottom: 50px !important; /* Juste au-dessus de la barre de commentaire (50px) */
     left: 0;
     width: 100%;
     height: 3px;
-    background: rgba(255,255,255,0.2);
-    z-index: 30;
+    background: rgba(255, 255, 255, 0.2);
+    z-index: 25; /* Au-dessus de la barre de commentaire */
 }
 .short-progress-fill {
     height: 100%;
@@ -2120,7 +2100,7 @@ body.dark-mode .short-menu-item:hover {
     left: 0;
     right: 0;
     height: 60vh; /* Hauteur de la fenêtre */
-    background: rgba(1, 1, 2, 0.658); /* Fond sombre style TikTok */
+    background: rgba(0, 0, 0, 0.925); /* Fond sombre style TikTok */
     border-top-left-radius: 16px;
     border-top-right-radius: 16px;
     z-index: 100;
@@ -2137,7 +2117,7 @@ body.dark-mode .short-menu-item:hover {
 /* Header de la section commentaires */
 .short-comments-header {
     padding: 16px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
+    border-bottom: 1px solid rgb(39, 17, 17);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -2163,8 +2143,8 @@ body.dark-mode .short-menu-item:hover {
 
 /* Input commentaires */
 .short-comments-input {
-    padding: 12px;
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 10px;
+    border-top: 1px solid rgba(255, 0, 0, 0.1);
     background: none;
     display: flex;
     gap: 10px;
@@ -2173,17 +2153,18 @@ body.dark-mode .short-menu-item:hover {
     flex: 1;
     background: rgba(0, 0, 0, 0.1));
     border: none;
-    padding: 10px 16px;
-    border-radius: 20px;
+    height: 35px;
+    padding: 10px 12px;
+    border-radius: 10px;
     color: rgb(255, 255, 255);
     outline: none;
 }
 .short-comments-input button {
-    background: linear-gradient(135deg, #87CEEB 0%, #FFD700 100%);
-    color: rgb(0, 0, 0);
+    background: linear-gradient(135deg, #000000 100%);
+    color: rgb(255, 255, 255);
     border: none;
-    padding: 0 20px;
-    border-radius: 20px;
+    padding: 0 10px;
+    border-radius: 10px;
     font-weight: bold;
     cursor: pointer;
 }
@@ -2214,3 +2195,131 @@ body.dark-mode .short-menu-item:hover {
     height: 28px !important;
 }
 
+/* --- WIDGET STORY INJECTÉ DANS LE FEED --- */
+.story-injection-widget {
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 10px;
+    padding-top: 10px;
+    position: sticky; /* Optionnel : reste visible un peu quand on scroll */
+    top: 130px; /* Se colle sous le header */
+    z-index: 20;
+}
+body.dark-mode .story-injection-widget {
+    background: #000;
+    border-color: #222;
+}
+
+/* Cacher la scrollbar horizontale */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* --- BARRE COMMENTAIRE FIXE EN BAS --- */
+.short-comment-bar {
+    position: absolute;
+    bottom: 0 !important; /* Collée tout en bas */
+    left: 0;
+    right: 0;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    padding: 0 9px; /* Augmenté légèrement pour plus d'air */
+    gap: 12px;
+    z-index: 20;
+    /* Un dégradé très léger vers le noir en bas aide à la lisibilité */
+}
+
+/* INPUT (Centre) */
+.short-comment-bar input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    border-radius: 20px;
+    padding: 8px 16px;
+    color: white;
+    font-size: 13px;
+    outline: none;
+    min-width: 0; /* Évite les débordements flex */
+}
+
+.short-comment-bar input::placeholder { 
+    color: rgba(255, 255, 255, 0.562); 
+}
+
+.short-comment-bar button {
+    background: #00000085; /* Bleu style Instagram/Facebook */
+    border: none;
+    color: white;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: 15px; /* Bouton arrondi plein */
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.short-comment-bar button:hover {
+    background: #fb1818;
+    transform: scale(1.02);
+}
+
+.short-comment-bar button:active { 
+    transform: scale(0.95);
+    opacity: 0.9; 
+}
+
+/* Si le bouton est vide/désactivé */
+.short-comment-bar button:disabled {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.144);
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* BOUTON RÉACTION (Gauche) */
+.short-bar-reaction {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    position: relative;
+}
+.short-bar-reaction:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+.short-bar-reaction.liked {
+    color: #fe2c55; /* Rouge */
+}
+
+/* MINI MENU RÉACTIONS (POPUP) */
+.bar-reaction-menu {
+    position: absolute;
+    bottom: 45px; /* Au-dessus du bouton */
+    left: 0;
+    background: white;
+    border-radius: 30px;
+    padding: 8px 12px;
+    display: none;
+    gap: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    z-index: 100;
+    animation: popUp 0.2s ease-out;
+}
+body.dark-mode .bar-reaction-menu {
+    background: #333;
+}
+
+@keyframes popUp {
+    from { transform: scale(0.8) translateY(10px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+}
