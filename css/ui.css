@@ -1897,7 +1897,7 @@ body.dark-mode .modal-top-controls .modal-btn:hover { background: rgba(255,255,2
 .short-action-btn:active { transform: scale(0.9); }
 
 .short-action-btn i {
-    font-size: 28px;
+    font-size: 25px;
     text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 .short-action-btn span {
@@ -1971,32 +1971,42 @@ body.dark-mode .modal-top-controls .modal-btn:hover { background: rgba(255,255,2
     overflow: hidden;
 }
 
-/* --- BARRE DE PROGRESSION (CORRECTION CLIC) --- */
+/* --- BARRE DE PROGRESSION (STYLE YOUTUBE) --- */
 .short-progress-bar {
     position: absolute;
-    bottom: 48px !important; /* Légèrement au-dessus de la barre commentaire (50px) */
+    bottom: 40px !important; /* Au-dessus de la barre commentaire */
     left: 0;
     width: 100%;
-    height: 3px; /* Un peu plus épais pour faciliter le clic */
-    background: rgba(255, 255, 255, 0.3);
-    z-index: 100 !important; /* FORCE le passage au-dessus de tout */
+    height: 20px; /* Zone tactile LARGE (invisible) */
+    background: transparent; /* Invisible */
+    z-index: 100 !important;
     cursor: pointer;
-    pointer-events: auto !important; /* Force l'écoute du clic */
+    display: flex;
+    align-items: center; /* Centre la ligne dedans */
+    padding: 0 10px; /* Petit espace sur les côtés */
 }
 
-/* La barre colorée à l'intérieur */
+/* La ligne colorée visible (Plus fine) */
 .short-progress-fill {
-    height: 100%;
-    background: white;
+    height: 4px; /* Épaisseur visuelle */
+    background: rgba(255, 255, 255, 0.9);
     width: 0%;
-    pointer-events: none; /* Laisse le clic passer au parent */
+    border-radius: 2px;
+    pointer-events: none; /* Ne gêne pas le clic sur le parent */
+    transition: height 0.1s;
+}
+
+/* Effet "Grossi" quand on touche (Optionnel, très pro) */
+.short-progress-bar:active .short-progress-fill {
+    height: 6px; /* La barre grossit légèrement sous le doigt */
+    background: #3b82f6;
 }
 
 /* Bouton Fermer (Haut Droit) */
 .short-close-btn {
     position: absolute;
-    top: 50px;
-    right:17px;
+    top: 0px;
+    right:13px;
     z-index: 50;
     color: white;
     font-size: 24px;
@@ -2348,12 +2358,12 @@ body.dark-mode .story-injection-widget {
     transform: translateY(-50%);
     width: 50px;
     height: 50px;
-    background: rgba(0, 0, 0, 0.267);
+    background: rgba(0, 0, 0, 0.164);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
+    color: rgba(255, 255, 255, 0.651);
     font-size: 10px;
     cursor: pointer;
     z-index: 15;
@@ -2369,4 +2379,41 @@ body.dark-mode .story-injection-widget {
 .short-video-wrapper.paused .short-skip-btn {
     opacity: 1;
     pointer-events: auto;
+}
+
+/* --- STYLE ICÔNES RÉACTIONS PRO --- */
+
+/* Le bouton contenant l'icône */
+.reaction-icon-item {
+    width: 45px;
+    height: 45px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.reaction-icon-item:hover {
+    transform: scale(1.2) translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+/* Couleurs Spécifiques Pro */
+.react-like { color: #E53935; }   /* Rouge */
+.react-love { color: #F44336; }   /* Rouge Foncé */
+.react-haha { color: #FFC107; }   /* Jaune Or */
+.react-wow { color: #FFC107; }    /* Jaune Or */
+.react-sad  { color: #5C6BC0; }   /* Bleu Gris */
+
+/* Animation d'apparition */
+@keyframes popReaction {
+    0% { transform: scale(0); opacity: 0; }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
 }
