@@ -95,10 +95,42 @@ const ViewHistory = {
 };
 
 // Limite un texte à X caractères et ajoute "..."
-function truncateText(text, maxLength = 5) {
+function truncateText(text, maxLength = 11) {
     if (!text) return '';
     return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
 }
+
+// --- CONFIGURATION DES RÉACTIONS (ICÔNES PRO) ---
+const REACTION_CONFIG = {
+    like: { 
+        icon: 'fa-heart', 
+        color: '#E53935', // Rouge
+        label: 'J\'aime' 
+    },
+    love: { 
+        icon: 'fa-kiss-wink-heart', // Icône cœur avec sourire
+        color: '#F44336', 
+        label: 'J\'adore' 
+    },
+    haha: { 
+        icon: 'fa-face-laugh-squint', // Visage qui rit (FontAwesome 6)
+        fallback: 'fa-grin-squint-tears', // Fallback FA5
+        color: '#FFC107', // Jaune
+        label: 'Haha' 
+    },
+    wow: { 
+        icon: 'fa-face-surprise', // Visage surpris (FontAwesome 6)
+        fallback: 'fa-surprise', // Fallback FA5
+        color: '#FFC107', 
+        label: 'Wow' 
+    },
+    sad: { 
+        icon: 'fa-face-sad-tear', // Visage triste (FontAwesome 6)
+        fallback: 'fa-sad-tear', // Fallback FA5
+        color: '#5C6BC0', // Bleu
+        label: 'Triste' 
+    }
+};
 
 // --- FONCTION MANQUANTE À AJOUTER ---
 function updateControls() {
@@ -155,27 +187,42 @@ function switchPage(pageId) {
     const sidebarOverlay = document.getElementById('sidebar-overlay');
     if (!sidebarOverlay.classList.contains('invisible')) toggleSidebar();
 
-    // 4. GESTION DU FOND HEADER (UNIQUEMENT SUR HOME)
+    // --- NOUVEAU : GESTION ROBUSTE HEADER & DOCK ---
+    const mobileHeader = document.getElementById('mobile-header');
+    const explorerBar = document.querySelector('.feed-sticky-header');
+    const dock = document.querySelector('.mobile-dock');
     const headerBg = document.querySelector('.header-bg-extension');
-    if (headerBg) {
-        if (pageId === 'home') {
-            // On affiche le fond blanc/noir uni sur l'accueil
-            headerBg.style.display = 'block';
-        } else {
-            // On le cache sur toutes les autres pages (Profil, Messages, Notifs...)
-            headerBg.style.display = 'none';
+
+    // CAS 1 : SHORTS (Tout cacher)
+    if (pageId === 'shorts') {
+        if (mobileHeader) mobileHeader.style.display = 'none'; // Cache le header
+        if (dock) dock.classList.add('dock-hidden');          // Cache le dock
+        if (headerBg) headerBg.style.display = 'none';       // Cache le fond
+        if (explorerBar) explorerBar.classList.add('nav-hidden'); // Cache l'explorer bar
+        loadShortsView(); // Charge les vidéos
+    } 
+    // CAS 2 : MESSAGES / CHAT (Header visible, Dock caché)
+    else if (pageId === 'messages' || pageId === 'chat') {
+        if (mobileHeader) mobileHeader.style.display = ''; // Réaffiche le header
+        if (dock) dock.classList.add('dock-hidden');
+        if (headerBg) headerBg.style.display = 'none';
+        if (explorerBar) explorerBar.classList.remove('nav-hidden');
+    } 
+    // CAS 3 : AUTRES PAGES (Home, Profil, Notifs...) -> Tout visible
+    else {
+        // CORRECTION BUG : On force le réaffichage
+        if (mobileHeader) mobileHeader.style.display = ''; 
+        if (dock) dock.classList.remove('dock-hidden');
+        
+        // On enlève la classe "nav-hidden" qui peut rester coincée
+        if (explorerBar) explorerBar.classList.remove('nav-hidden');
+
+        // Gestion du fond blanc uni (Header Extension)
+        if (headerBg) {
+            headerBg.style.display = (pageId === 'home') ? 'block' : 'none';
         }
     }
-
-    // 5. GESTION DU DOCK (BARRE DU BAS)
-    const dock = document.querySelector('.mobile-dock');
-    if (pageId === 'messages' || pageId === 'chat') {
-        // Si on est sur Messages ou Chat, on cache le dock
-        dock.classList.add('dock-hidden');
-    } else {
-        // Sinon (Accueil, Profil, etc.), on l'affiche
-        dock.classList.remove('dock-hidden');
-    }
+    // ----------------------------------------------
 
     // 6. Chargement des données spécifiques aux pages
     if (pageId === 'admin') {
@@ -197,10 +244,6 @@ function switchPage(pageId) {
 
     if (pageId === 'messages') {
         loadChatList();
-    }
-    // Dans switchPage(pageId)
-    if (pageId === 'shorts') {
-        loadShortsView();
     }
 }
 
@@ -6347,6 +6390,8 @@ window.loadShortsView = async function() {
     container.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-black/90"><i class="fas fa-spinner fa-spin text-4xl text-white"></i></div>`;
     
     // Masquer Header et Dock
+    const mobileHeader = document.getElementById('mobile-header');
+    if (mobileHeader) mobileHeader.style.display = 'none';
     const dock = document.querySelector('.mobile-dock');
     if (dock) dock.classList.add('dock-hidden');
 
@@ -6394,7 +6439,7 @@ window.loadShortsView = async function() {
             const isLiked = likedIds.has(post.id);
             const isSaved = mySavedIds.has(post.id);
             const isFollowing = followingIds.has(post.user_id);
-            const displayName = truncateText(u.full_name, 13);
+            const displayName = truncateText(u.full_name, 10);
 
             return `
             <div class="short-card" data-post-id="${post.id}">
@@ -6473,8 +6518,15 @@ window.loadShortsView = async function() {
                     <p class="short-caption">${post.caption || ''}</p>
                 </div>
 
-                <!-- BARRE DE PROGRESSION -->
-                <div class="short-progress-bar" onclick="seekVideoProgress(event, '${post.id}')">
+                <!-- BARRE DE PROGRESSION (DRAGGABLE) -->
+                <div class="short-progress-bar" 
+                     ontouchstart="startSeeking(event, '${post.id}')"
+                     ontouchmove="moveSeeking(event, '${post.id}')"
+                     ontouchend="endSeeking(event, '${post.id}')"
+                     onmousedown="startSeeking(event, '${post.id}')"
+                     onmousemove="moveSeeking(event, '${post.id}')"
+                     onmouseup="endSeeking(event, '${post.id}')"
+                     onmouseleave="endSeeking(event, '${post.id}')">
                     <div class="short-progress-fill" id="progress-${post.id}"></div>
                 </div>
 
@@ -7215,13 +7267,23 @@ window.openReactionMenu = function(postId, btnElement) {
     if (!menu) {
         menu = document.createElement('div');
         menu.id = `reaction-popup-${postId}`;
-        menu.className = 'reaction-popup-bar';
-        menu.innerHTML = `
-            <span onclick="selectReaction('${postId}', 'like')" class="emoji-react">❤️</span>
-            <span onclick="selectReaction('${postId}', 'haha')" class="emoji-react">😂</span>
-            <span onclick="selectReaction('${postId}', 'wow')" class="emoji-react">😮</span>
-            <span onclick="selectReaction('${postId}', 'sad')" class="emoji-react">😢</span>
-        `;
+        menu.className = 'reaction-popup-bar'; // Votre classe existante
+        
+        // Génération dynamique des icônes
+        let iconsHtml = '';
+        for (const [type, config] of Object.entries(REACTION_CONFIG)) {
+            // On utilise l'icône principale, ou le fallback si dispo
+            const iconClass = config.fallback ? config.fallback : config.icon;
+            
+            iconsHtml += `
+            <div class="reaction-icon-item react-${type}" 
+                 onclick="event.stopPropagation(); selectReaction('${postId}', '${type}')"
+                 style="animation: popReaction 0.3s ease-out;">
+                <i class="fas ${iconClass}" style="color: ${config.color};"></i>
+            </div>`;
+        }
+        
+        menu.innerHTML = iconsHtml;
         btnElement.parentElement.appendChild(menu);
     }
     
@@ -7229,52 +7291,56 @@ window.openReactionMenu = function(postId, btnElement) {
 };
 
 // 5. Sélection d'une réaction
-// --- ACTION : SÉLECTIONNER UNE RÉACTION ---
 window.selectReaction = async function(postId, reactionType) {
+    const config = REACTION_CONFIG[reactionType];
+    if (!config) return;
+
     const bottomBtn = document.getElementById(`bar-react-${postId}`);
     const topBtn = document.getElementById(`top-like-btn-${postId}`);
     const menu = document.getElementById(`reaction-popup-${postId}`);
     
+    // 1. Fermer le menu
     if (menu) menu.style.display = 'none';
 
-    // 1. Mapping des Emojis
-    const emojis = { like: '❤️', love: '😍', haha: '😂', wow: '😮', sad: '😢' };
-    const selectedEmoji = emojis[reactionType] || '❤️';
-
-    // 2. Mise à jour du bouton du BAS
+    // 2. Mise à jour visuelle du bouton du BAS
     const bottomIcon = bottomBtn.querySelector('i');
     if (bottomIcon) {
-        bottomIcon.className = ''; // Reset Font Awesome
-        bottomIcon.innerText = selectedEmoji;
+        bottomIcon.className = `fas ${config.icon}`; 
+        bottomIcon.style.color = config.color;
         bottomIcon.style.fontSize = '22px';
     }
     bottomBtn.classList.add('liked');
 
-    // 3. Mise à jour du bouton du HAUT (Synchronisation)
+    // 3. Mise à jour visuelle du bouton du HAUT
     const topIcon = topBtn.querySelector('i');
     if (topIcon) {
-        topIcon.className = ''; // Reset Font Awesome
-        topIcon.innerText = selectedEmoji;
-        topIcon.style.fontSize = '18px'; // Un peu plus petit en haut
+        topIcon.className = `fas ${config.icon}`;
+        topIcon.style.color = config.color;
+        topIcon.style.fontSize = '18px';
     }
     topBtn.classList.add('liked');
 
-    // 4. Mise à jour du compteur (Haut)
-    const countSpan = topBtn.querySelector('.like-count');
-    if (countSpan) {
-        let count = parseInt(countSpan.innerText) || 0;
-        countSpan.innerText = count + 1;
-    }
-
-    // 5. Envoi BDD
+    // 4. Envoi à la Base de Données (CORRECTION ICI)
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) return;
-    
-    await supabaseClient.from('post_likes').insert([{
-        post_id: postId, 
-        user_id: user.id, 
-        reaction_type: reactionType
-    }]);
+
+    // On utilise UPSERT : Si ça existe -> On update, Si ça n'existe pas -> On insert
+    const { error } = await supabaseClient
+        .from('post_likes')
+        .upsert([{
+            post_id: postId, 
+            user_id: user.id, 
+            reaction_type: reactionType
+        }], { 
+            onConflict: 'user_id,post_id' // Indique la clé unique qui cause le conflit
+        });
+
+    if (error) {
+        console.error("Erreur réaction:", error);
+        showToast("Erreur de mise à jour", "error");
+    } else {
+        showToast(`Réaction "${config.label}" enregistrée !`, "success");
+    }
 };
 
 // --- CONTRÔLES VIDÉO ---
@@ -7299,5 +7365,55 @@ window.skipVideoTime = function(seconds, postId) {
     const video = document.querySelector(`[data-post-id="${postId}"] video`);
     if (video) {
         video.currentTime += seconds;
+    }
+}
+
+// --- FONCTIONS POUR LE GLISSER-DÉPOSER (SEEK) ---
+
+// Variable pour savoir si on est en train de glisser
+let isDraggingSeekBar = false;
+
+// 1. Démarre le déplacement (au contact)
+window.startSeeking = function(event, postId) {
+    event.stopPropagation(); // Ne pas mettre en pause la vidéo
+    isDraggingSeekBar = true;
+    updateVideoTimeFromTouch(event, postId);
+}
+
+// 2. Pendant le déplacement (mouvement du doigt)
+window.moveSeeking = function(event, postId) {
+    if (!isDraggingSeekBar) return;
+    event.stopPropagation();
+    updateVideoTimeFromTouch(event, postId);
+}
+
+// 3. Fin du déplacement
+window.endSeeking = function(event, postId) {
+    if (isDraggingSeekBar) {
+        event.stopPropagation();
+    }
+    isDraggingSeekBar = false;
+}
+
+// Fonction utilitaire : Calcule le temps et met à jour la vidéo
+function updateVideoTimeFromTouch(event, postId) {
+    const bar = event.currentTarget;
+    const video = document.querySelector(`[data-post-id="${postId}"] video`);
+    
+    if (!video || !bar) return;
+
+    // Récupérer la position X du doigt
+    const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+    
+    // Calculer le pourcentage
+    const rect = bar.getBoundingClientRect();
+    let percent = (clientX - rect.left) / rect.width;
+    
+    // Borner entre 0 et 1
+    percent = Math.max(0, Math.min(1, percent));
+
+    // Appliquer à la vidéo
+    if (video.duration) {
+        video.currentTime = percent * video.duration;
     }
 }
